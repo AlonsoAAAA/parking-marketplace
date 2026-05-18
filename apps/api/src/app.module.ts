@@ -12,6 +12,7 @@ import { QrModule } from './modules/qr/qr.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { FraudModule } from './modules/fraud/fraud.module';
+import { CheckinModule } from './modules/checkin/checkin.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { FraudModule } from './modules/fraud/fraud.module';
     NotificationsModule,
     AdminModule,
     FraudModule,
+    CheckinModule,
   ],
 })
 export class AppModule {}

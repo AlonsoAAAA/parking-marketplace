@@ -73,4 +73,6 @@ export const api = {
   },
   scan: (token: string, qrToken: string) =>
     req<any>('/scan', { method: 'POST', body: JSON.stringify({ token: qrToken }) }, token),
+  checkin: (token: string, reservationId: string, data: object) =>
+    req<any>(`/checkin/${reservationId}`, { method: 'POST', body: JSON.stringify(data) }, token),
 };

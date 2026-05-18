@@ -106,6 +106,9 @@ export interface ScanResult {
     | 'TOKEN_INVÁLIDO'
     | 'NO_ENCONTRADO'
     | 'CONDICIÓN_DE_CARRERA';
+  reservationId?: string;
+  userName?: string;
+  eventName?: string;
   reservation?: Reservation;
   event?: ParkingEvent;
   scannedAt?: Date;

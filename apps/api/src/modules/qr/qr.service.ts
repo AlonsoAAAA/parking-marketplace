@@ -116,6 +116,9 @@ export class QrService {
     return {
       valid: true,
       reason: 'ACCESO_PERMITIDO',
+      reservationId: record.reservation_id,
+      userName: record.user_name,
+      eventName: record.event_name,
       reservation: {
         id: record.reservation_id,
         userId: record.user_id,

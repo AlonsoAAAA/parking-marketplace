@@ -1,216 +1,425 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { ScanResult } from '../../types';
-import { ADMIN_CSS } from '../../lib/styles';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import jsQR from 'jsqr';
 import { api } from '../../lib/api';
 
-interface Props { token: string; }
+type Step = 'scan' | 'plate' | 'photos' | 'confirm';
 
-interface HistoryEntry { token: string; valid: boolean; name?: string; event?: string; time: string; }
+const PHOTO_LABELS = ['Frente', 'Atrás', 'Lado izquierdo', 'Lado derecho'] as const;
+const PHOTO_KEYS = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'] as const;
 
-export default function OperatorScanner({ token }: Props) {
-  const videoRef    = useRef<HTMLVideoElement>(null);
-  const canvasRef   = useRef<HTMLCanvasElement>(null);
-  const rafRef      = useRef<number>(0);
+interface ScanData {
+  reservationId: string;
+  userName: string;
+  eventName: string;
+}
+
+interface Photos {
+  photoFront: string;
+  photoBack: string;
+  photoLeft: string;
+  photoRight: string;
+}
+
+export default function Scanner({ token }: { token: string }) {
+
+  const [step, setStep] = useState<Step>('scan');
+  const [scanning, setScanning] = useState(false);
+  const [manualToken, setManualToken] = useState('');
+  const [error, setError] = useState('');
+
+  // Step 1 result
+  const [scanData, setScanData] = useState<ScanData | null>(null);
+
+  // Step 2
+  const [plate, setPlate] = useState('');
+
+  // Step 3
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [photos, setPhotos] = useState<Partial<Photos>>({});
+  const [preview, setPreview] = useState<string | null>(null);
+
+  // Step 4
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number>(0);
   const processingRef = useRef(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const [scanning, setScanning]   = useState(false);
-  const [result, setResult]       = useState<ScanResult | null>(null);
-  const [error, setError]         = useState('');
-  const [manual, setManual]       = useState('');
-  const [history, setHistory]     = useState<HistoryEntry[]>([]);
-  const [cameraReady, setCameraReady] = useState(false);
+  // ── Stream helpers ──────────────────────────────────────────────────────────
 
-  const stopCamera = useCallback(() => {
+  const stopStream = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
-    if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      videoRef.current.srcObject = null;
-    }
-    setScanning(false);
-    setCameraReady(false);
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
-  useEffect(() => () => { cancelAnimationFrame(rafRef.current); stopCamera(); }, [stopCamera]);
+  // ── QR scan logic ───────────────────────────────────────────────────────────
 
-  const processQR = useCallback(async (raw: string) => {
-    if (processingRef.current) return;
-    processingRef.current = true;
-    cancelAnimationFrame(rafRef.current);
-
-    let qrToken = raw;
-    try { const parsed = JSON.parse(raw); if (parsed.t) qrToken = parsed.t; } catch {}
-
-    try {
-      const res = await api.scan(token, qrToken);
-      const r: ScanResult = {
-        valid: res.valid ?? !res.error,
-        reason: res.reason || res.message || (res.valid ? 'Acceso válido' : 'Token inválido'),
-        userName:  res.userName  || res.user_name  || res.name,
-        eventName: res.eventName || res.event_name,
-        scannedAt: res.scannedAt || new Date().toISOString(),
-      };
-      setResult(r);
-      setHistory(h => [{ token: qrToken.slice(-8), valid: r.valid, name: r.userName, event: r.eventName, time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }, ...h.slice(0, 9)]);
-      setTimeout(() => { setResult(null); processingRef.current = false; if (scanning) tick(); }, 4000);
-    } catch (e: any) {
-      const r: ScanResult = { valid: false, reason: e.message || 'Error de conexión' };
-      setResult(r);
-      setHistory(h => [{ token: qrToken.slice(-8), valid: false, time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }, ...h.slice(0, 9)]);
-      setTimeout(() => { setResult(null); processingRef.current = false; if (scanning) tick(); }, 4000);
-    }
-  }, [token, scanning]);
-
-  const tick = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || processingRef.current) return;
-    const video  = videoRef.current;
-    const canvas = canvasRef.current;
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(video, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      try {
-        const jsQR = (await import('jsqr')).default;
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-        if (code?.data) { processQR(code.data); return; }
-      } catch {}
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }, [processQR]);
-
-  const startCamera = async () => {
+  const handleScan = useCallback(async (qrToken: string) => {
     setError('');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => { setCameraReady(true); };
-        await videoRef.current.play();
-        setScanning(true);
-        tick();
+      const result = await api.scan(token!, qrToken);
+      if (result.valid) {
+        setScanData({
+          reservationId: result.reservationId,
+          userName: result.userName || 'Usuario',
+          eventName: result.eventName || 'Evento',
+        });
+        stopStream();
+        setStep('plate');
+      } else {
+        setError(`QR inválido: ${result.reason}`);
+        processingRef.current = false;
       }
-    } catch { setError('No se pudo acceder a la cámara. Verifica los permisos.'); }
+    } catch (e: any) {
+      setError(e.message || 'Error al escanear');
+      processingRef.current = false;
+    }
+  }, [token, stopStream]);
+
+  const scanFrame = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || processingRef.current) {
+      rafRef.current = requestAnimationFrame(scanFrame);
+      return;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, canvas.width, canvas.height);
+    if (code?.data) {
+      processingRef.current = true;
+      handleScan(code.data);
+    } else {
+      rafRef.current = requestAnimationFrame(scanFrame);
+    }
+  }, [handleScan]);
+
+  useEffect(() => {
+    if (step !== 'scan') return;
+    processingRef.current = false;
+    setScanning(false);
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(stream => {
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (video) {
+          video.srcObject = stream;
+          video.play().then(() => {
+            setScanning(true);
+            rafRef.current = requestAnimationFrame(scanFrame);
+          });
+        }
+      })
+      .catch(() => setError('No se pudo acceder a la cámara'));
+
+    return () => { stopStream(); processingRef.current = false; };
+  }, [step, scanFrame, stopStream]);
+
+  // ── Photo camera lifecycle ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (step !== 'photos') return;
+    setPreview(null);
+
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } },
+    })
+      .then(stream => {
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (video) { video.srcObject = stream; video.play(); }
+      })
+      .catch(() => setError('No se pudo acceder a la cámara'));
+
+    return () => stopStream();
+  }, [step, stopStream]);
+
+  // ── Step 2: Plate ───────────────────────────────────────────────────────────
+
+  const handlePlateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!plate.trim()) return;
+    setStep('photos');
+    setPhotoIndex(0);
+    setPhotos({});
   };
 
-  const handleManual = () => {
-    if (!manual.trim()) return;
-    processQR(manual.trim());
-    setManual('');
+  // ── Step 3: Photo capture ───────────────────────────────────────────────────
+
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const MAX_W = 1280, MAX_H = 960;
+    let w = video.videoWidth, h = video.videoHeight;
+    if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+    if (h > MAX_H) { w = Math.round(w * MAX_H / h); h = MAX_H; }
+
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(video, 0, 0, w, h);
+    setPreview(canvas.toDataURL('image/jpeg', 0.75));
   };
 
-  const resultBg    = result ? (result.valid ? '#D1FAE5' : '#FEE2E2') : 'transparent';
-  const resultColor = result ? (result.valid ? '#065F46' : '#991B1B') : '#1a1a1a';
+  const confirmPhoto = () => {
+    if (!preview) return;
+    const key = PHOTO_KEYS[photoIndex];
+    setPhotos(p => ({ ...p, [key]: preview }));
+    setPreview(null);
+    if (photoIndex < 3) {
+      setPhotoIndex(i => i + 1);
+    } else {
+      stopStream();
+      setStep('confirm');
+    }
+  };
+
+  // ── Step 4: Submit ──────────────────────────────────────────────────────────
+
+  const handleConfirm = async () => {
+    if (!scanData) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      await api.checkin(token!, scanData.reservationId, {
+        plate: plate.toUpperCase(),
+        ...photos,
+      });
+      setSuccess(true);
+    } catch (e: any) {
+      setError(e.message || 'Error al registrar entrada');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const reset = () => {
+    setStep('scan');
+    setScanData(null);
+    setPlate('');
+    setPhotos({});
+    setPreview(null);
+    setError('');
+    setSuccess(false);
+    setManualToken('');
+  };
+
+  // ── UI ──────────────────────────────────────────────────────────────────────
+
+  const stepIndex = ['scan', 'plate', 'photos', 'confirm'].indexOf(step);
+  const stepLabels = ['Escanear QR', 'Placas', 'Fotos', 'Confirmar'];
 
   return (
-    <>
-      <style>{ADMIN_CSS + `
-        .scanner-wrap { max-width: 580px; }
-        .cam-container { position: relative; background: #1a1a1a; border-radius: 16px; overflow: hidden; aspect-ratio: 4/3; }
-        .cam-video { width: 100%; height: 100%; object-fit: cover; }
-        .cam-canvas { display: none; }
-        .viewfinder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-        .vf-box { width: 56%; max-width: 220px; aspect-ratio: 1; position: relative; }
-        .vf-corner { position: absolute; width: 24px; height: 24px; border-color: #fff; border-style: solid; opacity: 0.8; }
-        .vf-tl { top:0; left:0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-        .vf-tr { top:0; right:0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
-        .vf-bl { bottom:0; left:0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
-        .vf-br { bottom:0; right:0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-        @keyframes scanLine { 0%,100%{ top:0 } 50%{ top:calc(100% - 2px) } }
-        .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.7); animation: scanLine 2s ease-in-out infinite; box-shadow: 0 0 6px rgba(255,255,255,0.5); }
+    <div className="max-w-lg mx-auto p-4 space-y-4">
+      <h1 className="text-2xl font-bold text-gray-900">Escáner QR</h1>
 
-        .result-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; transition: background 0.3s; }
-        .result-icon { font-size: 56px; line-height: 1; }
-        .result-name { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-        .result-event { font-size: 13px; opacity: 0.8; }
-        .result-reason { font-size: 12px; opacity: 0.7; }
+      {/* Progress */}
+      <div className="flex items-center gap-2">
+        {stepLabels.map((label, i) => (
+          <div key={label} className="flex-1 flex flex-col items-center gap-1">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold ${
+              i < stepIndex ? 'bg-green-500 text-white' : i === stepIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+            }`}>
+              {i < stepIndex ? '✓' : i + 1}
+            </div>
+            <span className={`text-xs ${i === stepIndex ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
 
-        .history-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .history-row:last-child { border-bottom: none; }
-        .hist-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-      `}</style>
-
-      <div className="adm-page">
-        <div className="adm-ph" style={{ marginBottom: 20 }}>
-          <div><h1 className="adm-pt">Escáner QR</h1><p className="adm-ps">Validación de accesos en tiempo real</p></div>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {error}
         </div>
+      )}
 
-        <div className="scanner-wrap">
-          <div className="cam-container">
-            <video ref={videoRef} className="cam-video" playsInline muted />
-            <canvas ref={canvasRef} className="cam-canvas" />
-
-            {scanning && cameraReady && !result && (
-              <div className="viewfinder">
-                <div className="vf-box">
-                  <div className="vf-corner vf-tl" /><div className="vf-corner vf-tr" />
-                  <div className="vf-corner vf-bl" /><div className="vf-corner vf-br" />
-                  <div className="scan-line" />
-                </div>
-              </div>
-            )}
-
-            {result && (
-              <div className="result-overlay" style={{ background: resultBg }}>
-                <div className="result-icon">{result.valid ? '✅' : '❌'}</div>
-                {result.userName && <div className="result-name" style={{ color: resultColor }}>{result.userName}</div>}
-                {result.eventName && <div className="result-event" style={{ color: resultColor }}>{result.eventName}</div>}
-                <div className="result-reason" style={{ color: resultColor }}>{result.reason}</div>
-              </div>
-            )}
-
-            {!scanning && !result && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div style={{ fontSize: 48 }}>📷</div>
-                <button className="adm-btn" onClick={startCamera}>Activar cámara</button>
-                {error && <p style={{ fontSize: 12, color: '#fca5a5', textAlign: 'center', maxWidth: 200 }}>{error}</p>}
+      {/* ── STEP 1: QR scan ── */}
+      {step === 'scan' && (
+        <div className="space-y-4">
+          <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+            <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+            <canvas ref={canvasRef} className="hidden" />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-56 h-56 border-2 border-white rounded-lg opacity-60" />
+            </div>
+            {!scanning && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white text-sm">
+                Iniciando cámara…
               </div>
             )}
           </div>
 
-          {scanning && !result && (
-            <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-              <button className="adm-btn adm-btn-ghost" style={{ flex: 1 }} onClick={stopCamera}>Detener cámara</button>
+          <form onSubmit={e => { e.preventDefault(); if (manualToken.trim()) { processingRef.current = true; handleScan(manualToken.trim()); setManualToken(''); } }} className="flex gap-2">
+            <input
+              type="text"
+              value={manualToken}
+              onChange={e => setManualToken(e.target.value)}
+              placeholder="Pegar token QR manualmente"
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={!manualToken.trim()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-blue-700"
+            >
+              Validar
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ── STEP 2: Plate ── */}
+      {step === 'plate' && scanData && (
+        <div className="space-y-4">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-1">
+            <p className="text-green-800 font-semibold text-sm">✅ QR válido — Acceso permitido</p>
+            <p className="text-gray-700 text-sm"><span className="font-medium">Usuario:</span> {scanData.userName}</p>
+            <p className="text-gray-700 text-sm"><span className="font-medium">Evento:</span> {scanData.eventName}</p>
+          </div>
+          <form onSubmit={handlePlateSubmit} className="space-y-3">
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700">Número de placas</span>
+              <input
+                type="text"
+                value={plate}
+                onChange={e => setPlate(e.target.value.toUpperCase())}
+                placeholder="Ej: ABC-1234"
+                maxLength={20}
+                autoFocus
+                className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={!plate.trim()}
+              className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold disabled:opacity-40 hover:bg-blue-700 transition-colors"
+            >
+              Continuar →
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ── STEP 3: Photos ── */}
+      {step === 'photos' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="font-semibold text-gray-800">{PHOTO_LABELS[photoIndex]}</p>
+            <span className="text-sm text-gray-500 font-medium">{photoIndex + 1} / 4</span>
+          </div>
+
+          <div className="flex gap-1.5">
+            {PHOTO_LABELS.map((_, i) => (
+              <div key={i} className={`flex-1 h-1.5 rounded-full transition-colors ${
+                i < photoIndex ? 'bg-green-500' : i === photoIndex ? 'bg-blue-500' : 'bg-gray-200'
+              }`} />
+            ))}
+          </div>
+
+          <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+            {preview
+              ? <img src={preview} alt="preview" className="w-full h-full object-cover" />
+              : <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+            }
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+
+          {preview ? (
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPreview(null)}
+                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+              >
+                Retomar
+              </button>
+              <button
+                onClick={confirmPhoto}
+                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
+              >
+                {photoIndex < 3 ? 'Siguiente →' : 'Finalizar'}
+              </button>
             </div>
+          ) : (
+            <button
+              onClick={capturePhoto}
+              className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+            >
+              📷 Tomar foto
+            </button>
           )}
+        </div>
+      )}
 
-          {/* Manual input */}
-          <div style={{ marginTop: 14 }}>
-            <label className="adm-label">Ingresar token manualmente</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input className="adm-input adm-input-sm" placeholder="eyJ..." value={manual}
-                onChange={e => setManual(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleManual()}
-                style={{ fontFamily: 'monospace', fontSize: 12 }} />
-              <button className="adm-btn adm-btn-sm" onClick={handleManual} disabled={!manual.trim()}>Validar</button>
+      {/* ── STEP 4: Confirm ── */}
+      {step === 'confirm' && scanData && (
+        <div className="space-y-4">
+          {success ? (
+            <div className="text-center space-y-3 py-8">
+              <div className="text-5xl">✅</div>
+              <p className="text-xl font-bold text-green-700">Entrada registrada</p>
+              <p className="text-gray-500 text-sm">El vehículo fue registrado correctamente.</p>
+              <button
+                onClick={reset}
+                className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Escanear siguiente
+              </button>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2 text-sm">
+                <p className="text-gray-700"><span className="font-medium">Usuario:</span> {scanData.userName}</p>
+                <p className="text-gray-700"><span className="font-medium">Evento:</span> {scanData.eventName}</p>
+                <p className="text-gray-700"><span className="font-medium">Placas:</span>{' '}
+                  <span className="font-mono tracking-widest font-semibold">{plate.toUpperCase()}</span>
+                </p>
+              </div>
 
-          {/* Scan history */}
-          {history.length > 0 && (
-            <div style={{ marginTop: 20 }}>
-              <p className="adm-section-lbl">Historial de escaneos</p>
-              <div className="adm-tw">
-                {history.map((h, i) => (
-                  <div key={i} className="history-row">
-                    <div className="hist-dot" style={{ background: h.valid ? '#10B981' : '#EF4444' }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{h.name || `Token ...${h.token}`}</div>
-                      {h.event && <div style={{ fontSize: 11, color: '#bbb' }}>{h.event}</div>}
+              <div className="grid grid-cols-2 gap-2">
+                {PHOTO_KEYS.map((key, i) => (
+                  <div key={key} className="relative rounded-lg overflow-hidden bg-gray-100" style={{ aspectRatio: '16/9' }}>
+                    {photos[key] && (
+                      <img src={photos[key]} alt={PHOTO_LABELS[i]} className="w-full h-full object-cover" />
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs text-center py-1">
+                      {PHOTO_LABELS[i]}
                     </div>
-                    <span style={{ fontSize: 11, color: '#bbb', flexShrink: 0 }}>{h.time}</span>
-                    <span style={{ fontSize: 12, flexShrink: 0, color: h.valid ? '#065F46' : '#991B1B', fontWeight: 600 }}>
-                      {h.valid ? '✓' : '✗'}
-                    </span>
                   </div>
                 ))}
               </div>
-            </div>
+
+              <button
+                onClick={handleConfirm}
+                disabled={submitting}
+                className="w-full py-4 bg-green-600 text-white rounded-xl font-bold text-lg disabled:opacity-50 hover:bg-green-700 transition-colors"
+              >
+                {submitting ? 'Registrando…' : 'Confirmar entrada'}
+              </button>
+
+              <button
+                onClick={reset}
+                className="w-full py-2 text-gray-500 text-sm hover:text-gray-700 transition-colors"
+              >
+                Cancelar
+              </button>
+            </>
           )}
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
