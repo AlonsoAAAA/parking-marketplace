@@ -1,0 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #EDEDED; font-family: 'Inter', -apple-system, Helvetica Neue, sans-serif; color: #1a1a1a; -webkit-font-smoothing: antialiased; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+input:focus { outline: 1.5px solid #1a1a1a; outline-offset: 0; }
+button:active { transform: scale(0.97); }
+a { color: inherit; }

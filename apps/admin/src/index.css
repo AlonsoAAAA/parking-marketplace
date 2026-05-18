@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #EDEDED; font-family: 'Inter', -apple-system, sans-serif; color: #1a1a1a; -webkit-font-smoothing: antialiased; height: 100%; }
+#root { height: 100%; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes scanLine { 0% { top: 10%; } 50% { top: 85%; } 100% { top: 10%; } }
+
+input:focus, select:focus, textarea:focus { outline: 1.5px solid #1a1a1a; outline-offset: 0; }
+button:active { transform: scale(0.97); }
+a { color: inherit; text-decoration: none; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
