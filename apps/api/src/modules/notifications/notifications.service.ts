@@ -50,7 +50,6 @@ export class NotificationsService {
     });
 
     const marketplaceUrl = this.config.get('MARKETPLACE_URL') ?? 'https://estacionat.mx';
-    const publicApiUrl  = this.config.get('PUBLIC_API_URL');
 
     const message = [
       `✅ *¡Tu lugar está confirmado!*`,
@@ -60,9 +59,8 @@ export class NotificationsService {
       `🏠 ${data.parking_address}`,
       `📅 ${fecha}`,
       ``,
-      `🎟️ Tu código QR está en la imagen adjunta. Preséntalo al llegar — solo es válido una vez.`,
-      ``,
-      `🔗 También puedes verlo aquí: ${marketplaceUrl}/mis-boletos/${data.id}`,
+      `🎟️ Ver y descargar tu código QR:`,
+      `${marketplaceUrl}/mis-boletos/${data.id}`,
       ``,
       `⚠️ *Política de cancelaciones:* NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 6 HORAS PREVIAS AL INICIO DEL EVENTO. Transcurrido dicho plazo, el pago es definitivo e irrevocable.`,
       ``,
@@ -80,10 +78,6 @@ export class NotificationsService {
       to: `whatsapp:+${waPhone}`,
     };
 
-    // Adjuntar imagen QR si hay URL pública del API con cert SSL válido
-    if (publicApiUrl && data.id) {
-      payload.mediaUrl = [`${publicApiUrl}/api/v1/qr/${data.id}/image`];
-    }
 
     try {
       const sent = await twilio.messages.create(payload);
