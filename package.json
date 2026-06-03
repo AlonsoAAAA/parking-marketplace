@@ -14,8 +14,5 @@
   "devDependencies": {
     "concurrently": "^8.2.0",
     "typescript": "^5.3.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["@nestjs/core", "esbuild", "@swc/core", "bcrypt"]
   }
 }
