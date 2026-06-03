@@ -5,6 +5,7 @@ import { UsersService } from '../users/users.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OtpEntity } from './entities/otp.entity';
+import { normalizePhone } from '../../lib/phone';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,7 @@ export class AuthService {
 
   // Paso 1: Enviar OTP por WhatsApp
   async sendOtp(phone: string): Promise<{ message: string; devOtp?: string }> {
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = normalizePhone(phone);
     const isDev = this.config.get('NODE_ENV') === 'development';
     // En desarrollo usamos OTP fijo para que las credenciales del demo siempre funcionen
     const otp = isDev ? '111222' : Math.floor(100000 + Math.random() * 900000).toString();
@@ -36,7 +37,7 @@ export class AuthService {
 
   // Paso 2: Verificar OTP y devolver JWT
   async verifyOtp(phone: string, otp: string): Promise<{ access_token: string; token: string; isNewUser: boolean }> {
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = normalizePhone(phone);
 
     const record = await this.otpRepo.findOne({
       where: { phone: cleanPhone, verified: false },

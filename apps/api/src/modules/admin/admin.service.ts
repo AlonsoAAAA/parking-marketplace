@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { normalizePhone } from '../../lib/phone';
 
 @Injectable()
 export class AdminService {
@@ -284,7 +285,7 @@ export class AdminService {
   // ─── Users ────────────────────────────────────────────────────────────────
 
   async createUser(data: { phone: string; name: string; role: string }) {
-    const clean = data.phone.replace(/\D/g, '');
+    const clean = normalizePhone(data.phone);
     try {
       const rows = await this.db.query(
         `INSERT INTO users (phone, name, role, channel)

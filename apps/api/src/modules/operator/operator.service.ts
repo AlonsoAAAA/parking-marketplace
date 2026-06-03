@@ -8,6 +8,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { OtpEntity } from '../auth/entities/otp.entity';
+import { normalizePhone } from '../../lib/phone';
 
 @Injectable()
 export class OperatorService {
@@ -37,9 +38,8 @@ export class OperatorService {
     data: { name: string; phone: string; role?: string; otp: string },
   ) {
     // ── 1. Normalise phones ────────────────────────────────────────────────────
-    const digits   = data.phone.replace(/\D/g, '');
-    const otpPhone = digits;                                              // same key as sendOtp stores
-    const userPhone = digits.length >= 10 ? `521${digits.slice(-10)}` : digits;
+    const userPhone = normalizePhone(data.phone);
+    const otpPhone  = userPhone;                                         // same key as sendOtp stores
 
     // ── 2. Verify OTP ──────────────────────────────────────────────────────────
     const record = await this.otpRepo.findOne({
