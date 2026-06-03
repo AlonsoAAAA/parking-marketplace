@@ -37,20 +37,31 @@ async function bootstrap() {
     }),
   );
 
-  // ── CORS — sólo orígenes explícitos ─────────────────────────────────────────
+  // ── CORS ─────────────────────────────────────────────────────────────────────
   const allowedOrigins = [
-    process.env.MARKETPLACE_URL || 'http://localhost:3001',
-    process.env.ADMIN_URL       || 'http://localhost:3002',
-    // Dominio de producción se agrega via env vars al desplegar
-    ...(process.env.PRODUCTION_URL ? [process.env.PRODUCTION_URL] : []),
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'https://estacionat.mx',
+    'https://www.estacionat.mx',
+    // Vercel preview URLs
+    /https:\/\/parking-marketplace.*\.vercel\.app$/,
+    // Env-var overrides (para otros dominios en el futuro)
+    ...(process.env.MARKETPLACE_URL  ? [process.env.MARKETPLACE_URL]  : []),
+    ...(process.env.ADMIN_URL        ? [process.env.ADMIN_URL]        : []),
+    ...(process.env.PRODUCTION_URL   ? [process.env.PRODUCTION_URL]   : []),
   ].filter(Boolean);
 
   app.enableCors({
     origin: (origin, cb) => {
-      // Permitir requests sin origin (mobile apps, Postman, cURL interno)
+      // Permitir requests sin origin (SSR de Next.js, Postman, apps móviles)
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      cb(new Error(`CORS: origen no permitido → ${origin}`));
+      const allowed = allowedOrigins.some(o =>
+        typeof o === 'string' ? o === origin : (o as RegExp).test(origin),
+      );
+      if (allowed) return cb(null, true);
+      // En producción logueamos el intento; nunca tiramos 500
+      console.warn(`CORS rechazado: ${origin}`);
+      cb(null, false);
     },
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
