@@ -62,7 +62,9 @@ export class NotificationsService {
       `🎟️ Tu código QR está listo. Ábrelo aquí:`,
       `${marketplaceUrl}/checkout/${data.id}/ticket`,
       ``,
-      `Preséntalo al llegar — solo es válido una vez.`,
+      `⚠️ *Política de cancelación:* No se aceptan cancelaciones dentro de las 8 horas previas al evento.`,
+      ``,
+      `📄 Términos y condiciones: https://www.estacionat.mx/terminos`,
     ].join('\n');
 
     const twilio = require('twilio')(accountSid, authToken);
