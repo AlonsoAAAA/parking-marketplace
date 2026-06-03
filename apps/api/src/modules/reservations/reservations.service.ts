@@ -287,8 +287,8 @@ export class ReservationsService {
         dto.make.trim(),
         dto.model.trim(),
         clasif.categoria,           // categoría determinada por el servidor
-        dto.year,
-        dto.color.trim(),
+        dto.year ?? null,
+        dto.color?.trim() ?? null,
         dto.version ?? null,
         reservationId,
         userId,

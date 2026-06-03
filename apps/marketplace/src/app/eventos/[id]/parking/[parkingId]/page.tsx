@@ -230,7 +230,7 @@ export default function ParkingDetailPage() {
       const reservationId = data1.reservation.id;
 
       // 2 — Guardar vehículo
-      await fetch(`${API_BASE}/api/v1/reservations/${reservationId}/vehicle`, {
+      const res2 = await fetch(`${API_BASE}/api/v1/reservations/${reservationId}/vehicle`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -240,6 +240,11 @@ export default function ParkingDetailPage() {
           version: version || undefined,
         }),
       });
+      if (!res2.ok) {
+        const d2 = await res2.json().catch(() => ({}));
+        setError(d2.message || 'No se pudo guardar el vehículo. Intenta de nuevo.');
+        return;
+      }
 
       // 3 — Actualizar nombre (fire and forget)
       fetch(`${API_BASE}/api/v1/users/me`, {
