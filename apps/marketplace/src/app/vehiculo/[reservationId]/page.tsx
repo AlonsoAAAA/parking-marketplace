@@ -4,8 +4,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SHARED_CSS } from '@/lib/design';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
-
 const YEARS = Array.from(
   { length: new Date().getFullYear() - 1989 },
   (_, i) => new Date().getFullYear() - i,
@@ -16,11 +14,18 @@ const COLORES = [
   'Verde', 'Amarillo', 'Naranja', 'Café / Beige', 'Morado', 'Otro',
 ];
 
+async function apiFetch(path: string) {
+  const base = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const url  = base ? `${base}${path}` : path;
+  const res  = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export default function VehiclePage() {
   const { reservationId } = useParams<{ reservationId: string }>();
   const router = useRouter();
 
-  // ── Datos del formulario ─────────────────────────────────────────────────
   const [plate,   setPlate]   = useState('');
   const [marca,   setMarca]   = useState('');
   const [modelo,  setModelo]  = useState('');
@@ -28,94 +33,82 @@ export default function VehiclePage() {
   const [year,    setYear]    = useState('');
   const [color,   setColor]   = useState('');
 
-  // ── Catálogos ────────────────────────────────────────────────────────────
   const [marcas,    setMarcas]    = useState<string[]>([]);
   const [modelos,   setModelos]   = useState<{ nombre: string; tieneVersion: boolean }[]>([]);
   const [versiones, setVersiones] = useState<string[]>([]);
 
-  // ── Precio y estado ──────────────────────────────────────────────────────
-  const [precio,  setPrecio]  = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [precio,        setPrecio]        = useState<number | null>(null);
+  const [loadingMarcas, setLoadingMarcas] = useState(true);
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState('');
 
   const tieneVersion = !!modelos.find(m => m.nombre === modelo)?.tieneVersion;
 
-  // ── Carga inicial de marcas ──────────────────────────────────────────────
+  // Carga marcas al montar
   useEffect(() => {
-    fetch(`${API}/api/v1/vehiculos/marcas`)
-      .then(r => r.json())
-      .then(d => setMarcas(d.marcas ?? []))
-      .catch(() => {});
+    setLoadingMarcas(true);
+    apiFetch('/api/v1/vehiculos/marcas')
+      .then(d => setMarcas(Array.isArray(d.marcas) ? d.marcas : []))
+      .catch(() => setMarcas([]))
+      .finally(() => setLoadingMarcas(false));
   }, []);
 
-  // ── Modelos cuando cambia la marca ───────────────────────────────────────
+  // Modelos cuando cambia marca
   useEffect(() => {
     if (!marca) { setModelos([]); setModelo(''); setVersiones([]); setVersion(''); setPrecio(null); return; }
-    fetch(`${API}/api/v1/vehiculos/modelos?marca=${encodeURIComponent(marca)}`)
-      .then(r => r.json())
-      .then(d => setModelos(d.modelos ?? []))
-      .catch(() => setModelos([]));
     setModelo(''); setVersiones([]); setVersion(''); setPrecio(null);
+    apiFetch(`/api/v1/vehiculos/modelos?marca=${encodeURIComponent(marca)}`)
+      .then(d => setModelos(Array.isArray(d.modelos) ? d.modelos : []))
+      .catch(() => setModelos([]));
   }, [marca]);
 
-  // ── Versiones cuando cambia el modelo ───────────────────────────────────
+  // Versiones cuando cambia modelo
   useEffect(() => {
     if (!modelo) { setVersiones([]); setVersion(''); setPrecio(null); return; }
-    const info = modelos.find(m => m.nombre === modelo);
-    if (info?.tieneVersion) {
-      fetch(`${API}/api/v1/vehiculos/versiones?marca=${encodeURIComponent(marca)}&modelo=${encodeURIComponent(modelo)}`)
-        .then(r => r.json())
-        .then(d => setVersiones(d.versiones ?? []))
-        .catch(() => setVersiones([]));
-    } else {
-      setVersiones([]);
-      setVersion('');
-    }
     setPrecio(null);
+    const info = modelos.find(m => m.nombre === modelo);
+    if (!info?.tieneVersion) { setVersiones([]); setVersion(''); return; }
+    apiFetch(`/api/v1/vehiculos/versiones?marca=${encodeURIComponent(marca)}&modelo=${encodeURIComponent(modelo)}`)
+      .then(d => setVersiones(Array.isArray(d.versiones) ? d.versiones : []))
+      .catch(() => setVersiones([]));
   }, [modelo]);
 
-  // ── Precio preview cuando el vehículo está listo ────────────────────────
+  // Precio preview
   const fetchPrecio = useCallback(() => {
     if (!marca || !modelo) return;
     if (tieneVersion && !version) return;
-
     const params = new URLSearchParams({ marca, modelo });
     if (version) params.set('version', version);
-
-    fetch(`${API}/api/v1/reservations/${reservationId}/pricing?${params}`)
-      .then(r => r.json())
-      .then(d => setPrecio(d.precio ?? null))
-      .catch(() => {});
+    apiFetch(`/api/v1/reservations/${reservationId}/pricing?${params}`)
+      .then(d => setPrecio(typeof d.precio === 'number' ? d.precio : null))
+      .catch(() => setPrecio(null));
   }, [marca, modelo, version, tieneVersion, reservationId]);
 
   useEffect(() => { fetchPrecio(); }, [fetchPrecio]);
 
-  // ── Validación ───────────────────────────────────────────────────────────
   const plateClean = plate.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const valid =
-    plateClean.length >= 5 &&
-    marca && modelo &&
-    (!tieneVersion || version) &&
-    year && color;
+  const valid = plateClean.length >= 5 && marca && modelo && (!tieneVersion || version) && year && color;
 
-  // ── Envío ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!valid) { setError('Completa todos los campos'); return; }
     setLoading(true); setError('');
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API}/api/v1/reservations/${reservationId}/vehicle`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          plate:   plateClean,
-          make:    marca,
-          model:   modelo,
-          version: version || undefined,
-          year:    parseInt(year),
-          color,
-        }),
-      });
+      const res = await fetch(
+        (process.env.NEXT_PUBLIC_API_URL ?? '') + `/api/v1/reservations/${reservationId}/vehicle`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            plate:   plateClean,
+            make:    marca,
+            model:   modelo,
+            version: version || undefined,
+            year:    parseInt(year),
+            color,
+          }),
+        },
+      );
       if (!res.ok) { const d = await res.json(); setError(d.message || 'Error al guardar'); return; }
       router.push(`/checkout/${reservationId}`);
     } catch { setError('Error de conexión.'); } finally { setLoading(false); }
@@ -130,9 +123,10 @@ export default function VehiclePage() {
         .vh1 { font-size:22px; font-weight:700; letter-spacing:-0.4px; color:#1a1a1a; margin-bottom:6px; }
         .vsub{ font-size:13px; color:#999; margin-bottom:28px; line-height:1.55; }
         .vl  { font-size:11px; font-weight:600; color:#888; margin-bottom:6px; letter-spacing:0.5px; text-transform:uppercase; }
-        .vi  { width:100%; padding:13px 16px; background:#fff; border:1.5px solid rgba(0,0,0,0.1); border-radius:10px; font-size:14px; color:#1a1a1a; font-family:Inter,sans-serif; box-sizing:border-box; transition:border-color 0.2s; -webkit-appearance:none; }
+        .vi  { width:100%; padding:13px 16px; background:#fff; border:1.5px solid rgba(0,0,0,0.1); border-radius:10px; font-size:14px; color:#1a1a1a; font-family:Inter,sans-serif; box-sizing:border-box; transition:border-color 0.2s; }
         .vi:focus  { outline:none; border-color:#1a1a1a; }
         .vi::placeholder { color:#ccc; }
+        .vi:disabled { opacity:0.5; cursor:not-allowed; }
         .vg  { display:flex; flex-direction:column; gap:16px; margin-bottom:24px; }
         .vrow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
         .vplate { text-transform:uppercase; letter-spacing:3px; font-weight:700; font-size:16px; }
@@ -153,36 +147,50 @@ export default function VehiclePage() {
 
             <div className="vg">
 
-              {/* ── Marca ── */}
+              {/* Marca */}
               <div>
                 <div className="vl">Marca</div>
-                <select className="vi" value={marca} onChange={e => setMarca(e.target.value)}>
-                  <option value="">Selecciona una marca</option>
+                <select
+                  className="vi"
+                  value={marca}
+                  onChange={e => setMarca(e.target.value)}
+                  disabled={loadingMarcas}
+                >
+                  <option value="">
+                    {loadingMarcas ? 'Cargando marcas…' : `Selecciona una marca (${marcas.length})`}
+                  </option>
                   {marcas.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
 
-              {/* ── Modelo ── */}
+              {/* Modelo */}
               <div>
                 <div className="vl">Modelo</div>
-                <select className="vi" value={modelo} onChange={e => setModelo(e.target.value)} disabled={!marca}>
-                  <option value="">Selecciona un modelo</option>
+                <select
+                  className="vi"
+                  value={modelo}
+                  onChange={e => setModelo(e.target.value)}
+                  disabled={!marca || modelos.length === 0}
+                >
+                  <option value="">
+                    {!marca ? 'Primero elige una marca' : modelos.length === 0 ? 'Cargando…' : 'Selecciona un modelo'}
+                  </option>
                   {modelos.map(m => <option key={m.nombre} value={m.nombre}>{m.nombre}</option>)}
                 </select>
               </div>
 
-              {/* ── Versión (solo cuando aplica) ── */}
+              {/* Versión */}
               {tieneVersion && (
                 <div>
                   <div className="vl">Versión / Cabina</div>
-                  <select className="vi" value={version} onChange={e => setVersion(e.target.value)} disabled={!modelo}>
+                  <select className="vi" value={version} onChange={e => setVersion(e.target.value)}>
                     <option value="">Selecciona una versión</option>
                     {versiones.map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
               )}
 
-              {/* ── Año y Color ── */}
+              {/* Año y Color */}
               <div className="vrow">
                 <div>
                   <div className="vl">Año</div>
@@ -200,7 +208,7 @@ export default function VehiclePage() {
                 </div>
               </div>
 
-              {/* ── Placas ── */}
+              {/* Placas */}
               <div>
                 <div className="vl">Placas</div>
                 <input
@@ -213,7 +221,6 @@ export default function VehiclePage() {
               </div>
             </div>
 
-            {/* ── Precio preview ── */}
             {precio !== null && (
               <div className="vprice">
                 <span style={{ fontSize: 13, color: '#666' }}>Total a pagar</span>
@@ -225,11 +232,7 @@ export default function VehiclePage() {
 
             {error && <div className="pm-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-            <button
-              className="pm-btn-primary"
-              onClick={handleSubmit}
-              disabled={loading || !valid}
-            >
+            <button className="pm-btn-primary" onClick={handleSubmit} disabled={loading || !valid}>
               {loading ? 'Guardando...' : 'Continuar al pago →'}
             </button>
           </div>
