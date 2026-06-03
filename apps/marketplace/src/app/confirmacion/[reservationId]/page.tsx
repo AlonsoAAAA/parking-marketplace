@@ -190,6 +190,22 @@ export default function ConfirmacionPage() {
               </div>
             ))}
           </div>
+          <div style={{
+            background: '#fff8f0',
+            border: '1px solid #fde68a',
+            borderLeft: '3px solid #f59e0b',
+            borderRadius: 12,
+            padding: '14px 16px',
+            marginBottom: 14,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 6, letterSpacing: .3 }}>
+              ⚠️ Política de cancelaciones
+            </div>
+            <div style={{ fontSize: 12, color: '#b45309', lineHeight: 1.65 }}>
+              NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 6 HORAS PREVIAS AL INICIO DEL EVENTO. Transcurrido dicho plazo, el pago es definitivo e irrevocable.
+            </div>
+          </div>
+
           <Link href="/" className="pm-btn-primary" style={{display:'flex',textDecoration:'none'}}>
             Ir al inicio
           </Link>

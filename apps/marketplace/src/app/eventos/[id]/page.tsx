@@ -375,7 +375,7 @@ export default function EventDetailPage() {
                     style={{ opacity: soldOut ? .4 : 1 }}
                     disabled={soldOut}
                     onClick={handleContinue}>
-                    {soldOut ? 'Agotado' : 'Seleccionar lugar →'}
+                    {soldOut ? 'Agotado' : 'Reservar'}
                   </button>
 
                   <div className="desk-perks">
@@ -413,7 +413,7 @@ export default function EventDetailPage() {
                 style={{ width:'auto', minWidth:140, opacity: soldOut ? .4 : 1 }}
                 disabled={soldOut}
                 onClick={handleContinue}>
-                {soldOut ? 'Agotado' : `Elegir · $${minP}`}
+                {soldOut ? 'Agotado' : 'Reservar'}
               </button>
             </div>
           );
