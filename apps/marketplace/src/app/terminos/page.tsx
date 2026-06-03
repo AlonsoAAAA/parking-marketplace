@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { SHARED_CSS } from '@/lib/design';
 
 export const metadata = {
-  title: 'Términos y Condiciones · ParkMX',
+  title: 'Términos y Condiciones · Estacionat',
 };
 
 export default function TerminosPage() {
@@ -53,7 +53,7 @@ export default function TerminosPage() {
 
       <div className="tc-wrap">
         <header className="pm-header">
-          <Link href="/" className="pm-logo">Park<span>MX</span></Link>
+          <Link href="/" className="pm-logo">Estaciona<span>t</span></Link>
           <Link href="/" className="pm-nav-link">← Inicio</Link>
         </header>
 

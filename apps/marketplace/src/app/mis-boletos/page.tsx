@@ -109,7 +109,7 @@ export default function MisBoletosPage() {
 
       <div className="mb">
         <header className="pm-header">
-          <Link href="/" className="pm-logo">Park<span>MX</span></Link>
+          <Link href="/" className="pm-logo">Estaciona<span>t</span></Link>
           <Link href="/" className="pm-nav-link">Inicio</Link>
         </header>
 

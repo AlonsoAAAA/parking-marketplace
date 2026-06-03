@@ -86,7 +86,7 @@ export default function VenuesPage() {
 
       <div className="vp-root">
         <header className="vp-header">
-          <span className="pm-logo">Park<span>MX</span></span>
+          <span className="pm-logo">Estaciona<span>t</span></span>
           <Link href="/" className="pm-nav-link">Eventos</Link>
         </header>
 

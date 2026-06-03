@@ -361,7 +361,7 @@ export default function ParkingDetailPage() {
       <div className="pp-page">
         <header className="pm-header" style={{ background: color.bg }}>
           <button className="pm-back" onClick={() => router.back()}>← Elegir otro</button>
-          <span className="pm-logo">Park<span>MX</span></span>
+          <span className="pm-logo">Estaciona<span>t</span></span>
         </header>
 
         <div className="pp-hero">

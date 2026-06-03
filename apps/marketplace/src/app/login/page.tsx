@@ -97,7 +97,7 @@ function LoginContent() {
       `}</style>
       <div className="lw">
         <header className="pm-header">
-          <Link href="/" className="pm-logo" style={{ textDecoration: 'none' }}>Park<span>MX</span></Link>
+          <Link href="/" className="pm-logo" style={{ textDecoration: 'none' }}>Estaciona<span>t</span></Link>
         </header>
         <div className="lb">
           <div className="lc">

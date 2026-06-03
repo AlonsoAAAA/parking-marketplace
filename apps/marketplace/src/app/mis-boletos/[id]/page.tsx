@@ -184,7 +184,7 @@ export default function BoletoDetailPage() {
       <div className="bd-wrap">
         <header className="pm-header">
           <Link href="/mis-boletos" className="pm-back">← Mis boletos</Link>
-          <span className="pm-logo">Park<span>MX</span></span>
+          <span className="pm-logo">Estaciona<span>t</span></span>
         </header>
 
         <div className="bd-body">

@@ -87,7 +87,7 @@ export default function VenuePage() {
         <header className="pm-header" style={{ position:'absolute', width:'100%', zIndex:10 }}>
           <button className="pm-back" style={{ color:'rgba(255,255,255,.75)' }}
             onClick={() => router.push('/venues')}>← Venues</button>
-          <span className="pm-logo" style={{ color:'rgba(255,255,255,.8)' }}>Park<span style={{ color:'rgba(255,255,255,.4)' }}>MX</span></span>
+          <span className="pm-logo" style={{ color:'rgba(255,255,255,.8)' }}>Estaciona<span style={{ color:'rgba(255,255,255,.4)' }}>t</span></span>
         </header>
 
         <div className="vd-hero" style={{ background: color.accent }}>

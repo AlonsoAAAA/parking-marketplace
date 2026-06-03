@@ -137,7 +137,7 @@ export default function ConfirmacionPage() {
       `}</style>
       <div className="cnw">
         <header className="pm-header" style={{paddingBottom:0}}>
-          <span className="pm-logo">Park<span>MX</span></span>
+          <span className="pm-logo">Estaciona<span>t</span></span>
         </header>
         <div className="cnb">
           <div style={{textAlign:'center',padding:'32px 0 28px'}}>

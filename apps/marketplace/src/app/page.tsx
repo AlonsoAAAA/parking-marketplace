@@ -138,7 +138,7 @@ export default function HomePage() {
 
       <div className="hp">
         <header className="hp-header">
-          <Link href="/" className="pm-logo">Park<span>MX</span></Link>
+          <Link href="/" className="pm-logo">Estaciona<span>t</span></Link>
           <Link href="/mis-boletos" className="pm-nav-link">Mis boletos</Link>
         </header>
 

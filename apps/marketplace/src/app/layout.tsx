@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'ParkMX — Estacionamiento para eventos en CDMX',
+  title: 'Estacionat — Estacionamiento para eventos en CDMX',
   description: 'Reserva tu lugar de estacionamiento para conciertos, deportes y más en Ciudad de México.',
 };
 

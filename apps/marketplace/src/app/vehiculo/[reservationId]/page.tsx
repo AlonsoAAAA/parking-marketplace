@@ -136,7 +136,7 @@ export default function VehiclePage() {
 
       <div className="vw">
         <header className="pm-header">
-          <Link href="/" className="pm-logo">Park<span>MX</span></Link>
+          <Link href="/" className="pm-logo">Estaciona<span>t</span></Link>
         </header>
 
         <div className="vb">

@@ -44,87 +44,6 @@ const STRIPE_APPEARANCE = {
 
 interface CheckoutData { clientSecret: string; amount: number; eventName: string; }
 
-// ─── Modal de Términos y Condiciones ──────────────────────────────────────────
-function TermsModal({ onClose }: { onClose: () => void }) {
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(6px)',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-      animation: 'fadeIn .2s ease both',
-    }} onClick={onClose}>
-      <div style={{
-        background: '#fff', borderRadius: '20px 20px 0 0',
-        width: '100%', maxWidth: 560, maxHeight: '85vh',
-        display: 'flex', flexDirection: 'column',
-        animation: 'slideUp .25s ease both',
-      }} onClick={e => e.stopPropagation()}>
-        {/* Cabecera */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
-          <div>
-            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#bbb', marginBottom: 4 }}>PARKMX</div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-.3px' }}>Términos y Condiciones</div>
-          </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#f0f0f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#666', flexShrink: 0 }}>×</button>
-        </div>
-
-        {/* Contenido desplazable */}
-        <div style={{ overflowY: 'auto', padding: '20px 24px 32px', fontSize: 13, color: '#444', lineHeight: 1.7 }}>
-
-          <Section title="1. Descripción del servicio">
-            ParkMX es una plataforma digital que permite a los usuarios reservar lugares de estacionamiento en instalaciones asociadas cercanas a venues de eventos. La reservación garantiza disponibilidad del lugar conforme a los términos aquí descritos.
-          </Section>
-
-          <Section title="2. Reservaciones">
-            Al realizar una reservación confirmas que la información proporcionada es verídica. Cada reservación es personal e intransferible. El código QR generado es de uso único y exclusivo para el vehículo indicado. ParkMX no se hace responsable del uso indebido del código QR por terceros.
-          </Section>
-
-          <Section title="3. Pagos">
-            El cobro se realiza en el momento de confirmar la reservación a través de la pasarela de pago Stripe. Los precios se muestran en pesos mexicanos (MXN) e incluyen todos los cargos aplicables. No se realizan cobros adicionales al momento de llegar al estacionamiento.
-          </Section>
-
-          <Section title="4. Cancelaciones y reembolsos">
-            Las reservaciones pueden cancelarse hasta <strong>2 horas antes</strong> del inicio del evento para recibir un reembolso completo. Cancelaciones realizadas después de ese plazo no generan reembolso. Para solicitar una cancelación contacta a soporte@parkmx.mx.
-          </Section>
-
-          <Section title="5. Disponibilidad del lugar">
-            El lugar reservado está garantizado mientras el usuario llegue dentro del horario del evento. ParkMX no garantiza disponibilidad en caso de fuerza mayor (desastres naturales, cortes de servicio, etc.). En tales casos se gestionará el reembolso correspondiente.
-          </Section>
-
-          <Section title="6. Responsabilidad">
-            ParkMX actúa como intermediario entre el usuario y los operadores de estacionamiento. No nos hacemos responsables por daños, robo o pérdida de objetos dentro del estacionamiento. El operador del inmueble es responsable de la seguridad dentro de sus instalaciones.
-          </Section>
-
-          <Section title="7. Datos personales">
-            La información recopilada (nombre, teléfono, datos de pago) es utilizada exclusivamente para procesar tu reservación y enviarte el boleto por WhatsApp. No compartimos tus datos con terceros salvo los necesarios para procesar el pago (Stripe) y el envío de mensajes (Twilio). Consulta nuestro Aviso de Privacidad en parkmx.mx/privacidad.
-          </Section>
-
-          <Section title="8. Modificaciones">
-            ParkMX se reserva el derecho de modificar estos términos en cualquier momento. Los cambios serán notificados a través de la plataforma con al menos 7 días de anticipación.
-          </Section>
-
-          <div style={{ fontSize: 11, color: '#bbb', marginTop: 20 }}>Última actualización: mayo 2026 · soporte@parkmx.mx</div>
-        </div>
-
-        {/* Botón de cerrar */}
-        <div style={{ padding: '12px 24px calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid #f0f0f0', flexShrink: 0 }}>
-          <button onClick={onClose} style={{ width: '100%', padding: '14px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>
-            Entendido
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#1a1a1a', marginBottom: 6 }}>{title}</div>
-      <div style={{ fontSize: 13, color: '#555', lineHeight: 1.7 }}>{children}</div>
-    </div>
-  );
-}
 
 // ─── Formulario interno (requiere contexto de Elements) ───────────────────────
 function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservationId: string }) {
@@ -133,7 +52,6 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
 
   const [phone, setPhone] = useState(() => {
     try {
@@ -185,7 +103,6 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
 
   return (
     <>
-      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
 
       <div className="fc">
         <label className="pm-label">Tu número de WhatsApp</label>
@@ -233,12 +150,15 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
         </div>
         <div style={{ fontSize: 13, color: '#444', lineHeight: 1.5 }}>
           He leído y acepto los{' '}
-          <span
-            style={{ color: '#1a1a1a', fontWeight: 600, textDecoration: 'underline', textDecorationColor: 'rgba(0,0,0,.25)', cursor: 'pointer' }}
-            onClick={e => { e.stopPropagation(); setShowTerms(true); }}>
+          <a
+            href="/terminos"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#1a1a1a', fontWeight: 600, textDecoration: 'underline', textDecorationColor: 'rgba(0,0,0,.25)' }}
+            onClick={e => e.stopPropagation()}>
             Términos y Condiciones
-          </span>
-          {' '}de ParkMX
+          </a>
+          {' '}de Estacionat
         </div>
       </div>
 
@@ -404,7 +324,7 @@ export default function CheckoutPage() {
 
             {/* Beneficios — solo visibles en desktop */}
             <div className="co-left-extras">
-              {['Lugar garantizado antes de llegar','Código QR único por WhatsApp','Sin cobros adicionales en puerta','Cancelación hasta 2 hrs antes'].map(item => (
+              {['Lugar garantizado antes de llegar','Código QR único por WhatsApp','Sin cobros adicionales en puerta','Cancelación hasta 6 hrs antes'].map(item => (
                 <div key={item} className="co-left-perk">
                   <div className="co-left-dot">
                     <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
@@ -421,7 +341,7 @@ export default function CheckoutPage() {
           <div className="co-right">
             {!STRIPE_KEY ? (
               <div style={{ background:'#fff', borderRadius:14, padding:20, textAlign:'center', color:'#e53e3e', fontSize:13 }}>
-                ⚠️ Pago no disponible en este momento. Contacta a soporte@parkmx.mx
+                ⚠️ Pago no disponible en este momento. Contacta a soporte@estacionat.mx
               </div>
             ) : (
               <Elements

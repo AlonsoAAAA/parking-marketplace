@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { SHARED_CSS } from '@/lib/design';
 
 export const metadata = {
-  title: 'Aviso de Privacidad · ParkMX',
+  title: 'Aviso de Privacidad · Estacionat',
 };
 
 export default function PrivacidadPage() {
@@ -26,7 +26,7 @@ export default function PrivacidadPage() {
 
       <div className="pp-wrap">
         <header className="pm-header">
-          <Link href="/" className="pm-logo">Park<span>MX</span></Link>
+          <Link href="/" className="pm-logo">Estaciona<span>t</span></Link>
           <Link href="/" className="pm-nav-link">← Inicio</Link>
         </header>
 
@@ -38,7 +38,7 @@ export default function PrivacidadPage() {
           <div className="pp-section">
             <p className="pp-h">Responsable del tratamiento</p>
             <p className="pp-p">
-              <strong>ParkMX</strong> (en adelante "el Operador"), con domicilio en Ciudad de México, es responsable del tratamiento de los datos personales que usted proporcione a través de la Plataforma, en términos de la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong> y su Reglamento.
+              <strong>Estacionat</strong> (en adelante "el Operador"), con domicilio en Ciudad de México, es responsable del tratamiento de los datos personales que usted proporcione a través de la Plataforma, en términos de la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong> y su Reglamento.
             </p>
           </div>
 
