@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 interface PricingConfig {
   marginMin:          number;
@@ -15,12 +15,64 @@ interface PriceBreakdown {
   finalPrice:     number;
   profit:         number;
   marginPercent:  number;
-  multipliers: {
-    distance: number; anticipation: number; demand: number; composite: number;
-  };
+  multipliers: { distance: number; anticipation: number; demand: number; composite: number };
 }
 
 const API = (import.meta as any).env?.VITE_API_URL || '';
+
+// ─── Motor de precios (espejo del servicio NestJS) ────────────────────────────
+const IVA = 0.16;
+const MULT_MIN = { distance: 0.8, anticipation: 0.9, demand: 0.85 };
+const MULT_MAX = { distance: 1.5, anticipation: 1.6, demand: 1.40 };
+
+function lerp(x: number, x0: number, y0: number, x1: number, y1: number) {
+  if (x <= x0) return y0; if (x >= x1) return y1;
+  return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+}
+function distMult(km: number) {
+  if (km <= 0.5) return 1.5;
+  if (km <= 1.0) return lerp(km, 0.5, 1.5, 1.0, 1.2);
+  if (km <= 2.0) return lerp(km, 1.0, 1.2, 2.0, 1.0);
+  if (km <= 3.0) return lerp(km, 2.0, 1.0, 3.0, 0.8);
+  return 0.8;
+}
+function antMult(h: number) {
+  if (h <= 0)   return 1.6;
+  if (h <= 6)   return lerp(h,  0,  1.6,  6,  1.3);
+  if (h <= 24)  return lerp(h,  6,  1.3, 24,  1.1);
+  if (h <= 72)  return lerp(h, 24,  1.1, 72,  1.0);
+  if (h <= 168) return lerp(h, 72,  1.0, 168, 0.9);
+  return 0.9;
+}
+function demMult(pct: number) {
+  const p = Math.max(0, Math.min(100, pct));
+  if (p <= 50) return lerp(p,  0, 0.85,  50, 1.0);
+  if (p <= 80) return lerp(p, 50, 1.0,   80, 1.2);
+  return         lerp(p, 80, 1.2, 100, 1.4);
+}
+function computePrice(
+  contractPrice: number, distKm: number, antHours: number, occupancy: number,
+  cfg: PricingConfig,
+): PriceBreakdown {
+  const mDist = distMult(distKm);
+  const mAnt  = antMult(antHours);
+  const mDem  = demMult(occupancy);
+  const { weightDistance: wd, weightAnticipation: wa, weightDemand: wdem, marginMin, marginMax } = cfg;
+  const composite = wd * mDist + wa * mAnt + wdem * mDem;
+  const compMin   = wd * MULT_MIN.distance + wa * MULT_MIN.anticipation + wdem * MULT_MIN.demand;
+  const compMax   = wd * MULT_MAX.distance + wa * MULT_MAX.anticipation + wdem * MULT_MAX.demand;
+  const score     = compMax > compMin ? Math.max(0, Math.min(1, (composite - compMin) / (compMax - compMin))) : 0.5;
+  const marginPct = marginMin + score * (marginMax - marginMin);
+  const basePrice = +(contractPrice * (1 + marginPct / 100)).toFixed(2);
+  const ivaAmount = +(basePrice * IVA).toFixed(2);
+  const finalPrice = Math.round(basePrice + ivaAmount);
+  const profit    = +(basePrice - contractPrice).toFixed(2);
+  return {
+    contractPrice, basePrice, ivaAmount, finalPrice, profit,
+    marginPercent: +marginPct.toFixed(2),
+    multipliers: { distance: +mDist.toFixed(4), anticipation: +mAnt.toFixed(4), demand: +mDem.toFixed(4), composite: +composite.toFixed(4) },
+  };
+}
 
 const label = (txt: string) => (
   <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: '#999', display: 'block', marginBottom: 6 }}>
@@ -59,7 +111,6 @@ export default function AdminPricing({ token }: { token: string }) {
   const [loaded, setLoaded]   = useState(false);
 
   // Preview calculator state
-  const [preview, setPreview]         = useState<PriceBreakdown | null>(null);
   const [contractPrice, setContractP] = useState(100);
   const [distKm,   setDistKm]         = useState(1.5);
   const [antHours, setAntHours]       = useState(48);
@@ -74,20 +125,11 @@ export default function AdminPricing({ token }: { token: string }) {
       }).catch(() => setLoaded(true));
   }, [token]);
 
-  // Live preview
-  const fetchPreview = useCallback(() => {
-    const params = new URLSearchParams({
-      contractPrice:     String(contractPrice),
-      distanceKm:        String(distKm),
-      anticipationHours: String(antHours),
-      occupancyPercent:  String(occupancy),
-    });
-    fetch(`${API}/api/v1/pricing-config/calculate?${params}`)
-      .then(r => r.json()).then(d => { if (d.data) setPreview(d.data); })
-      .catch(() => {});
-  }, [contractPrice, distKm, antHours, occupancy]);
-
-  useEffect(() => { fetchPreview(); }, [fetchPreview]);
+  // Live preview — computed client-side, sin necesidad del API
+  const preview = useMemo<PriceBreakdown>(
+    () => computePrice(contractPrice, distKm, antHours, occupancy, config),
+    [contractPrice, distKm, antHours, occupancy, config],
+  );
 
   const weightsSum = +(config.weightDistance + config.weightAnticipation + config.weightDemand).toFixed(4);
   const weightsOk  = Math.abs(weightsSum - 1) <= 0.01;
@@ -276,7 +318,7 @@ export default function AdminPricing({ token }: { token: string }) {
           )}
 
           {/* Resultado */}
-          {preview && card(
+          {card(
             <div>
               {/* Multiplicadores */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 20 }}>
