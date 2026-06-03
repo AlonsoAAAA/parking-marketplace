@@ -2,17 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { QrService } from '../qr/qr.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     private config: ConfigService,
     @InjectDataSource() private dataSource: DataSource,
-    private qrService: QrService,
   ) {}
 
-  async sendTicket(reservationId: string, token: string): Promise<void> {
+  async sendTicket(reservationId: string, _token?: string): Promise<void> {
     // Obtener datos completos de la reserva
     const result = await this.dataSource.query(
       `SELECT r.*, u.phone, u.name as user_name, u.email,
@@ -30,16 +28,13 @@ export class NotificationsService {
 
     const data = result[0];
 
-    // Generar imagen QR
-    const qrImage = await this.qrService.generateQRImage(token);
-
     // Enviar por WhatsApp
     if (data.phone) {
-      await this.sendWhatsAppTicket(data, qrImage);
+      await this.sendWhatsAppTicket(data);
     }
   }
 
-  private async sendWhatsAppTicket(data: any, qrImageBase64: string): Promise<void> {
+  private async sendWhatsAppTicket(data: any): Promise<void> {
     const accountSid = this.config.get('TWILIO_ACCOUNT_SID');
     const authToken  = this.config.get('TWILIO_AUTH_TOKEN');
     const fromNumber = this.config.get('TWILIO_WHATSAPP_NUMBER'); // ya incluye 'whatsapp:+...'
@@ -54,6 +49,8 @@ export class NotificationsService {
       day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
 
+    const marketplaceUrl = this.config.get('MARKETPLACE_URL') ?? 'https://estacionat.mx';
+
     const message = [
       `✅ *¡Tu lugar está confirmado!*`,
       ``,
@@ -62,7 +59,10 @@ export class NotificationsService {
       `🏠 ${data.parking_address}`,
       `📅 ${fecha}`,
       ``,
-      `Tu código QR está adjunto. Preséntalo al llegar — solo es válido una vez.`,
+      `🎟️ Tu código QR está listo. Ábrelo aquí:`,
+      `${marketplaceUrl}/checkout/${data.id}/ticket`,
+      ``,
+      `Preséntalo al llegar — solo es válido una vez.`,
     ].join('\n');
 
     const twilio = require('twilio')(accountSid, authToken);
@@ -70,17 +70,11 @@ export class NotificationsService {
     // Usar número tal como está almacenado (formato E.164 sin '+': 52XXXXXXXXXX)
     const waPhone = data.phone as string;
 
-    // Construir payload — agregar mediaUrl si hay URL pública del QR
-    const publicUrl = this.config.get('PUBLIC_API_URL'); // e.g. ngrok URL
     const payload: any = {
       body: message,
       from: fromNumber,
       to: `whatsapp:+${waPhone}`,
     };
-
-    if (publicUrl && data.id) {
-      payload.mediaUrl = [`${publicUrl}/api/v1/qr/${data.id}/image`];
-    }
 
     try {
       const sent = await twilio.messages.create(payload);
