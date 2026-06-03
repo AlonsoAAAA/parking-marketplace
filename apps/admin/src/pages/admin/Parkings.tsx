@@ -34,6 +34,7 @@ interface VenueLink { venueId: string; distanceMeters: string; }
 export default function AdminParkings({ token }: Props) {
   const [parkings,     setParkings]     = useState<any[]>([]);
   const [allVenues,    setAllVenues]    = useState<any[]>([]);
+  const [allOperators, setAllOperators] = useState<any[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [modal,        setModal]        = useState<any | null>(null);
   const [pricing,      setPricing]      = useState<PricingRow[]>(EMPTY_PRICING());
@@ -53,17 +54,23 @@ export default function AdminParkings({ token }: Props) {
     api.admin.venues(token)
       .then(d => setAllVenues((d as any)?.data || d || []))
       .catch(() => {});
+    api.admin.customers(token)
+      .then(d => {
+        const all = (d as any)?.data || (d as any) || [];
+        setAllOperators(Array.isArray(all) ? all.filter((u: any) => u.role === 'operator') : []);
+      })
+      .catch(() => {});
   }, [token]);
 
   const openCreate = () => {
-    setModal({ id: '', name: '', address: '' });
+    setModal({ id: '', name: '', address: '', ownerId: '' });
     setPricing(EMPTY_PRICING());
     setVenueLinks([]);
     setError('');
   };
 
   const openEdit = (p: any) => {
-    setModal({ id: p.id, name: p.name, address: p.address });
+    setModal({ id: p.id, name: p.name, address: p.address, ownerId: p.owner_id ?? '' });
     setPricing(buildPricing(p.pricing || []));
     setError('');
     // Load existing venue associations
@@ -106,7 +113,7 @@ export default function AdminParkings({ token }: Props) {
           slots: parseInt(r.slots) || 0,
           price: parseFloat(r.price) || 0,
         }));
-      const data = { name: modal.name, address: modal.address, pricing: pricingPayload };
+      const data = { name: modal.name, address: modal.address, pricing: pricingPayload, ownerId: modal.ownerId || undefined };
       let savedId = modal.id;
       if (modal.id) {
         await api.admin.updateParking(token, modal.id, data);
@@ -161,6 +168,7 @@ export default function AdminParkings({ token }: Props) {
                 <tr>
                   <th>Nombre</th>
                   <th>Dirección</th>
+                  <th>Operador</th>
                   <th>Capacidad</th>
                   <th>Venues</th>
                   <th>Tipos</th>
@@ -175,6 +183,11 @@ export default function AdminParkings({ token }: Props) {
                     <tr key={p.id}>
                       <td style={{ fontWeight: 600 }}>{p.name}</td>
                       <td style={{ fontSize: 12, color: '#555', maxWidth: 200 }}>{p.address || '—'}</td>
+                      <td>
+                        {p.ownerName
+                          ? <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>{p.ownerName}</span>
+                          : <span style={{ fontSize: 11, color: '#bbb' }}>Sin asignar</span>}
+                      </td>
                       <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
                         {p.total_capacity > 0 ? p.total_capacity : '—'}
                         <span style={{ color: '#bbb', fontWeight: 400, fontSize: 11 }}> lugares</span>
@@ -239,6 +252,29 @@ export default function AdminParkings({ token }: Props) {
             <div className="adm-field">
               <label className="adm-label">Dirección</label>
               <input className="adm-input" value={modal.address || ''} onChange={e => setModal((m: any) => ({ ...m, address: e.target.value }))} placeholder="Av. Insurgentes Sur 123, CDMX" />
+            </div>
+
+            {/* Operador responsable */}
+            <div className="adm-field">
+              <label className="adm-label">Operador responsable</label>
+              <select
+                className="adm-input"
+                value={modal.ownerId || ''}
+                onChange={e => setModal((m: any) => ({ ...m, ownerId: e.target.value }))}
+                style={{ cursor: 'pointer' }}
+              >
+                <option value="">— Sin asignar —</option>
+                {allOperators.map((op: any) => (
+                  <option key={op.id} value={op.id}>
+                    {op.name || '(sin nombre)'} · {op.phone}
+                  </option>
+                ))}
+              </select>
+              {allOperators.length === 0 && (
+                <p style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>
+                  No hay usuarios con rol "operador" registrados aún.
+                </p>
+              )}
             </div>
 
             {/* Lugares y precios por tipo */}
