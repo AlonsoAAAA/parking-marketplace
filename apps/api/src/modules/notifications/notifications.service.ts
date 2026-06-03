@@ -62,7 +62,7 @@ export class NotificationsService {
       `🎟️ Tu código QR está listo. Ábrelo aquí:`,
       `${marketplaceUrl}/checkout/${data.id}/ticket`,
       ``,
-      `⚠️ *Política de cancelación:* No se aceptan cancelaciones dentro de las 8 horas previas al evento.`,
+      `⚠️ *Política de cancelaciones:* NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 6 HORAS PREVIAS AL INICIO DEL EVENTO. Transcurrido dicho plazo, el pago es definitivo e irrevocable.`,
       ``,
       `📄 Términos y condiciones: https://www.estacionat.mx/terminos`,
     ].join('\n');
