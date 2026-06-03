@@ -26,6 +26,70 @@ interface ParkingOption {
   pricing: Record<string, number>;
 }
 
+interface PricingConfig {
+  marginMin: number; marginMax: number;
+  weightDistance: number; weightAnticipation: number; weightDemand: number;
+}
+
+// ─── Etiquetas de tipo de vehículo ────────────────────────────────────────────
+const VEHICLE_LABELS: Record<string, string> = {
+  auto: 'Auto', suv_camioneta: 'SUV', pickup: 'Pick Up', moto: 'Moto',
+};
+
+// ─── Motor de precios (espejo del servicio NestJS) ────────────────────────────
+const IVA = 0.16;
+const MULT_MIN = { distance: 0.8, anticipation: 0.9, demand: 0.85 };
+const MULT_MAX = { distance: 1.5, anticipation: 1.6, demand: 1.40 };
+function lerp(x: number, x0: number, y0: number, x1: number, y1: number) {
+  if (x <= x0) return y0; if (x >= x1) return y1;
+  return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+}
+function distMult(km: number) {
+  if (km <= 0.5) return 1.5;
+  if (km <= 1.0) return lerp(km, 0.5, 1.5, 1.0, 1.2);
+  if (km <= 2.0) return lerp(km, 1.0, 1.2, 2.0, 1.0);
+  if (km <= 3.0) return lerp(km, 2.0, 1.0, 3.0, 0.8);
+  return 0.8;
+}
+function antMult(h: number) {
+  if (h <= 0)   return 1.6; if (h <= 6)   return lerp(h, 0, 1.6, 6, 1.3);
+  if (h <= 24)  return lerp(h, 6, 1.3, 24, 1.1);
+  if (h <= 72)  return lerp(h, 24, 1.1, 72, 1.0);
+  if (h <= 168) return lerp(h, 72, 1.0, 168, 0.9);
+  return 0.9;
+}
+function demMult(pct: number) {
+  const p = Math.max(0, Math.min(100, pct));
+  if (p <= 50) return lerp(p, 0, 0.85, 50, 1.0);
+  if (p <= 80) return lerp(p, 50, 1.0, 80, 1.2);
+  return lerp(p, 80, 1.2, 100, 1.4);
+}
+function computeFinalPrice(contractPrice: number, distKm: number, antHours: number, occupancy: number, cfg: PricingConfig): number {
+  const mDist = distMult(distKm), mAnt = antMult(antHours), mDem = demMult(occupancy);
+  const { weightDistance: wd, weightAnticipation: wa, weightDemand: wdem, marginMin, marginMax } = cfg;
+  const composite = wd * mDist + wa * mAnt + wdem * mDem;
+  const compMin = wd * MULT_MIN.distance + wa * MULT_MIN.anticipation + wdem * MULT_MIN.demand;
+  const compMax = wd * MULT_MAX.distance + wa * MULT_MAX.anticipation + wdem * MULT_MAX.demand;
+  const score = compMax > compMin ? Math.max(0, Math.min(1, (composite - compMin) / (compMax - compMin))) : 0.5;
+  const marginPct = marginMin + score * (marginMax - marginMin);
+  const basePrice = contractPrice * (1 + marginPct / 100);
+  return Math.round(basePrice * (1 + IVA));
+}
+
+/** Calcula precios finales (IVA inc.) para cada tipo de vehículo de un parking */
+function computeParkingPrices(
+  pk: ParkingOption, startsAt: string, cfg: PricingConfig,
+): Record<string, number> {
+  const distKm   = pk.distanceMeters / 1000;
+  const antHours = (new Date(startsAt).getTime() - Date.now()) / 3_600_000;
+  const occupancy = pk.totalSlots > 0 ? (1 - pk.available / pk.totalSlots) * 100 : 50;
+  const result: Record<string, number> = {};
+  for (const [type, contract] of Object.entries(pk.pricing)) {
+    if (contract > 0) result[type] = computeFinalPrice(contract, distKm, antHours, occupancy, cfg);
+  }
+  return result;
+}
+
 const EMOJIS = ['🎵','⚽','🎧','🎤','🎸'];
 
 export default function EventDetailPage() {
@@ -36,6 +100,9 @@ export default function EventDetailPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pricingCfg, setPricingCfg] = useState<PricingConfig>({
+    marginMin: 15, marginMax: 60, weightDistance: 0.40, weightAnticipation: 0.35, weightDemand: 0.25,
+  });
 
   const idx = Number(String(params.id).replace(/\D/g,'').slice(-1) || 0) % CARD_COLORS.length;
   const color = CARD_COLORS[idx];
@@ -46,11 +113,13 @@ export default function EventDetailPage() {
     Promise.all([
       fetch(`${API}/api/v1/events/${params.id}`).then(r => r.json()),
       fetch(`${API}/api/v1/events/${params.id}/parkings`).then(r => r.json()),
-    ]).then(([ed, pd]) => {
+      fetch(`${API}/api/v1/pricing-config`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([ed, pd, pc]) => {
       setEvent(ed.data);
       const pks: ParkingOption[] = pd.data || [];
       setParkings(pks);
       if (pks.length) setSelected(pks[0].id);
+      if (pc?.data) setPricingCfg(pc.data);
     }).catch(() => setError('No se pudo cargar el evento.')).finally(() => setLoading(false));
   }, [params.id]);
 
@@ -76,7 +145,8 @@ export default function EventDetailPage() {
   const soldOut = avail === 0 && event.totalSlots > 0 || event.status === 'sold_out';
   const fillPct = event.totalSlots > 0 ? Math.round((event.slotsReserved / event.totalSlots) * 100) : 0;
   const minPrice = parkings.length
-    ? Math.min(...parkings.flatMap(p => Object.values(p.pricing as Record<string,number>).filter(Boolean)))
+    ? Math.min(...parkings.flatMap(p =>
+        Object.values(computeParkingPrices(p, event.startsAt, pricingCfg)).filter(Boolean)))
     : Number(event.price);
   const minWalk = parkings.length ? Math.min(...parkings.map(p => p.walkMinutes)) : null;
 
@@ -211,7 +281,10 @@ export default function EventDetailPage() {
               <>
                 <p className="sct">Elige tu estacionamiento</p>
                 {parkings.map(pk => {
-                  const minP = Math.min(...Object.values(pk.pricing).filter(Boolean));
+                  const finalPrices = computeParkingPrices(pk, event.startsAt, pricingCfg);
+                  const minP = Object.values(finalPrices).length
+                    ? Math.min(...Object.values(finalPrices))
+                    : 0;
                   const isSel = selected === pk.id;
                   return (
                     <div key={pk.id} id={`pk-${pk.id}`}
@@ -227,7 +300,7 @@ export default function EventDetailPage() {
                         <div style={{ textAlign:'right', flexShrink:0 }}>
                           <div style={{ fontSize:15, fontWeight:700, color:'#1a1a1a' }}>desde ${minP}</div>
                           <div style={{ fontSize:11, color: pk.available <= 15 ? '#e8954a' : '#bbb', marginTop:2 }}>
-                            {pk.available} lugares
+                            {pk.available} lugares · IVA inc.
                           </div>
                         </div>
                       </div>
@@ -238,8 +311,10 @@ export default function EventDetailPage() {
                           <span>{pk.distanceMeters} m</span>
                         </div>
                         <div className="pk-prices">
-                          {Object.entries(pk.pricing).map(([type, price]) => (
-                            <span key={type} className="pk-ptag">{type} ${price}</span>
+                          {Object.entries(finalPrices).map(([type, price]) => (
+                            <span key={type} className="pk-ptag">
+                              {VEHICLE_LABELS[type] ?? type} ${price}
+                            </span>
                           ))}
                         </div>
                       </div>
@@ -270,7 +345,8 @@ export default function EventDetailPage() {
             {selected && (() => {
               const pk = parkings.find(p => p.id === selected);
               if (!pk) return null;
-              const minP = Math.min(...Object.values(pk.pricing).filter(Boolean));
+              const finalPrices = computeParkingPrices(pk, event.startsAt, pricingCfg);
+              const minP = Object.values(finalPrices).length ? Math.min(...Object.values(finalPrices)) : 0;
               return (
                 <div className="desk-cta">
                   <div className="desk-cta-ev">{event.name}</div>
@@ -325,7 +401,8 @@ export default function EventDetailPage() {
         {selected && (() => {
           const pk = parkings.find(p => p.id === selected);
           if (!pk) return null;
-          const minP = Math.min(...Object.values(pk.pricing).filter(Boolean));
+          const finalPrices = computeParkingPrices(pk, event.startsAt, pricingCfg);
+          const minP = Object.values(finalPrices).length ? Math.min(...Object.values(finalPrices)) : 0;
           return (
             <div className="cta">
               <div>
