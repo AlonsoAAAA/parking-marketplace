@@ -5,10 +5,10 @@ import { api } from '../../lib/api';
 interface Props { token: string; }
 
 const VEHICLE_TYPES = [
-  { key: 'Auto',    label: 'Auto',    icon: '🚗' },
-  { key: 'Sub',     label: 'SUV',     icon: '🚙' },
-  { key: 'Pick Up', label: 'Pick Up', icon: '🛻' },
-  { key: 'Moto',    label: 'Moto',    icon: '🏍️' },
+  { key: 'auto',          label: 'Auto',           icon: '🚗' },
+  { key: 'suv_camioneta', label: 'SUV / Camioneta', icon: '🚙' },
+  { key: 'pickup',        label: 'Pick Up',         icon: '🛻' },
+  { key: 'moto',          label: 'Moto',            icon: '🏍️' },
 ] as const;
 
 type VehicleKey = typeof VEHICLE_TYPES[number]['key'];

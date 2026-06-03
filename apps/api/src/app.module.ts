@@ -18,6 +18,7 @@ import { FraudModule } from './modules/fraud/fraud.module';
 import { CheckinModule } from './modules/checkin/checkin.module';
 import { VenuesModule } from './modules/venues/venues.module';
 import { VehicleModelsModule } from './modules/vehicle-models/vehicle-models.module';
+import { VehiculosMxModule } from './modules/vehiculos-mx/vehiculos-mx.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { VehicleModelsModule } from './modules/vehicle-models/vehicle-models.mod
     CheckinModule,
     VenuesModule,
     VehicleModelsModule,
+    VehiculosMxModule,
   ],
   providers: [
     // Aplica ThrottlerGuard globalmente a todos los endpoints

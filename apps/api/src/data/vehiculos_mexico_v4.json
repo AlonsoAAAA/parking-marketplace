@@ -1,0 +1,3605 @@
+{
+  "_meta": {
+    "version": "4.0",
+    "descripcion": "Base de datos vehicular para plataforma de estacionamiento - México",
+    "nota_seguridad": "Este archivo vive SOLO en el servidor. Nunca se expone al cliente.",
+    "actualizado": "2026-05 (v4 — con dimensiones reales)",
+    "total_marcas": 65,
+    "total_modelos": 454,
+    "nota_pension": "Tarifas de pensión mensual integradas. Referencia: Acoxpa 337 - 4/03/2026",
+    "dimensiones": "largo_m y ancho_m en metros (largo del vehículo, ancho sin espejos). Fuente: especificaciones oficiales de fabricante."
+  },
+  "tipos": {
+    "moto": {
+      "label": "Motocicleta",
+      "precio_base": 80,
+      "pension": 800,
+      "dim_ancho": "0.9m",
+      "dim_largo": "2.5m",
+      "dim_ft": "3ft × 8.2ft",
+      "color": "#534AB7"
+    },
+    "auto": {
+      "label": "Automóvil",
+      "precio_base": 150,
+      "pension": 1800,
+      "dim_ancho": "1.52m",
+      "dim_largo": "5.0m",
+      "dim_ft": "5ft × 16.4ft",
+      "color": "#1D9E75"
+    },
+    "suv": {
+      "label": "SUV Compacto",
+      "precio_base": 180,
+      "pension": 2000,
+      "dim_ancho": "1.52m",
+      "dim_largo": "6.1m",
+      "dim_ft": "5ft × 20ft",
+      "color": "#185FA5"
+    },
+    "camioneta": {
+      "label": "SUV Grande / Sedan",
+      "precio_base": 220,
+      "pension": 2300,
+      "dim_ancho": "1.52m",
+      "dim_largo": "7.0m",
+      "dim_ft": "5ft × 23ft",
+      "color": "#BA7517"
+    },
+    "pickup-s": {
+      "label": "Pickup Cab. Sencilla",
+      "precio_base": 250,
+      "pension": 2300,
+      "dim_ancho": "1.52m",
+      "dim_largo": "7.0m",
+      "dim_ft": "5ft × 23ft",
+      "color": "#D85A30"
+    },
+    "pickup-d": {
+      "label": "Pickup Doble Cabina",
+      "precio_base": 280,
+      "pension": 2300,
+      "dim_ancho": "1.52m",
+      "dim_largo": "7.0m",
+      "dim_ft": "5ft × 23ft",
+      "color": "#B02020"
+    },
+    "van": {
+      "label": "Van / Minivan",
+      "precio_base": 220,
+      "pension": 2500,
+      "dim_ancho": "1.52m",
+      "dim_largo": "5.5m",
+      "dim_ft": "5ft × 18ft",
+      "color": "#412402"
+    },
+    "van-l": {
+      "label": "Van Grande",
+      "precio_base": 260,
+      "pension": 1800,
+      "dim_ancho": "1.52m",
+      "dim_largo": "7.6m",
+      "dim_ft": "5ft × 25ft",
+      "color": "#3C3489"
+    },
+    "truck": {
+      "label": "Camión / Truck Cab",
+      "precio_base": 500,
+      "pension": 5000,
+      "dim_ancho": "1.52m",
+      "dim_largo": "5.5m",
+      "dim_ft": "5ft × 18ft",
+      "color": "#1E1E1E"
+    }
+  },
+  "versiones_tipos": {
+    "Cabina Sencilla": "pickup-s",
+    "Cabina y Media": "pickup-s",
+    "Regular Cab": "pickup-s",
+    "Super Cab": "pickup-s",
+    "Cabina Regular": "pickup-s",
+    "Cabina Extendida": "pickup-s",
+    "Doble Cabina": "pickup-d",
+    "SuperCrew": "pickup-d",
+    "Double Cab": "pickup-d",
+    "Corta": "van",
+    "Larga": "van-l",
+    "MAX": "camioneta",
+    "Estándar": "camioneta"
+  },
+  "marcas": [
+    {
+      "nombre": "Nissan",
+      "modelos": [
+        {
+          "nombre": "Versa",
+          "tipo": "auto",
+          "largo_m": 4.37,
+          "ancho_m": 1.74
+        },
+        {
+          "nombre": "Sentra",
+          "tipo": "auto",
+          "largo_m": 4.64,
+          "ancho_m": 1.76
+        },
+        {
+          "nombre": "March",
+          "tipo": "auto",
+          "largo_m": 3.98,
+          "ancho_m": 1.67
+        },
+        {
+          "nombre": "Tiida",
+          "tipo": "auto",
+          "largo_m": 4.41,
+          "ancho_m": 1.69
+        },
+        {
+          "nombre": "Kicks",
+          "tipo": "suv",
+          "largo_m": 4.3,
+          "ancho_m": 1.76
+        },
+        {
+          "nombre": "X-Trail",
+          "tipo": "suv",
+          "largo_m": 4.65,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Murano",
+          "tipo": "suv",
+          "largo_m": 4.89,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Pathfinder",
+          "tipo": "camioneta",
+          "largo_m": 4.97,
+          "ancho_m": 1.97
+        },
+        {
+          "nombre": "Armada",
+          "tipo": "camioneta",
+          "largo_m": 5.31,
+          "ancho_m": 2.03
+        },
+        {
+          "nombre": "NP300 Frontier",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Cabina y Media",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.18,
+              "ancho": 1.85
+            },
+            "Cabina y Media": {
+              "largo": 5.22,
+              "ancho": 1.85
+            },
+            "Doble Cabina": {
+              "largo": 5.25,
+              "ancho": 1.85
+            }
+          }
+        },
+        {
+          "nombre": "Frontier",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.18,
+              "ancho": 1.85
+            },
+            "Doble Cabina": {
+              "largo": 5.25,
+              "ancho": 1.85
+            }
+          }
+        },
+        {
+          "nombre": "Tsuru",
+          "tipo": "auto",
+          "largo_m": 4.33,
+          "ancho_m": 1.67
+        },
+        {
+          "nombre": "Note",
+          "tipo": "auto",
+          "largo_m": 4.1,
+          "ancho_m": 1.7
+        },
+        {
+          "nombre": "Leaf",
+          "tipo": "auto",
+          "largo_m": 4.49,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "Urvan",
+          "tipo": "van-l",
+          "largo_m": 5.38,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "Ariya",
+          "tipo": "suv",
+          "largo_m": 4.6,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "GT-R",
+          "tipo": "auto",
+          "largo_m": 4.71,
+          "ancho_m": 1.9
+        }
+      ]
+    },
+    {
+      "nombre": "Chevrolet",
+      "modelos": [
+        {
+          "nombre": "Aveo",
+          "tipo": "auto",
+          "largo_m": 4.28,
+          "ancho_m": 1.72
+        },
+        {
+          "nombre": "Beat",
+          "tipo": "auto",
+          "largo_m": 3.99,
+          "ancho_m": 1.68
+        },
+        {
+          "nombre": "Sonic",
+          "tipo": "auto",
+          "largo_m": 4.04,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Cavalier",
+          "tipo": "auto",
+          "largo_m": 4.56,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Cruze",
+          "tipo": "auto",
+          "largo_m": 4.67,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "Malibu",
+          "tipo": "auto",
+          "largo_m": 4.92,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Equinox",
+          "tipo": "suv",
+          "largo_m": 4.65,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Trax",
+          "tipo": "suv",
+          "largo_m": 4.25,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "Trailblazer",
+          "tipo": "suv",
+          "largo_m": 4.42,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Blazer",
+          "tipo": "suv",
+          "largo_m": 4.86,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "Tahoe",
+          "tipo": "camioneta",
+          "largo_m": 5.18,
+          "ancho_m": 2.06
+        },
+        {
+          "nombre": "Suburban",
+          "tipo": "camioneta",
+          "largo_m": 5.79,
+          "ancho_m": 2.06
+        },
+        {
+          "nombre": "Colorado",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.28,
+              "ancho": 1.9
+            },
+            "Doble Cabina": {
+              "largo": 5.4,
+              "ancho": 1.9
+            }
+          }
+        },
+        {
+          "nombre": "Cheyenne",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Cabina y Media",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.38,
+              "ancho": 2
+            },
+            "Cabina y Media": {
+              "largo": 5.74,
+              "ancho": 2
+            },
+            "Doble Cabina": {
+              "largo": 5.9,
+              "ancho": 2
+            }
+          }
+        },
+        {
+          "nombre": "Silverado",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Regular",
+            "Cabina Extendida",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Regular": {
+              "largo": 5.38,
+              "ancho": 2
+            },
+            "Cabina Extendida": {
+              "largo": 5.75,
+              "ancho": 2
+            },
+            "Doble Cabina": {
+              "largo": 5.91,
+              "ancho": 2
+            }
+          }
+        },
+        {
+          "nombre": "Spark",
+          "tipo": "auto",
+          "largo_m": 3.64,
+          "ancho_m": 1.6
+        },
+        {
+          "nombre": "Traverse",
+          "tipo": "camioneta",
+          "largo_m": 5.19,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "Camaro",
+          "tipo": "auto",
+          "largo_m": 4.79,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Corvette",
+          "tipo": "auto",
+          "largo_m": 4.63,
+          "ancho_m": 1.94
+        },
+        {
+          "nombre": "Express",
+          "tipo": "van",
+          "versiones": [
+            "Corta",
+            "Larga"
+          ],
+          "dim_versiones": {
+            "Corta": {
+              "largo": 5.68,
+              "ancho": 2
+            },
+            "Larga": {
+              "largo": 6.32,
+              "ancho": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Volkswagen",
+      "modelos": [
+        {
+          "nombre": "Polo",
+          "tipo": "auto",
+          "largo_m": 4.05,
+          "ancho_m": 1.75
+        },
+        {
+          "nombre": "Vento",
+          "tipo": "auto",
+          "largo_m": 4.37,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Virtus",
+          "tipo": "auto",
+          "largo_m": 4.48,
+          "ancho_m": 1.75
+        },
+        {
+          "nombre": "Jetta",
+          "tipo": "auto",
+          "largo_m": 4.7,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Golf",
+          "tipo": "auto",
+          "largo_m": 4.28,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "Passat",
+          "tipo": "auto",
+          "largo_m": 4.77,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "Taos",
+          "tipo": "suv",
+          "largo_m": 4.47,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "T-Cross",
+          "tipo": "suv",
+          "largo_m": 4.23,
+          "ancho_m": 1.76
+        },
+        {
+          "nombre": "Tiguan",
+          "tipo": "suv",
+          "largo_m": 4.5,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Teramont",
+          "tipo": "camioneta",
+          "largo_m": 5,
+          "ancho_m": 1.98
+        },
+        {
+          "nombre": "Touareg",
+          "tipo": "camioneta",
+          "largo_m": 4.88,
+          "ancho_m": 1.98
+        },
+        {
+          "nombre": "Amarok",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.17,
+              "ancho": 1.95
+            },
+            "Doble Cabina": {
+              "largo": 5.35,
+              "ancho": 1.95
+            }
+          }
+        },
+        {
+          "nombre": "ID.4",
+          "tipo": "suv",
+          "largo_m": 4.58,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "Multivan",
+          "tipo": "van",
+          "largo_m": 4.97,
+          "ancho_m": 1.94
+        },
+        {
+          "nombre": "Crafter",
+          "tipo": "van",
+          "versiones": [
+            "Corta",
+            "Larga"
+          ],
+          "dim_versiones": {
+            "Corta": {
+              "largo": 5.99,
+              "ancho": 2.04
+            },
+            "Larga": {
+              "largo": 6.83,
+              "ancho": 2.04
+            }
+          }
+        },
+        {
+          "nombre": "T-Roc",
+          "tipo": "suv",
+          "largo_m": 4.23,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Transporter",
+          "tipo": "van",
+          "largo_m": 4.9,
+          "ancho_m": 1.9
+        }
+      ]
+    },
+    {
+      "nombre": "Toyota",
+      "modelos": [
+        {
+          "nombre": "Yaris",
+          "tipo": "auto",
+          "largo_m": 4.13,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Corolla",
+          "tipo": "auto",
+          "largo_m": 4.63,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "Corolla Cross",
+          "tipo": "suv",
+          "largo_m": 4.46,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Camry",
+          "tipo": "auto",
+          "largo_m": 4.88,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Avalon",
+          "tipo": "auto",
+          "largo_m": 5,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "C-HR",
+          "tipo": "suv",
+          "largo_m": 4.36,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "RAV4",
+          "tipo": "suv",
+          "largo_m": 4.6,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Fortuner",
+          "tipo": "suv",
+          "largo_m": 4.8,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Highlander",
+          "tipo": "camioneta",
+          "largo_m": 4.97,
+          "ancho_m": 1.97
+        },
+        {
+          "nombre": "Sequoia",
+          "tipo": "camioneta",
+          "largo_m": 5.21,
+          "ancho_m": 2.03
+        },
+        {
+          "nombre": "Land Cruiser",
+          "tipo": "camioneta",
+          "largo_m": 4.95,
+          "ancho_m": 1.98
+        },
+        {
+          "nombre": "4Runner",
+          "tipo": "camioneta",
+          "largo_m": 4.81,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "Hilux",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Cabina y Media",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.22,
+              "ancho": 1.86
+            },
+            "Cabina y Media": {
+              "largo": 5.26,
+              "ancho": 1.86
+            },
+            "Doble Cabina": {
+              "largo": 5.33,
+              "ancho": 1.86
+            }
+          }
+        },
+        {
+          "nombre": "Tacoma",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.17,
+              "ancho": 1.91
+            },
+            "Doble Cabina": {
+              "largo": 5.38,
+              "ancho": 1.91
+            }
+          }
+        },
+        {
+          "nombre": "Tundra",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Regular",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Regular": {
+              "largo": 5.68,
+              "ancho": 2.02
+            },
+            "Doble Cabina": {
+              "largo": 5.82,
+              "ancho": 2.02
+            }
+          }
+        },
+        {
+          "nombre": "Prius",
+          "tipo": "auto",
+          "largo_m": 4.6,
+          "ancho_m": 1.76
+        },
+        {
+          "nombre": "Avanza",
+          "tipo": "auto",
+          "largo_m": 4.19,
+          "ancho_m": 1.66
+        },
+        {
+          "nombre": "Sienna",
+          "tipo": "van",
+          "largo_m": 5.16,
+          "ancho_m": 1.99
+        },
+        {
+          "nombre": "GR86",
+          "tipo": "auto",
+          "largo_m": 4.27,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "GR Supra",
+          "tipo": "auto",
+          "largo_m": 4.38,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "Rush",
+          "tipo": "suv",
+          "largo_m": 4.44,
+          "ancho_m": 1.75
+        },
+        {
+          "nombre": "bZ4X",
+          "tipo": "suv",
+          "largo_m": 4.69,
+          "ancho_m": 1.86
+        }
+      ]
+    },
+    {
+      "nombre": "Ford",
+      "modelos": [
+        {
+          "nombre": "Figo",
+          "tipo": "auto",
+          "largo_m": 4.08,
+          "ancho_m": 1.71
+        },
+        {
+          "nombre": "Focus",
+          "tipo": "auto",
+          "largo_m": 4.36,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Mustang",
+          "tipo": "auto",
+          "largo_m": 4.79,
+          "ancho_m": 1.92
+        },
+        {
+          "nombre": "Fusion",
+          "tipo": "auto",
+          "largo_m": 4.87,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "EcoSport",
+          "tipo": "suv",
+          "largo_m": 4.14,
+          "ancho_m": 1.76
+        },
+        {
+          "nombre": "Escape",
+          "tipo": "suv",
+          "largo_m": 4.41,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Edge",
+          "tipo": "suv",
+          "largo_m": 4.76,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "Bronco",
+          "tipo": "suv",
+          "largo_m": 4.4,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "Explorer",
+          "tipo": "camioneta",
+          "largo_m": 5.05,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "Expedition",
+          "tipo": "camioneta",
+          "versiones": [
+            "Estándar",
+            "MAX"
+          ],
+          "dim_versiones": {
+            "Estándar": {
+              "largo": 5.21,
+              "ancho": 2.11
+            },
+            "MAX": {
+              "largo": 5.59,
+              "ancho": 2.11
+            }
+          }
+        },
+        {
+          "nombre": "Bronco Sport",
+          "tipo": "suv",
+          "largo_m": 4.39,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "Maverick",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.08,
+              "ancho": 1.84
+            }
+          }
+        },
+        {
+          "nombre": "Ranger",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Cabina y Media",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.25,
+              "ancho": 1.86
+            },
+            "Cabina y Media": {
+              "largo": 5.3,
+              "ancho": 1.86
+            },
+            "Doble Cabina": {
+              "largo": 5.36,
+              "ancho": 1.86
+            }
+          }
+        },
+        {
+          "nombre": "F-150",
+          "tipo": "pickup",
+          "versiones": [
+            "Regular Cab",
+            "Super Cab",
+            "SuperCrew"
+          ],
+          "dim_versiones": {
+            "Regular Cab": {
+              "largo": 5.63,
+              "ancho": 2.03
+            },
+            "Super Cab": {
+              "largo": 5.96,
+              "ancho": 2.03
+            },
+            "SuperCrew": {
+              "largo": 5.88,
+              "ancho": 2.03
+            }
+          }
+        },
+        {
+          "nombre": "F-250",
+          "tipo": "pickup",
+          "versiones": [
+            "Regular Cab",
+            "Super Cab",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Regular Cab": {
+              "largo": 5.89,
+              "ancho": 2.03
+            },
+            "Super Cab": {
+              "largo": 6.22,
+              "ancho": 2.03
+            },
+            "Doble Cabina": {
+              "largo": 6.1,
+              "ancho": 2.03
+            }
+          }
+        },
+        {
+          "nombre": "Transit",
+          "tipo": "van",
+          "versiones": [
+            "Corta",
+            "Larga"
+          ],
+          "dim_versiones": {
+            "Corta": {
+              "largo": 5.76,
+              "ancho": 2.06
+            },
+            "Larga": {
+              "largo": 6.69,
+              "ancho": 2.06
+            }
+          }
+        },
+        {
+          "nombre": "Puma",
+          "tipo": "suv",
+          "largo_m": 4.21,
+          "ancho_m": 1.81
+        }
+      ]
+    },
+    {
+      "nombre": "Honda",
+      "modelos": [
+        {
+          "nombre": "Fit",
+          "tipo": "auto",
+          "largo_m": 3.9,
+          "ancho_m": 1.69
+        },
+        {
+          "nombre": "City",
+          "tipo": "auto",
+          "largo_m": 4.55,
+          "ancho_m": 1.75
+        },
+        {
+          "nombre": "Civic",
+          "tipo": "auto",
+          "largo_m": 4.67,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Accord",
+          "tipo": "auto",
+          "largo_m": 4.9,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "HR-V",
+          "tipo": "suv",
+          "largo_m": 4.34,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "CR-V",
+          "tipo": "suv",
+          "largo_m": 4.6,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Pilot",
+          "tipo": "camioneta",
+          "largo_m": 4.96,
+          "ancho_m": 1.99
+        },
+        {
+          "nombre": "Passport",
+          "tipo": "camioneta",
+          "largo_m": 4.74,
+          "ancho_m": 1.98
+        },
+        {
+          "nombre": "Ridgeline",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.31,
+              "ancho": 1.96
+            }
+          }
+        },
+        {
+          "nombre": "Odyssey",
+          "tipo": "van",
+          "largo_m": 5.21,
+          "ancho_m": 1.99
+        }
+      ]
+    },
+    {
+      "nombre": "Mazda",
+      "modelos": [
+        {
+          "nombre": "Mazda2",
+          "tipo": "auto",
+          "largo_m": 4.06,
+          "ancho_m": 1.7
+        },
+        {
+          "nombre": "Mazda3",
+          "tipo": "auto",
+          "largo_m": 4.66,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Mazda6",
+          "tipo": "auto",
+          "largo_m": 4.87,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "CX-3",
+          "tipo": "suv",
+          "largo_m": 4.28,
+          "ancho_m": 1.77
+        },
+        {
+          "nombre": "CX-30",
+          "tipo": "suv",
+          "largo_m": 4.4,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "CX-5",
+          "tipo": "suv",
+          "largo_m": 4.55,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "CX-50",
+          "tipo": "suv",
+          "largo_m": 4.61,
+          "ancho_m": 1.92
+        },
+        {
+          "nombre": "CX-9",
+          "tipo": "camioneta",
+          "largo_m": 5.07,
+          "ancho_m": 1.97
+        },
+        {
+          "nombre": "BT-50",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.21,
+              "ancho": 1.85
+            },
+            "Doble Cabina": {
+              "largo": 5.37,
+              "ancho": 1.85
+            }
+          }
+        },
+        {
+          "nombre": "MX-5 Miata",
+          "tipo": "auto",
+          "largo_m": 3.92,
+          "ancho_m": 1.74
+        },
+        {
+          "nombre": "CX-60",
+          "tipo": "suv",
+          "largo_m": 4.74,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "CX-90",
+          "tipo": "camioneta",
+          "largo_m": 5.09,
+          "ancho_m": 1.99
+        }
+      ]
+    },
+    {
+      "nombre": "Kia",
+      "modelos": [
+        {
+          "nombre": "Rio",
+          "tipo": "auto",
+          "largo_m": 4.07,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Forte",
+          "tipo": "auto",
+          "largo_m": 4.64,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "K5",
+          "tipo": "auto",
+          "largo_m": 4.9,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Stonic",
+          "tipo": "suv",
+          "largo_m": 4.14,
+          "ancho_m": 1.76
+        },
+        {
+          "nombre": "Seltos",
+          "tipo": "suv",
+          "largo_m": 4.37,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Sportage",
+          "tipo": "suv",
+          "largo_m": 4.52,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "Sorento",
+          "tipo": "camioneta",
+          "largo_m": 4.81,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Telluride",
+          "tipo": "camioneta",
+          "largo_m": 4.99,
+          "ancho_m": 1.99
+        },
+        {
+          "nombre": "EV6",
+          "tipo": "auto",
+          "largo_m": 4.68,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Carnival",
+          "tipo": "van",
+          "largo_m": 5.17,
+          "ancho_m": 1.99
+        },
+        {
+          "nombre": "Niro",
+          "tipo": "suv",
+          "largo_m": 4.42,
+          "ancho_m": 1.81
+        },
+        {
+          "nombre": "EV9",
+          "tipo": "camioneta",
+          "largo_m": 5.01,
+          "ancho_m": 1.98
+        }
+      ]
+    },
+    {
+      "nombre": "Hyundai",
+      "modelos": [
+        {
+          "nombre": "Grand i10",
+          "tipo": "auto",
+          "largo_m": 3.77,
+          "ancho_m": 1.68
+        },
+        {
+          "nombre": "HB20",
+          "tipo": "auto",
+          "largo_m": 4.07,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Accent",
+          "tipo": "auto",
+          "largo_m": 4.37,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Elantra",
+          "tipo": "auto",
+          "largo_m": 4.68,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "Venue",
+          "tipo": "suv",
+          "largo_m": 4.04,
+          "ancho_m": 1.77
+        },
+        {
+          "nombre": "Tucson",
+          "tipo": "suv",
+          "largo_m": 4.5,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "Creta",
+          "tipo": "suv",
+          "largo_m": 4.3,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "Santa Fe",
+          "tipo": "camioneta",
+          "largo_m": 4.79,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Palisade",
+          "tipo": "camioneta",
+          "largo_m": 4.99,
+          "ancho_m": 1.98
+        },
+        {
+          "nombre": "Ioniq 5",
+          "tipo": "auto",
+          "largo_m": 4.64,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "Staria",
+          "tipo": "van",
+          "largo_m": 5.25,
+          "ancho_m": 1.99
+        },
+        {
+          "nombre": "Santa Cruz",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.1,
+              "ancho": 1.96
+            }
+          }
+        },
+        {
+          "nombre": "Ioniq 6",
+          "tipo": "auto",
+          "largo_m": 4.86,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Tucson PHEV",
+          "tipo": "suv",
+          "largo_m": 4.51,
+          "ancho_m": 1.87
+        }
+      ]
+    },
+    {
+      "nombre": "Seat",
+      "modelos": [
+        {
+          "nombre": "Ibiza",
+          "tipo": "auto",
+          "largo_m": 4.06,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "León",
+          "tipo": "auto",
+          "largo_m": 4.37,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Arona",
+          "tipo": "suv",
+          "largo_m": 4.14,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "Ateca",
+          "tipo": "suv",
+          "largo_m": 4.37,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Tarraco",
+          "tipo": "camioneta",
+          "largo_m": 4.74,
+          "ancho_m": 1.84
+        }
+      ]
+    },
+    {
+      "nombre": "Suzuki",
+      "modelos": [
+        {
+          "nombre": "Swift",
+          "tipo": "auto",
+          "largo_m": 3.85,
+          "ancho_m": 1.74
+        },
+        {
+          "nombre": "Ciaz",
+          "tipo": "auto",
+          "largo_m": 4.49,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Baleno",
+          "tipo": "auto",
+          "largo_m": 3.99,
+          "ancho_m": 1.74
+        },
+        {
+          "nombre": "S-Cross",
+          "tipo": "suv",
+          "largo_m": 4.3,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "Vitara",
+          "tipo": "suv",
+          "largo_m": 4.17,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "Jimny",
+          "tipo": "suv",
+          "largo_m": 3.48,
+          "ancho_m": 1.65
+        }
+      ]
+    },
+    {
+      "nombre": "Jeep",
+      "modelos": [
+        {
+          "nombre": "Renegade",
+          "tipo": "suv",
+          "largo_m": 4.23,
+          "ancho_m": 1.81
+        },
+        {
+          "nombre": "Compass",
+          "tipo": "suv",
+          "largo_m": 4.41,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Cherokee",
+          "tipo": "suv",
+          "largo_m": 4.63,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Wrangler",
+          "tipo": "camioneta",
+          "largo_m": 4.33,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "Grand Cherokee",
+          "tipo": "camioneta",
+          "largo_m": 4.88,
+          "ancho_m": 1.98
+        },
+        {
+          "nombre": "Gladiator",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.59,
+              "ancho": 1.88
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "RAM",
+      "modelos": [
+        {
+          "nombre": "700",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.12,
+              "ancho": 1.82
+            },
+            "Doble Cabina": {
+              "largo": 5.25,
+              "ancho": 1.82
+            }
+          }
+        },
+        {
+          "nombre": "1500",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Regular",
+            "Cabina Extendida",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Regular": {
+              "largo": 5.69,
+              "ancho": 2.02
+            },
+            "Cabina Extendida": {
+              "largo": 6.02,
+              "ancho": 2.02
+            },
+            "Doble Cabina": {
+              "largo": 5.82,
+              "ancho": 2.02
+            }
+          }
+        },
+        {
+          "nombre": "2500",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Regular",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Regular": {
+              "largo": 5.89,
+              "ancho": 2.06
+            },
+            "Doble Cabina": {
+              "largo": 6.16,
+              "ancho": 2.06
+            }
+          }
+        },
+        {
+          "nombre": "ProMaster",
+          "tipo": "camioneta",
+          "versiones": [
+            "Corta",
+            "Larga"
+          ],
+          "dim_versiones": {
+            "Corta": {
+              "largo": 5.4,
+              "ancho": 2.01
+            },
+            "Larga": {
+              "largo": 6.06,
+              "ancho": 2.01
+            }
+          }
+        },
+        {
+          "nombre": "ProMaster City",
+          "tipo": "van",
+          "largo_m": 4.46,
+          "ancho_m": 1.83
+        }
+      ]
+    },
+    {
+      "nombre": "Dodge",
+      "modelos": [
+        {
+          "nombre": "Attitude",
+          "tipo": "auto",
+          "largo_m": 3.99,
+          "ancho_m": 1.68
+        },
+        {
+          "nombre": "Neon",
+          "tipo": "auto",
+          "largo_m": 4.39,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "Journey",
+          "tipo": "suv",
+          "largo_m": 4.88,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Durango",
+          "tipo": "camioneta",
+          "largo_m": 5.12,
+          "ancho_m": 1.98
+        }
+      ]
+    },
+    {
+      "nombre": "Mitsubishi",
+      "modelos": [
+        {
+          "nombre": "Mirage",
+          "tipo": "auto",
+          "largo_m": 3.8,
+          "ancho_m": 1.67
+        },
+        {
+          "nombre": "Eclipse Cross",
+          "tipo": "suv",
+          "largo_m": 4.41,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Outlander",
+          "tipo": "suv",
+          "largo_m": 4.71,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Montero Sport",
+          "tipo": "camioneta",
+          "largo_m": 4.74,
+          "ancho_m": 1.81
+        },
+        {
+          "nombre": "L200 Triton",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.2,
+              "ancho": 1.82
+            },
+            "Doble Cabina": {
+              "largo": 5.27,
+              "ancho": 1.82
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Peugeot",
+      "modelos": [
+        {
+          "nombre": "208",
+          "tipo": "auto",
+          "largo_m": 4.05,
+          "ancho_m": 1.75
+        },
+        {
+          "nombre": "301",
+          "tipo": "auto",
+          "largo_m": 4.44,
+          "ancho_m": 1.74
+        },
+        {
+          "nombre": "408",
+          "tipo": "auto",
+          "largo_m": 4.69,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "2008",
+          "tipo": "suv",
+          "largo_m": 4.3,
+          "ancho_m": 1.77
+        },
+        {
+          "nombre": "3008",
+          "tipo": "suv",
+          "largo_m": 4.45,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "5008",
+          "tipo": "camioneta",
+          "largo_m": 4.64,
+          "ancho_m": 1.84
+        }
+      ]
+    },
+    {
+      "nombre": "Renault",
+      "modelos": [
+        {
+          "nombre": "Kwid",
+          "tipo": "auto",
+          "largo_m": 3.73,
+          "ancho_m": 1.58
+        },
+        {
+          "nombre": "Sandero",
+          "tipo": "auto",
+          "largo_m": 4.08,
+          "ancho_m": 1.76
+        },
+        {
+          "nombre": "Logan",
+          "tipo": "auto",
+          "largo_m": 4.35,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Captur",
+          "tipo": "suv",
+          "largo_m": 4.23,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Duster",
+          "tipo": "suv",
+          "largo_m": 4.34,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Koleos",
+          "tipo": "camioneta",
+          "largo_m": 4.67,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Oroch",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.06,
+              "ancho": 1.82
+            }
+          }
+        },
+        {
+          "nombre": "Austral",
+          "tipo": "suv",
+          "largo_m": 4.51,
+          "ancho_m": 1.83
+        }
+      ]
+    },
+    {
+      "nombre": "Fiat",
+      "modelos": [
+        {
+          "nombre": "Mobi",
+          "tipo": "auto",
+          "largo_m": 3.68,
+          "ancho_m": 1.64
+        },
+        {
+          "nombre": "Cronos",
+          "tipo": "auto",
+          "largo_m": 4.48,
+          "ancho_m": 1.76
+        },
+        {
+          "nombre": "Pulse",
+          "tipo": "suv",
+          "largo_m": 4.08,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Fastback",
+          "tipo": "suv",
+          "largo_m": 4.37,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "Toro",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.09,
+              "ancho": 1.83
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Subaru",
+      "modelos": [
+        {
+          "nombre": "Impreza",
+          "tipo": "auto",
+          "largo_m": 4.47,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "WRX",
+          "tipo": "auto",
+          "largo_m": 4.67,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "Legacy",
+          "tipo": "auto",
+          "largo_m": 4.8,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Crosstrek",
+          "tipo": "suv",
+          "largo_m": 4.47,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Forester",
+          "tipo": "suv",
+          "largo_m": 4.64,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Outback",
+          "tipo": "camioneta",
+          "largo_m": 4.87,
+          "ancho_m": 1.88
+        }
+      ]
+    },
+    {
+      "nombre": "Chirey",
+      "modelos": [
+        {
+          "nombre": "Arrizo 5",
+          "tipo": "auto",
+          "largo_m": 4.58,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Arrizo 6",
+          "tipo": "auto",
+          "largo_m": 4.74,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "Tiggo 2",
+          "tipo": "suv",
+          "largo_m": 4.23,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Tiggo 4",
+          "tipo": "suv",
+          "largo_m": 4.41,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Tiggo 7",
+          "tipo": "suv",
+          "largo_m": 4.5,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "Tiggo 8",
+          "tipo": "camioneta",
+          "largo_m": 4.72,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Omoda 5",
+          "tipo": "suv",
+          "largo_m": 4.43,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Omoda 7",
+          "tipo": "suv",
+          "largo_m": 4.62,
+          "ancho_m": 1.89
+        }
+      ]
+    },
+    {
+      "nombre": "JAC",
+      "modelos": [
+        {
+          "nombre": "J4",
+          "tipo": "auto",
+          "largo_m": 4.45,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "JS3",
+          "tipo": "suv",
+          "largo_m": 4.21,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "JS4",
+          "tipo": "suv",
+          "largo_m": 4.47,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "T6",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.27,
+              "ancho": 1.84
+            },
+            "Doble Cabina": {
+              "largo": 5.4,
+              "ancho": 1.84
+            }
+          }
+        },
+        {
+          "nombre": "T8",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.48,
+              "ancho": 1.91
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "MG",
+      "modelos": [
+        {
+          "nombre": "3",
+          "tipo": "auto",
+          "largo_m": 4.07,
+          "ancho_m": 1.77
+        },
+        {
+          "nombre": "5",
+          "tipo": "auto",
+          "largo_m": 4.52,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "ZS",
+          "tipo": "suv",
+          "largo_m": 4.32,
+          "ancho_m": 1.81
+        },
+        {
+          "nombre": "HS",
+          "tipo": "suv",
+          "largo_m": 4.57,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "RX5",
+          "tipo": "camioneta",
+          "largo_m": 4.58,
+          "ancho_m": 1.87
+        }
+      ]
+    },
+    {
+      "nombre": "BYD",
+      "modelos": [
+        {
+          "nombre": "Dolphin",
+          "tipo": "auto",
+          "largo_m": 4.29,
+          "ancho_m": 1.77
+        },
+        {
+          "nombre": "Seal",
+          "tipo": "auto",
+          "largo_m": 4.8,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Atto 3",
+          "tipo": "suv",
+          "largo_m": 4.46,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Tang",
+          "tipo": "camioneta",
+          "largo_m": 4.87,
+          "ancho_m": 1.95
+        },
+        {
+          "nombre": "Han",
+          "tipo": "auto",
+          "largo_m": 4.99,
+          "ancho_m": 1.91
+        },
+        {
+          "nombre": "Song Plus",
+          "tipo": "suv",
+          "largo_m": 4.71,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "Yuan Plus",
+          "tipo": "suv",
+          "largo_m": 4.46,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Shark",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.43,
+              "ancho": 1.96
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "BMW",
+      "modelos": [
+        {
+          "nombre": "Serie 1",
+          "tipo": "auto",
+          "largo_m": 4.36,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Serie 2",
+          "tipo": "auto",
+          "largo_m": 4.36,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Serie 3",
+          "tipo": "auto",
+          "largo_m": 4.71,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "Serie 5",
+          "tipo": "auto",
+          "largo_m": 4.96,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "Serie 7",
+          "tipo": "auto",
+          "largo_m": 5.39,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "X1",
+          "tipo": "suv",
+          "largo_m": 4.5,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "X2",
+          "tipo": "suv",
+          "largo_m": 4.36,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "X3",
+          "tipo": "suv",
+          "largo_m": 4.72,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "X4",
+          "tipo": "suv",
+          "largo_m": 4.77,
+          "ancho_m": 1.92
+        },
+        {
+          "nombre": "X5",
+          "tipo": "camioneta",
+          "largo_m": 4.92,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "X6",
+          "tipo": "camioneta",
+          "largo_m": 4.93,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "X7",
+          "tipo": "camioneta",
+          "largo_m": 5.15,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "Serie 4",
+          "tipo": "auto",
+          "largo_m": 4.77,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "Serie 8",
+          "tipo": "auto",
+          "largo_m": 4.84,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "M3",
+          "tipo": "auto",
+          "largo_m": 4.71,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "iX3",
+          "tipo": "suv",
+          "largo_m": 4.73,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "iX",
+          "tipo": "camioneta",
+          "largo_m": 4.95,
+          "ancho_m": 1.97
+        }
+      ]
+    },
+    {
+      "nombre": "Mercedes-Benz",
+      "modelos": [
+        {
+          "nombre": "Clase A",
+          "tipo": "auto",
+          "largo_m": 4.42,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Clase C",
+          "tipo": "auto",
+          "largo_m": 4.75,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Clase E",
+          "tipo": "auto",
+          "largo_m": 4.93,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "Clase S",
+          "tipo": "auto",
+          "largo_m": 5.18,
+          "ancho_m": 1.95
+        },
+        {
+          "nombre": "GLA",
+          "tipo": "suv",
+          "largo_m": 4.41,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "GLB",
+          "tipo": "suv",
+          "largo_m": 4.63,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "GLC",
+          "tipo": "suv",
+          "largo_m": 4.72,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "GLE",
+          "tipo": "camioneta",
+          "largo_m": 4.92,
+          "ancho_m": 1.95
+        },
+        {
+          "nombre": "GLS",
+          "tipo": "camioneta",
+          "largo_m": 5.21,
+          "ancho_m": 2.03
+        },
+        {
+          "nombre": "Clase X",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.33,
+              "ancho": 1.92
+            },
+            "Doble Cabina": {
+              "largo": 5.34,
+              "ancho": 1.92
+            }
+          }
+        },
+        {
+          "nombre": "Clase B",
+          "tipo": "auto",
+          "largo_m": 4.42,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "AMG GT",
+          "tipo": "auto",
+          "largo_m": 4.55,
+          "ancho_m": 1.96
+        },
+        {
+          "nombre": "Clase G",
+          "tipo": "camioneta",
+          "largo_m": 4.66,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "Vito",
+          "tipo": "van",
+          "largo_m": 5.14,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "Sprinter",
+          "tipo": "van",
+          "versiones": [
+            "Corta",
+            "Larga"
+          ],
+          "dim_versiones": {
+            "Corta": {
+              "largo": 6,
+              "ancho": 1.99
+            },
+            "Larga": {
+              "largo": 7,
+              "ancho": 1.99
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Audi",
+      "modelos": [
+        {
+          "nombre": "A1",
+          "tipo": "auto",
+          "largo_m": 4.03,
+          "ancho_m": 1.75
+        },
+        {
+          "nombre": "A3",
+          "tipo": "auto",
+          "largo_m": 4.34,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "A4",
+          "tipo": "auto",
+          "largo_m": 4.73,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "A6",
+          "tipo": "auto",
+          "largo_m": 4.94,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "Q2",
+          "tipo": "suv",
+          "largo_m": 4.19,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "Q3",
+          "tipo": "suv",
+          "largo_m": 4.49,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "Q5",
+          "tipo": "suv",
+          "largo_m": 4.67,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "Q7",
+          "tipo": "camioneta",
+          "largo_m": 4.97,
+          "ancho_m": 1.97
+        },
+        {
+          "nombre": "Q8",
+          "tipo": "camioneta",
+          "largo_m": 4.99,
+          "ancho_m": 1.99
+        }
+      ]
+    },
+    {
+      "nombre": "Honda (moto)",
+      "modelos": [
+        {
+          "nombre": "CB300",
+          "tipo": "moto",
+          "largo_m": 2.03,
+          "ancho_m": 0.76
+        },
+        {
+          "nombre": "CB500",
+          "tipo": "moto",
+          "largo_m": 2.19,
+          "ancho_m": 0.75
+        },
+        {
+          "nombre": "CB600",
+          "tipo": "moto",
+          "largo_m": 2.22,
+          "ancho_m": 0.77
+        },
+        {
+          "nombre": "NC750",
+          "tipo": "moto",
+          "largo_m": 2.22,
+          "ancho_m": 0.81
+        },
+        {
+          "nombre": "PCX 150",
+          "tipo": "moto",
+          "largo_m": 1.93,
+          "ancho_m": 0.74
+        },
+        {
+          "nombre": "CRF 300",
+          "tipo": "moto",
+          "largo_m": 2.23,
+          "ancho_m": 0.82
+        },
+        {
+          "nombre": "Africa Twin",
+          "tipo": "moto",
+          "largo_m": 2.33,
+          "ancho_m": 0.9
+        }
+      ]
+    },
+    {
+      "nombre": "Yamaha",
+      "modelos": [
+        {
+          "nombre": "FZ 25",
+          "tipo": "moto",
+          "largo_m": 2.02,
+          "ancho_m": 0.75
+        },
+        {
+          "nombre": "MT-03",
+          "tipo": "moto",
+          "largo_m": 2.04,
+          "ancho_m": 0.74
+        },
+        {
+          "nombre": "R3",
+          "tipo": "moto",
+          "largo_m": 2.09,
+          "ancho_m": 0.73
+        },
+        {
+          "nombre": "NMAX 155",
+          "tipo": "moto",
+          "largo_m": 1.93,
+          "ancho_m": 0.74
+        },
+        {
+          "nombre": "Tracer 7",
+          "tipo": "moto",
+          "largo_m": 2.14,
+          "ancho_m": 0.85
+        },
+        {
+          "nombre": "XSR 700",
+          "tipo": "moto",
+          "largo_m": 2.1,
+          "ancho_m": 0.82
+        }
+      ]
+    },
+    {
+      "nombre": "Kawasaki",
+      "modelos": [
+        {
+          "nombre": "Ninja 300",
+          "tipo": "moto",
+          "largo_m": 2.03,
+          "ancho_m": 0.71
+        },
+        {
+          "nombre": "Ninja 400",
+          "tipo": "moto",
+          "largo_m": 2.03,
+          "ancho_m": 0.71
+        },
+        {
+          "nombre": "Z400",
+          "tipo": "moto",
+          "largo_m": 2.03,
+          "ancho_m": 0.78
+        },
+        {
+          "nombre": "Versys 650",
+          "tipo": "moto",
+          "largo_m": 2.26,
+          "ancho_m": 0.88
+        },
+        {
+          "nombre": "Z900",
+          "tipo": "moto",
+          "largo_m": 2.07,
+          "ancho_m": 0.82
+        }
+      ]
+    },
+    {
+      "nombre": "Harley-Davidson",
+      "modelos": [
+        {
+          "nombre": "Sportster",
+          "tipo": "moto",
+          "largo_m": 2.26,
+          "ancho_m": 0.84
+        },
+        {
+          "nombre": "Iron 883",
+          "tipo": "moto",
+          "largo_m": 2.21,
+          "ancho_m": 0.76
+        },
+        {
+          "nombre": "Softail",
+          "tipo": "moto",
+          "largo_m": 2.37,
+          "ancho_m": 0.86
+        },
+        {
+          "nombre": "Fat Boy",
+          "tipo": "moto",
+          "largo_m": 2.39,
+          "ancho_m": 0.92
+        },
+        {
+          "nombre": "Street 750",
+          "tipo": "moto",
+          "largo_m": 2.18,
+          "ancho_m": 0.79
+        }
+      ]
+    },
+    {
+      "nombre": "GMC",
+      "modelos": [
+        {
+          "nombre": "Terrain",
+          "tipo": "suv",
+          "largo_m": 4.68,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "Acadia",
+          "tipo": "camioneta",
+          "largo_m": 5.02,
+          "ancho_m": 1.99
+        },
+        {
+          "nombre": "Yukon",
+          "tipo": "camioneta",
+          "largo_m": 5.17,
+          "ancho_m": 2.06
+        },
+        {
+          "nombre": "Envoy",
+          "tipo": "camioneta",
+          "largo_m": 4.72,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Canyon",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.28,
+              "ancho": 1.9
+            },
+            "Doble Cabina": {
+              "largo": 5.4,
+              "ancho": 1.9
+            }
+          }
+        },
+        {
+          "nombre": "Sierra",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Regular",
+            "Cabina Extendida",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Regular": {
+              "largo": 5.38,
+              "ancho": 2
+            },
+            "Cabina Extendida": {
+              "largo": 5.75,
+              "ancho": 2
+            },
+            "Doble Cabina": {
+              "largo": 5.91,
+              "ancho": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Buick",
+      "modelos": [
+        {
+          "nombre": "Encore",
+          "tipo": "suv",
+          "largo_m": 4.27,
+          "ancho_m": 1.78
+        },
+        {
+          "nombre": "Encore GX",
+          "tipo": "suv",
+          "largo_m": 4.43,
+          "ancho_m": 1.79
+        },
+        {
+          "nombre": "Envision",
+          "tipo": "suv",
+          "largo_m": 4.65,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "Enclave",
+          "tipo": "camioneta",
+          "largo_m": 5.19,
+          "ancho_m": 2
+        }
+      ]
+    },
+    {
+      "nombre": "Cadillac",
+      "modelos": [
+        {
+          "nombre": "XT4",
+          "tipo": "suv",
+          "largo_m": 4.6,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "XT5",
+          "tipo": "suv",
+          "largo_m": 4.82,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "XT6",
+          "tipo": "camioneta",
+          "largo_m": 5,
+          "ancho_m": 1.97
+        },
+        {
+          "nombre": "Escalade",
+          "tipo": "camioneta",
+          "largo_m": 5.18,
+          "ancho_m": 2.07
+        },
+        {
+          "nombre": "CT5",
+          "tipo": "auto",
+          "largo_m": 4.92,
+          "ancho_m": 1.88
+        }
+      ]
+    },
+    {
+      "nombre": "Lincoln",
+      "modelos": [
+        {
+          "nombre": "Corsair",
+          "tipo": "suv",
+          "largo_m": 4.6,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "Nautilus",
+          "tipo": "suv",
+          "largo_m": 4.89,
+          "ancho_m": 1.96
+        },
+        {
+          "nombre": "Aviator",
+          "tipo": "camioneta",
+          "largo_m": 5.1,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "Navigator",
+          "tipo": "camioneta",
+          "largo_m": 5.32,
+          "ancho_m": 2.07
+        }
+      ]
+    },
+    {
+      "nombre": "Land Rover",
+      "modelos": [
+        {
+          "nombre": "Defender",
+          "tipo": "camioneta",
+          "largo_m": 4.32,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Discovery",
+          "tipo": "camioneta",
+          "largo_m": 4.97,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "Discovery Sport",
+          "tipo": "suv",
+          "largo_m": 4.6,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Range Rover Evoque",
+          "tipo": "suv",
+          "largo_m": 4.37,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Range Rover Velar",
+          "tipo": "suv",
+          "largo_m": 4.8,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "Range Rover Sport",
+          "tipo": "camioneta",
+          "largo_m": 4.88,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "Range Rover",
+          "tipo": "camioneta",
+          "largo_m": 4.99,
+          "ancho_m": 2
+        }
+      ]
+    },
+    {
+      "nombre": "Volvo",
+      "modelos": [
+        {
+          "nombre": "XC40",
+          "tipo": "suv",
+          "largo_m": 4.43,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "XC60",
+          "tipo": "suv",
+          "largo_m": 4.69,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "XC90",
+          "tipo": "camioneta",
+          "largo_m": 4.95,
+          "ancho_m": 1.96
+        },
+        {
+          "nombre": "S60",
+          "tipo": "auto",
+          "largo_m": 4.76,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "S90",
+          "tipo": "auto",
+          "largo_m": 5,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "V60",
+          "tipo": "auto",
+          "largo_m": 4.76,
+          "ancho_m": 1.85
+        }
+      ]
+    },
+    {
+      "nombre": "Porsche",
+      "modelos": [
+        {
+          "nombre": "911",
+          "tipo": "auto",
+          "largo_m": 4.52,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "Taycan",
+          "tipo": "auto",
+          "largo_m": 4.96,
+          "ancho_m": 1.97
+        },
+        {
+          "nombre": "Panamera",
+          "tipo": "auto",
+          "largo_m": 5.05,
+          "ancho_m": 1.94
+        },
+        {
+          "nombre": "Macan",
+          "tipo": "suv",
+          "largo_m": 4.47,
+          "ancho_m": 1.92
+        },
+        {
+          "nombre": "Cayenne",
+          "tipo": "camioneta",
+          "largo_m": 4.92,
+          "ancho_m": 1.98
+        }
+      ]
+    },
+    {
+      "nombre": "Lexus",
+      "modelos": [
+        {
+          "nombre": "UX",
+          "tipo": "suv",
+          "largo_m": 4.49,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "NX",
+          "tipo": "suv",
+          "largo_m": 4.66,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "RX",
+          "tipo": "suv",
+          "largo_m": 4.89,
+          "ancho_m": 1.89
+        },
+        {
+          "nombre": "GX",
+          "tipo": "camioneta",
+          "largo_m": 4.88,
+          "ancho_m": 1.92
+        },
+        {
+          "nombre": "LX",
+          "tipo": "camioneta",
+          "largo_m": 5.1,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "IS",
+          "tipo": "auto",
+          "largo_m": 4.71,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "ES",
+          "tipo": "auto",
+          "largo_m": 4.97,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "LS",
+          "tipo": "auto",
+          "largo_m": 5.24,
+          "ancho_m": 1.9
+        }
+      ]
+    },
+    {
+      "nombre": "Infiniti",
+      "modelos": [
+        {
+          "nombre": "QX50",
+          "tipo": "suv",
+          "largo_m": 4.69,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "QX55",
+          "tipo": "suv",
+          "largo_m": 4.71,
+          "ancho_m": 1.91
+        },
+        {
+          "nombre": "QX60",
+          "tipo": "camioneta",
+          "largo_m": 5.03,
+          "ancho_m": 1.99
+        },
+        {
+          "nombre": "QX80",
+          "tipo": "camioneta",
+          "largo_m": 5.34,
+          "ancho_m": 2.03
+        },
+        {
+          "nombre": "Q50",
+          "tipo": "auto",
+          "largo_m": 4.69,
+          "ancho_m": 1.82
+        }
+      ]
+    },
+    {
+      "nombre": "Acura",
+      "modelos": [
+        {
+          "nombre": "RDX",
+          "tipo": "suv",
+          "largo_m": 4.67,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "MDX",
+          "tipo": "camioneta",
+          "largo_m": 5.03,
+          "ancho_m": 1.99
+        },
+        {
+          "nombre": "TLX",
+          "tipo": "auto",
+          "largo_m": 4.89,
+          "ancho_m": 1.88
+        }
+      ]
+    },
+    {
+      "nombre": "MINI",
+      "modelos": [
+        {
+          "nombre": "Cooper",
+          "tipo": "auto",
+          "largo_m": 3.84,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Cooper S",
+          "tipo": "auto",
+          "largo_m": 3.84,
+          "ancho_m": 1.73
+        },
+        {
+          "nombre": "Clubman",
+          "tipo": "auto",
+          "largo_m": 4.25,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "Countryman",
+          "tipo": "suv",
+          "largo_m": 4.3,
+          "ancho_m": 1.82
+        },
+        {
+          "nombre": "Paceman",
+          "tipo": "suv",
+          "largo_m": 4.11,
+          "ancho_m": 1.79
+        }
+      ]
+    },
+    {
+      "nombre": "Alfa Romeo",
+      "modelos": [
+        {
+          "nombre": "Giulia",
+          "tipo": "auto",
+          "largo_m": 4.64,
+          "ancho_m": 1.87
+        },
+        {
+          "nombre": "Stelvio",
+          "tipo": "suv",
+          "largo_m": 4.69,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Tonale",
+          "tipo": "suv",
+          "largo_m": 4.53,
+          "ancho_m": 1.84
+        }
+      ]
+    },
+    {
+      "nombre": "Isuzu",
+      "modelos": [
+        {
+          "nombre": "D-Max",
+          "tipo": "pickup",
+          "versiones": [
+            "Cabina Sencilla",
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Cabina Sencilla": {
+              "largo": 5.3,
+              "ancho": 1.86
+            },
+            "Doble Cabina": {
+              "largo": 5.4,
+              "ancho": 1.86
+            }
+          }
+        },
+        {
+          "nombre": "MU-X",
+          "tipo": "suv",
+          "largo_m": 4.8,
+          "ancho_m": 1.87
+        }
+      ]
+    },
+    {
+      "nombre": "BAIC",
+      "modelos": [
+        {
+          "nombre": "BJ40",
+          "tipo": "suv",
+          "largo_m": 4.3,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "BJ40 Plus",
+          "tipo": "suv",
+          "largo_m": 4.59,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "X35",
+          "tipo": "suv",
+          "largo_m": 4.25,
+          "ancho_m": 1.77
+        },
+        {
+          "nombre": "X55",
+          "tipo": "suv",
+          "largo_m": 4.47,
+          "ancho_m": 1.84
+        },
+        {
+          "nombre": "X7",
+          "tipo": "camioneta",
+          "largo_m": 4.73,
+          "ancho_m": 1.89
+        }
+      ]
+    },
+    {
+      "nombre": "Italika",
+      "modelos": [
+        {
+          "nombre": "FT 180",
+          "tipo": "moto",
+          "largo_m": 2.12,
+          "ancho_m": 0.82
+        },
+        {
+          "nombre": "DT 150",
+          "tipo": "moto",
+          "largo_m": 2.1,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "WS 175",
+          "tipo": "moto",
+          "largo_m": 2.15,
+          "ancho_m": 0.83
+        },
+        {
+          "nombre": "CS 125",
+          "tipo": "moto",
+          "largo_m": 2.05,
+          "ancho_m": 0.78
+        },
+        {
+          "nombre": "AT 110",
+          "tipo": "moto",
+          "largo_m": 1.87,
+          "ancho_m": 0.68
+        },
+        {
+          "nombre": "RC 200",
+          "tipo": "moto",
+          "largo_m": 2.1,
+          "ancho_m": 0.77
+        }
+      ]
+    },
+    {
+      "nombre": "Bajaj",
+      "modelos": [
+        {
+          "nombre": "Pulsar 150",
+          "tipo": "moto",
+          "largo_m": 2.05,
+          "ancho_m": 0.76
+        },
+        {
+          "nombre": "Pulsar 200 NS",
+          "tipo": "moto",
+          "largo_m": 2.08,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "Dominar 400",
+          "tipo": "moto",
+          "largo_m": 2.16,
+          "ancho_m": 0.82
+        },
+        {
+          "nombre": "Platino 100",
+          "tipo": "moto",
+          "largo_m": 1.95,
+          "ancho_m": 0.72
+        },
+        {
+          "nombre": "CT 100",
+          "tipo": "moto",
+          "largo_m": 1.93,
+          "ancho_m": 0.7
+        }
+      ]
+    },
+    {
+      "nombre": "KTM",
+      "modelos": [
+        {
+          "nombre": "Duke 200",
+          "tipo": "moto",
+          "largo_m": 2.04,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "Duke 390",
+          "tipo": "moto",
+          "largo_m": 2,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "390 Adventure",
+          "tipo": "moto",
+          "largo_m": 2.17,
+          "ancho_m": 0.9
+        },
+        {
+          "nombre": "690 Duke",
+          "tipo": "moto",
+          "largo_m": 2.12,
+          "ancho_m": 0.87
+        }
+      ]
+    },
+    {
+      "nombre": "Royal Enfield",
+      "modelos": [
+        {
+          "nombre": "Classic 350",
+          "tipo": "moto",
+          "largo_m": 2.14,
+          "ancho_m": 0.79
+        },
+        {
+          "nombre": "Meteor 350",
+          "tipo": "moto",
+          "largo_m": 2.18,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "Himalayan",
+          "tipo": "moto",
+          "largo_m": 2.19,
+          "ancho_m": 0.81
+        },
+        {
+          "nombre": "Interceptor 650",
+          "tipo": "moto",
+          "largo_m": 2.12,
+          "ancho_m": 0.79
+        }
+      ]
+    },
+    {
+      "nombre": "Triumph",
+      "modelos": [
+        {
+          "nombre": "Street Triple",
+          "tipo": "moto",
+          "largo_m": 2.09,
+          "ancho_m": 0.75
+        },
+        {
+          "nombre": "Tiger 900",
+          "tipo": "moto",
+          "largo_m": 2.24,
+          "ancho_m": 0.92
+        },
+        {
+          "nombre": "Bonneville",
+          "tipo": "moto",
+          "largo_m": 2.23,
+          "ancho_m": 0.88
+        },
+        {
+          "nombre": "Trident 660",
+          "tipo": "moto",
+          "largo_m": 2.05,
+          "ancho_m": 0.77
+        }
+      ]
+    },
+    {
+      "nombre": "Suzuki (moto)",
+      "modelos": [
+        {
+          "nombre": "GN 125",
+          "tipo": "moto",
+          "largo_m": 1.97,
+          "ancho_m": 0.72
+        },
+        {
+          "nombre": "GS 150",
+          "tipo": "moto",
+          "largo_m": 2.05,
+          "ancho_m": 0.76
+        },
+        {
+          "nombre": "Gixxer 150",
+          "tipo": "moto",
+          "largo_m": 2.01,
+          "ancho_m": 0.73
+        },
+        {
+          "nombre": "V-Strom 650",
+          "tipo": "moto",
+          "largo_m": 2.25,
+          "ancho_m": 0.92
+        },
+        {
+          "nombre": "Burgman 200",
+          "tipo": "moto",
+          "largo_m": 2.08,
+          "ancho_m": 0.77
+        },
+        {
+          "nombre": "GSX-R 150",
+          "tipo": "moto",
+          "largo_m": 2,
+          "ancho_m": 0.69
+        }
+      ]
+    },
+    {
+      "nombre": "Ducati",
+      "modelos": [
+        {
+          "nombre": "Monster",
+          "tipo": "moto",
+          "largo_m": 2.06,
+          "ancho_m": 0.81
+        },
+        {
+          "nombre": "Multistrada",
+          "tipo": "moto",
+          "largo_m": 2.18,
+          "ancho_m": 0.91
+        },
+        {
+          "nombre": "Panigale",
+          "tipo": "moto",
+          "largo_m": 2.09,
+          "ancho_m": 0.7
+        },
+        {
+          "nombre": "Scrambler",
+          "tipo": "moto",
+          "largo_m": 2.1,
+          "ancho_m": 0.82
+        }
+      ]
+    },
+    {
+      "nombre": "Tesla",
+      "modelos": [
+        {
+          "nombre": "Model 3",
+          "tipo": "auto",
+          "largo_m": 4.72,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "Model Y",
+          "tipo": "suv",
+          "largo_m": 4.75,
+          "ancho_m": 1.92
+        },
+        {
+          "nombre": "Model S",
+          "tipo": "auto",
+          "largo_m": 4.97,
+          "ancho_m": 1.96
+        },
+        {
+          "nombre": "Model X",
+          "tipo": "camioneta",
+          "largo_m": 5.04,
+          "ancho_m": 2
+        },
+        {
+          "nombre": "Cybertruck",
+          "tipo": "pickup",
+          "versiones": [
+            "Doble Cabina"
+          ],
+          "dim_versiones": {
+            "Doble Cabina": {
+              "largo": 5.68,
+              "ancho": 2.2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Genesis",
+      "modelos": [
+        {
+          "nombre": "G70",
+          "tipo": "auto",
+          "largo_m": 4.69,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "G80",
+          "tipo": "auto",
+          "largo_m": 4.99,
+          "ancho_m": 1.91
+        },
+        {
+          "nombre": "G90",
+          "tipo": "auto",
+          "largo_m": 5.21,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "GV70",
+          "tipo": "suv",
+          "largo_m": 4.72,
+          "ancho_m": 1.91
+        },
+        {
+          "nombre": "GV80",
+          "tipo": "camioneta",
+          "largo_m": 4.96,
+          "ancho_m": 1.97
+        },
+        {
+          "nombre": "GV60",
+          "tipo": "suv",
+          "largo_m": 4.52,
+          "ancho_m": 1.9
+        }
+      ]
+    },
+    {
+      "nombre": "Haval",
+      "modelos": [
+        {
+          "nombre": "Jolion",
+          "tipo": "suv",
+          "largo_m": 4.47,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "H2",
+          "tipo": "suv",
+          "largo_m": 4.33,
+          "ancho_m": 1.8
+        },
+        {
+          "nombre": "H6",
+          "tipo": "suv",
+          "largo_m": 4.65,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "H6 GT",
+          "tipo": "suv",
+          "largo_m": 4.65,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Dargo",
+          "tipo": "suv",
+          "largo_m": 4.72,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Big Dog",
+          "tipo": "suv",
+          "largo_m": 4.67,
+          "ancho_m": 1.92
+        }
+      ]
+    },
+    {
+      "nombre": "Jaguar",
+      "modelos": [
+        {
+          "nombre": "E-Pace",
+          "tipo": "suv",
+          "largo_m": 4.4,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "F-Pace",
+          "tipo": "suv",
+          "largo_m": 4.73,
+          "ancho_m": 1.94
+        },
+        {
+          "nombre": "I-Pace",
+          "tipo": "suv",
+          "largo_m": 4.68,
+          "ancho_m": 2.01
+        },
+        {
+          "nombre": "F-Type",
+          "tipo": "auto",
+          "largo_m": 4.47,
+          "ancho_m": 1.92
+        },
+        {
+          "nombre": "XE",
+          "tipo": "auto",
+          "largo_m": 4.67,
+          "ancho_m": 1.85
+        },
+        {
+          "nombre": "XF",
+          "tipo": "auto",
+          "largo_m": 4.96,
+          "ancho_m": 1.88
+        }
+      ]
+    },
+    {
+      "nombre": "Chrysler",
+      "modelos": [
+        {
+          "nombre": "300",
+          "tipo": "auto",
+          "largo_m": 5.05,
+          "ancho_m": 1.9
+        },
+        {
+          "nombre": "Pacifica",
+          "tipo": "van",
+          "largo_m": 5.09,
+          "ancho_m": 1.99
+        }
+      ]
+    },
+    {
+      "nombre": "Polestar",
+      "modelos": [
+        {
+          "nombre": "Polestar 2",
+          "tipo": "auto",
+          "largo_m": 4.61,
+          "ancho_m": 1.86
+        },
+        {
+          "nombre": "Polestar 3",
+          "tipo": "suv",
+          "largo_m": 4.9,
+          "ancho_m": 1.97
+        },
+        {
+          "nombre": "Polestar 4",
+          "tipo": "suv",
+          "largo_m": 4.84,
+          "ancho_m": 1.93
+        }
+      ]
+    },
+    {
+      "nombre": "GAC",
+      "modelos": [
+        {
+          "nombre": "GS3",
+          "tipo": "suv",
+          "largo_m": 4.32,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "GS4",
+          "tipo": "suv",
+          "largo_m": 4.45,
+          "ancho_m": 1.83
+        },
+        {
+          "nombre": "GS8",
+          "tipo": "camioneta",
+          "largo_m": 4.84,
+          "ancho_m": 1.93
+        },
+        {
+          "nombre": "Aion S",
+          "tipo": "auto",
+          "largo_m": 4.89,
+          "ancho_m": 1.88
+        },
+        {
+          "nombre": "Aion Y",
+          "tipo": "suv",
+          "largo_m": 4.41,
+          "ancho_m": 1.85
+        }
+      ]
+    },
+    {
+      "nombre": "Vento (moto)",
+      "modelos": [
+        {
+          "nombre": "Phantom R",
+          "tipo": "moto",
+          "largo_m": 2.08,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "Zip 150",
+          "tipo": "moto",
+          "largo_m": 1.95,
+          "ancho_m": 0.73
+        },
+        {
+          "nombre": "Rebel 150",
+          "tipo": "moto",
+          "largo_m": 2.04,
+          "ancho_m": 0.76
+        },
+        {
+          "nombre": "Freedom 200",
+          "tipo": "moto",
+          "largo_m": 2.1,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "Runner",
+          "tipo": "moto",
+          "largo_m": 1.88,
+          "ancho_m": 0.7
+        }
+      ]
+    },
+    {
+      "nombre": "Benelli",
+      "modelos": [
+        {
+          "nombre": "302S",
+          "tipo": "moto",
+          "largo_m": 2.08,
+          "ancho_m": 0.73
+        },
+        {
+          "nombre": "TNT 150",
+          "tipo": "moto",
+          "largo_m": 1.99,
+          "ancho_m": 0.79
+        },
+        {
+          "nombre": "TNT 250",
+          "tipo": "moto",
+          "largo_m": 2.04,
+          "ancho_m": 0.82
+        },
+        {
+          "nombre": "TRK 502",
+          "tipo": "moto",
+          "largo_m": 2.22,
+          "ancho_m": 0.9
+        },
+        {
+          "nombre": "Leoncino",
+          "tipo": "moto",
+          "largo_m": 2.09,
+          "ancho_m": 0.87
+        }
+      ]
+    },
+    {
+      "nombre": "Kymco",
+      "modelos": [
+        {
+          "nombre": "Like 200i",
+          "tipo": "moto",
+          "largo_m": 1.9,
+          "ancho_m": 0.73
+        },
+        {
+          "nombre": "X-Town 300",
+          "tipo": "moto",
+          "largo_m": 2.12,
+          "ancho_m": 0.78
+        },
+        {
+          "nombre": "AK 550",
+          "tipo": "moto",
+          "largo_m": 2.21,
+          "ancho_m": 0.79
+        },
+        {
+          "nombre": "Downtown 350",
+          "tipo": "moto",
+          "largo_m": 2.17,
+          "ancho_m": 0.78
+        }
+      ]
+    },
+    {
+      "nombre": "Vespa",
+      "modelos": [
+        {
+          "nombre": "Sprint 150",
+          "tipo": "moto",
+          "largo_m": 1.94,
+          "ancho_m": 0.74
+        },
+        {
+          "nombre": "Primavera 150",
+          "tipo": "moto",
+          "largo_m": 1.89,
+          "ancho_m": 0.74
+        },
+        {
+          "nombre": "GTS 300",
+          "tipo": "moto",
+          "largo_m": 1.95,
+          "ancho_m": 0.77
+        },
+        {
+          "nombre": "Elettrica",
+          "tipo": "moto",
+          "largo_m": 1.89,
+          "ancho_m": 0.74
+        }
+      ]
+    },
+    {
+      "nombre": "CFMoto",
+      "modelos": [
+        {
+          "nombre": "300NK",
+          "tipo": "moto",
+          "largo_m": 2.05,
+          "ancho_m": 0.77
+        },
+        {
+          "nombre": "400NK",
+          "tipo": "moto",
+          "largo_m": 2.06,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "650MT",
+          "tipo": "moto",
+          "largo_m": 2.25,
+          "ancho_m": 0.89
+        },
+        {
+          "nombre": "800MT",
+          "tipo": "moto",
+          "largo_m": 2.28,
+          "ancho_m": 0.93
+        },
+        {
+          "nombre": "300SS",
+          "tipo": "moto",
+          "largo_m": 2.02,
+          "ancho_m": 0.7
+        }
+      ]
+    },
+    {
+      "nombre": "BMW Motorrad",
+      "modelos": [
+        {
+          "nombre": "R1250GS",
+          "tipo": "moto",
+          "largo_m": 2.21,
+          "ancho_m": 0.91
+        },
+        {
+          "nombre": "R1250RT",
+          "tipo": "moto",
+          "largo_m": 2.22,
+          "ancho_m": 0.9
+        },
+        {
+          "nombre": "S1000RR",
+          "tipo": "moto",
+          "largo_m": 2.07,
+          "ancho_m": 0.84
+        },
+        {
+          "nombre": "F800GS",
+          "tipo": "moto",
+          "largo_m": 2.3,
+          "ancho_m": 0.88
+        },
+        {
+          "nombre": "G310R",
+          "tipo": "moto",
+          "largo_m": 2,
+          "ancho_m": 0.79
+        },
+        {
+          "nombre": "F900R",
+          "tipo": "moto",
+          "largo_m": 2.11,
+          "ancho_m": 0.85
+        }
+      ]
+    },
+    {
+      "nombre": "Indian",
+      "modelos": [
+        {
+          "nombre": "Scout",
+          "tipo": "moto",
+          "largo_m": 2.26,
+          "ancho_m": 0.89
+        },
+        {
+          "nombre": "Scout Bobber",
+          "tipo": "moto",
+          "largo_m": 2.26,
+          "ancho_m": 0.8
+        },
+        {
+          "nombre": "Chief",
+          "tipo": "moto",
+          "largo_m": 2.43,
+          "ancho_m": 0.94
+        },
+        {
+          "nombre": "FTR 1200",
+          "tipo": "moto",
+          "largo_m": 2.23,
+          "ancho_m": 0.88
+        }
+      ]
+    }
+  ]
+}

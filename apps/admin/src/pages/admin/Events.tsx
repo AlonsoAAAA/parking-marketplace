@@ -248,10 +248,10 @@ export default function AdminEvents({ token }: Props) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {([
                   { key: 'price',       label: 'Base',    placeholder: '180', icon: '🚗' },
-                  { key: 'priceAuto',   label: 'Auto',    placeholder: 'ej. 180', icon: '🚘' },
-                  { key: 'priceSub',    label: 'SUV',     placeholder: 'ej. 220', icon: '🚙' },
-                  { key: 'pricePickup', label: 'Pick Up', placeholder: 'ej. 250', icon: '🛻' },
-                  { key: 'priceMoto',   label: 'Moto',    placeholder: 'ej. 80',  icon: '🏍️' },
+                  { key: 'priceAuto',   label: 'Auto',           placeholder: 'ej. 180', icon: '🚘' },
+                  { key: 'priceSub',    label: 'SUV / Camioneta', placeholder: 'ej. 220', icon: '🚙' },
+                  { key: 'pricePickup', label: 'Pick Up',         placeholder: 'ej. 250', icon: '🛻' },
+                  { key: 'priceMoto',   label: 'Moto',            placeholder: 'ej. 80',  icon: '🏍️' },
                 ] as const).map(({ key, label, placeholder, icon }) => {
                   const rawVal = (modal as any)[key];
                   const pv = calcIva(rawVal);

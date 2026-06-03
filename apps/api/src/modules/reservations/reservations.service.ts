@@ -9,6 +9,7 @@ import { DataSource } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { FraudService } from '../fraud/fraud.service';
 import { QrService } from '../qr/qr.service';
+import { VehiculosMxService } from '../vehiculos-mx/vehiculos-mx.service';
 
 @Injectable()
 export class ReservationsService {
@@ -16,6 +17,7 @@ export class ReservationsService {
     @InjectDataSource() private dataSource: DataSource,
     private fraud: FraudService,
     private qrService: QrService,
+    private vehiculos: VehiculosMxService,
   ) {}
 
   // Crear reserva con bloqueo atómico de slot
@@ -198,6 +200,14 @@ export class ReservationsService {
     }
   }
 
+  // ─── Mapa interno: categoría del vehículo → columna de precio en events ──
+  private readonly PRECIO_COL: Record<string, string> = {
+    auto:          'price_auto',
+    suv_camioneta: 'price_sub',    // price_sub = precio de SUV/Camioneta
+    pickup:        'price_pickup',
+    moto:          'price_moto',
+  };
+
   async getPricing(reservationId: string) {
     const rows = await this.dataSource.query(
       `SELECT e.price, e.price_auto, e.price_sub, e.price_pickup, e.price_moto
@@ -207,22 +217,82 @@ export class ReservationsService {
     );
     if (!rows.length) throw new NotFoundException('Reserva no encontrada');
     const e = rows[0];
+    // Exponer con los nuevos nombres de categoría (el frontend usa esto solo como fallback)
     return {
-      base:   parseFloat(e.price),
-      auto:   e.price_auto   ? parseFloat(e.price_auto)   : null,
-      sub:    e.price_sub    ? parseFloat(e.price_sub)    : null,
-      pickup: e.price_pickup ? parseFloat(e.price_pickup) : null,
-      moto:   e.price_moto   ? parseFloat(e.price_moto)   : null,
+      base:          parseFloat(e.price),
+      auto:          e.price_auto   ? parseFloat(e.price_auto)   : null,
+      suv_camioneta: e.price_sub    ? parseFloat(e.price_sub)    : null,
+      pickup:        e.price_pickup ? parseFloat(e.price_pickup) : null,
+      moto:          e.price_moto   ? parseFloat(e.price_moto)   : null,
     };
   }
 
-  async saveVehicle(reservationId: string, userId: string, dto: { plate: string; make: string; model: string; type: string }) {
+  /**
+   * Devuelve el precio que le corresponde a un vehículo específico para esta reserva.
+   * La categoría se resuelve en el servidor — el cliente solo recibe el precio.
+   */
+  async getPrecioVehiculo(
+    reservationId: string,
+    marca: string,
+    modelo: string,
+    version?: string,
+  ): Promise<{ precio: number | null; error?: string }> {
+    const rows = await this.dataSource.query(
+      `SELECT e.price, e.price_auto, e.price_sub, e.price_pickup, e.price_moto
+       FROM reservations r JOIN events e ON e.id = r.event_id
+       WHERE r.id = $1`,
+      [reservationId],
+    );
+    if (!rows.length) throw new NotFoundException('Reserva no encontrada');
+
+    const clasif = this.vehiculos.resolverVehiculo(marca, modelo, version);
+    if (!clasif.ok) return { precio: null, error: clasif.error };
+
+    const e      = rows[0];
+    const col    = this.PRECIO_COL[clasif.categoria];
+    const precio = e[col] ? parseFloat(e[col]) : parseFloat(e.price);
+    return { precio };
+  }
+
+  async saveVehicle(
+    reservationId: string,
+    userId: string,
+    dto: {
+      plate: string;
+      make: string;
+      model: string;
+      version?: string;
+      year: number;
+      color: string;
+    },
+  ) {
+    // 1. Clasificar en el servidor (el cliente nunca envía la categoría)
+    const clasif = this.vehiculos.resolverVehiculo(dto.make, dto.model, dto.version);
+    if (!clasif.ok) throw new BadRequestException(clasif.error);
+
+    // 2. Guardar todos los datos del vehículo
     const result = await this.dataSource.query(
       `UPDATE reservations
-       SET vehicle_plate = $1, vehicle_make = $2, vehicle_model = $3, vehicle_type = $4
-       WHERE id = $5 AND user_id = $6 AND status = 'pending'
+       SET vehicle_plate   = $1,
+           vehicle_make    = $2,
+           vehicle_model   = $3,
+           vehicle_type    = $4,
+           vehicle_year    = $5,
+           vehicle_color   = $6,
+           vehicle_version = $7
+       WHERE id = $8 AND user_id = $9 AND status = 'pending'
        RETURNING id`,
-      [dto.plate.toUpperCase(), dto.make, dto.model, dto.type, reservationId, userId],
+      [
+        dto.plate.toUpperCase(),
+        dto.make.trim(),
+        dto.model.trim(),
+        clasif.categoria,           // categoría determinada por el servidor
+        dto.year,
+        dto.color.trim(),
+        dto.version ?? null,
+        reservationId,
+        userId,
+      ],
     );
     if (!result.length) throw new NotFoundException('Reserva no encontrada o no editable');
     return { ok: true };
