@@ -39,7 +39,7 @@ class UpdateVenueDto {
 }
 
 class ParkingPricingDto {
-  @IsIn(['Auto', 'Sub', 'Pick Up', 'Moto']) vehicleType: string;
+  @IsIn(['auto', 'suv_camioneta', 'pickup', 'moto']) vehicleType: string;
   @IsNumber() @Min(0) @Type(() => Number) slots: number;
   @IsNumber() @Min(0) @Type(() => Number) price: number;
 }
