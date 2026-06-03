@@ -17,9 +17,18 @@ const COLORES = [
 async function apiFetch(path: string) {
   const base = process.env.NEXT_PUBLIC_API_URL ?? '';
   const url  = base ? `${base}${path}` : path;
-  const res  = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  console.log('[vehiculo] fetch →', url);
+  try {
+    const res  = await fetch(url);
+    console.log('[vehiculo] status', res.status, res.url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    console.log('[vehiculo] data keys', Object.keys(data));
+    return data;
+  } catch (err) {
+    console.error('[vehiculo] fetch error', err);
+    throw err;
+  }
 }
 
 export default function VehiclePage() {
