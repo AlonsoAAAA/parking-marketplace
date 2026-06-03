@@ -5,9 +5,10 @@ import { WebhooksController } from './webhooks.controller';
 import { QrModule } from '../qr/qr.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { FraudModule } from '../fraud/fraud.module';
+import { PricingModule } from '../pricing/pricing.module';
 
 @Module({
-  imports: [QrModule, NotificationsModule, FraudModule],
+  imports: [QrModule, NotificationsModule, FraudModule, PricingModule],
   providers: [PaymentsService],
   controllers: [PaymentsController, WebhooksController],
   exports: [PaymentsService],

@@ -5,7 +5,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { SHARED_CSS } from '@/lib/design';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const STRIPE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
+const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
 
 const STRIPE_APPEARANCE = {
   theme: 'stripe' as const,
@@ -254,7 +255,7 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
               Procesando...
             </span>
           ) : (
-            `🔒 Pagar $${data.amount.toFixed(2)} MXN`
+            `🔒 Pagar $${Math.round(data.amount)} MXN`
           )}
         </button>
         <div className="sn">Pago seguro · Stripe SSL 256-bit</div>
@@ -387,8 +388,8 @@ export default function CheckoutPage() {
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', letterSpacing: '-0.2px' }}>{data!.eventName}</span>
               </div>
               <div className="sb">
-                <div className="sr"><span>1 lugar de estacionamiento</span><span>${data!.amount.toFixed(2)} MXN</span></div>
-                <div className="sr tot"><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 700 }}>${data!.amount.toFixed(2)} MXN</span></div>
+                <div className="sr"><span>1 lugar de estacionamiento</span><span>${Math.round(data!.amount)} MXN</span></div>
+                <div className="sr tot"><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 700 }}>${Math.round(data!.amount)} MXN</span></div>
               </div>
             </div>
 
@@ -409,12 +410,18 @@ export default function CheckoutPage() {
 
           {/* RIGHT: formulario de pago */}
           <div className="co-right">
-            <Elements
-              stripe={stripePromise}
-              options={{ clientSecret: data!.clientSecret, appearance: STRIPE_APPEARANCE }}
-            >
-              <CheckoutForm data={data!} reservationId={reservationId} />
-            </Elements>
+            {!STRIPE_KEY ? (
+              <div style={{ background:'#fff', borderRadius:14, padding:20, textAlign:'center', color:'#e53e3e', fontSize:13 }}>
+                ⚠️ Pago no disponible en este momento. Contacta a soporte@parkmx.mx
+              </div>
+            ) : (
+              <Elements
+                stripe={stripePromise}
+                options={{ clientSecret: data!.clientSecret, appearance: STRIPE_APPEARANCE }}
+              >
+                <CheckoutForm data={data!} reservationId={reservationId} />
+              </Elements>
+            )}
           </div>
 
         </div>

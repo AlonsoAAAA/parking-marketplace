@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import Stripe from 'stripe';
 import { QrService } from '../qr/qr.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PricingService } from '../pricing/pricing.service';
 
 @Injectable()
 export class PaymentsService {
@@ -15,6 +16,7 @@ export class PaymentsService {
     @InjectDataSource() private dataSource: DataSource,
     private qrService: QrService,
     private notificationsService: NotificationsService,
+    private pricingService: PricingService,
   ) {
     this.stripe = new Stripe(this.config.get('STRIPE_SECRET_KEY'), {
       apiVersion: '2023-10-16',
@@ -22,13 +24,33 @@ export class PaymentsService {
   }
 
   async createPaymentIntent(reservationId: string, userId: string) {
-    // 1. Obtener reserva con precios por categoría del evento
+    // 1. Obtener reserva con toda la info necesaria para el precio dinámico
     const result = await this.dataSource.query(
       `SELECT r.id, r.status, r.expires_at, r.vehicle_type,
-              e.price, e.price_auto, e.price_sub, e.price_pickup, e.price_moto,
-              e.name as event_name
+              COALESCE(r.parking_id, e.parking_id) AS parking_id,
+              e.name     AS event_name,
+              e.starts_at,
+              e.price    AS event_base_price,
+              e.venue_id,
+              -- Precio de contrato desde parking_slots_pricing
+              sp.price   AS contract_price,
+              -- Distancia estacionamiento → venue (table: venue_parkings)
+              COALESCE(vp.distance_meters, 500) AS distance_meters,
+              -- Slots totales y ocupados para calcular demanda
+              COALESCE(sp.slots, 0)             AS total_slots,
+              (SELECT COUNT(*) FROM reservations r2
+               WHERE r2.parking_id = COALESCE(r.parking_id, e.parking_id)
+                 AND r2.event_id   = r.event_id
+                 AND r2.status NOT IN ('cancelled','expired')
+              )::int                            AS reserved_slots
        FROM reservations r
        JOIN events e ON e.id = r.event_id
+       LEFT JOIN parking_slots_pricing sp
+              ON sp.parking_id   = COALESCE(r.parking_id, e.parking_id)
+             AND sp.vehicle_type = r.vehicle_type
+       LEFT JOIN venue_parkings vp
+              ON vp.parking_id = COALESCE(r.parking_id, e.parking_id)
+             AND vp.venue_id   = e.venue_id
        WHERE r.id = $1 AND r.user_id = $2`,
       [reservationId, userId],
     );
@@ -45,15 +67,28 @@ export class PaymentsService {
       throw new BadRequestException('La reserva ha expirado');
     }
 
-    // 2. Seleccionar precio según tipo de vehículo
-    const priceByType: Record<string, string | null> = {
-      'Auto':    reservation.price_auto,
-      'Sub':     reservation.price_sub,
-      'Pick Up': reservation.price_pickup,
-      'Moto':    reservation.price_moto,
-    };
-    const categoryPrice = reservation.vehicle_type ? priceByType[reservation.vehicle_type] : null;
-    const finalPrice = parseFloat(categoryPrice ?? reservation.price);
+    // 2. Calcular precio final con motor de precios dinámicos
+    const contractPrice = reservation.contract_price
+      ? parseFloat(reservation.contract_price)
+      : parseFloat(reservation.event_base_price);   // fallback al precio base del evento
+
+    const distanceKm        = parseFloat(reservation.distance_meters) / 1000;
+    const anticipationHours = (new Date(reservation.starts_at).getTime() - Date.now()) / 3_600_000;
+    const totalSlots        = parseInt(reservation.total_slots, 10);
+    const reservedSlots     = parseInt(reservation.reserved_slots, 10);
+    const occupancyPercent  = totalSlots > 0
+      ? Math.min(100, (reservedSlots / totalSlots) * 100)
+      : 50;
+
+    const breakdown = this.pricingService.calculate({
+      contractPrice,
+      distanceKm,
+      anticipationHours,
+      occupancyPercent,
+      vehicleType: (reservation.vehicle_type as any) ?? 'auto',
+    });
+
+    const finalPrice = breakdown.finalPrice;
 
     // 3. Crear Payment Intent en Stripe
     const paymentIntent = await this.stripe.paymentIntents.create({
