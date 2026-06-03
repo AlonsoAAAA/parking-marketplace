@@ -21,7 +21,7 @@ export class NotificationsService {
        FROM reservations r
        JOIN users u ON u.id = r.user_id
        JOIN events e ON e.id = r.event_id
-       JOIN parkings p ON p.id = e.parking_id
+       LEFT JOIN parkings p ON p.id = COALESCE(r.parking_id, e.parking_id)
        WHERE r.id = $1`,
       [reservationId],
     );
