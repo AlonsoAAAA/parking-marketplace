@@ -12,14 +12,14 @@ interface EventInfo {
   id: string; name: string; venueName: string; startsAt: string; category?: string;
 }
 
-export type VehicleCategory = 'Auto' | 'Sub' | 'Pick Up' | 'Moto';
+export type VehicleCategory = 'auto' | 'suv_camioneta' | 'pickup' | 'moto';
 export interface CarModel { make: string; model: string; category: VehicleCategory; }
 
 const CATEGORY_LABELS: Record<VehicleCategory, string> = {
-  'Auto': 'Auto', 'Sub': 'SUV', 'Pick Up': 'Pick Up', 'Moto': 'Moto',
+  'auto': 'Auto', 'suv_camioneta': 'SUV / Camioneta', 'pickup': 'Pick Up', 'moto': 'Moto',
 };
 const CATEGORY_ICONS: Record<VehicleCategory, string> = {
-  'Auto': '🚗', 'Sub': '🚙', 'Pick Up': '🛻', 'Moto': '🏍️',
+  'auto': '🚗', 'suv_camioneta': '🚙', 'pickup': '🛻', 'moto': '🏍️',
 };
 
 // ─── Dropdown de modelos ──────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ function ModelDropdown({ pricing, selected, onSelect }: {
       setLoading(true);
       try {
         const cats = availableCategories.join(',');
-        const url  = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/vehicles?q=${encodeURIComponent(q)}&categories=${encodeURIComponent(cats)}`;
+        const url  = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/vehiculos/buscar?q=${encodeURIComponent(q)}&categories=${encodeURIComponent(cats)}`;
         const data = await fetch(url).then(r => r.json()) as { data: CarModel[] };
         setResults(data.data ?? []);
       } catch { setResults([]); }
@@ -286,7 +286,6 @@ export default function ParkingDetailPage() {
           plate: plate.trim().toUpperCase(),
           make:  selectedModel.make,
           model: selectedModel.model,
-          type:  selectedModel.category,
         }),
       });
 

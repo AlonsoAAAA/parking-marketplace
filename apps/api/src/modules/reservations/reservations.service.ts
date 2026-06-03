@@ -262,8 +262,8 @@ export class ReservationsService {
       make: string;
       model: string;
       version?: string;
-      year: number;
-      color: string;
+      year?: number;
+      color?: string;
     },
   ) {
     // 1. Clasificar en el servidor (el cliente nunca envía la categoría)

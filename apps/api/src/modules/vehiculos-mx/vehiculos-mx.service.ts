@@ -94,6 +94,61 @@ export class VehiculosMxService {
     return modeloObj.versiones as string[];
   }
 
+  // ─── Búsqueda para el dropdown de la página de parking ───────────────────
+  /**
+   * Busca vehículos por texto libre (make + model).
+   * Devuelve hasta 20 resultados con su categoría de facturación.
+   * Opcionalmente filtra por categorías permitidas.
+   */
+  buscar(
+    q: string,
+    categories?: VehiculoCategoria[],
+  ): Array<{ make: string; model: string; category: VehiculoCategoria }> {
+    const qLower  = (q ?? '').toLowerCase().trim();
+    const results: Array<{ make: string; model: string; category: VehiculoCategoria }> = [];
+
+    for (const marcaObj of DB.marcas as any[]) {
+      const makeName: string = marcaObj.nombre;
+      const makeKey  = makeName.toLowerCase();
+
+      for (const modeloObj of marcaObj.modelos as any[]) {
+        const modelName: string = modeloObj.nombre;
+        const combined  = `${makeKey} ${modelName.toLowerCase()}`;
+
+        // Filtro de texto
+        if (qLower && !combined.includes(qLower) && !modelName.toLowerCase().includes(qLower)) {
+          continue;
+        }
+
+        // Clasificar por tipo y dimensiones (sin version, conservador)
+        const tipo: string = modeloObj.tipo ?? '';
+        let categoria: VehiculoCategoria;
+
+        if (TIPOS_MOTO.has(tipo)) {
+          categoria = 'moto';
+        } else if (TIPOS_PICKUP.has(tipo)) {
+          categoria = 'pickup';
+        } else {
+          const largo: number =
+            modeloObj.largo_m ??
+            (modeloObj.dim_versiones
+              ? Math.max(...Object.values(modeloObj.dim_versiones as Record<string, { largo: number }>).map(v => v.largo))
+              : 0);
+          if (largo > 0 && largo <= UMBRALES.MOTO_MAX)  categoria = 'moto';
+          else if (largo > 0 && largo <= UMBRALES.AUTO_MAX) categoria = 'auto';
+          else categoria = 'suv_camioneta';
+        }
+
+        // Filtro de categorías
+        if (categories && categories.length > 0 && !categories.includes(categoria)) continue;
+
+        results.push({ make: makeName, model: modelName, category: categoria });
+        if (results.length >= 20) return results;
+      }
+    }
+    return results;
+  }
+
   // ─── Resolución servidor (NUNCA exponer resultado al cliente) ────────────
 
   resolverVehiculo(

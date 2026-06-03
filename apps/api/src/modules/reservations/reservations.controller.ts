@@ -39,13 +39,16 @@ class VehicleDto {
   @IsString() @IsNotEmpty() model: string;
   @IsOptional() @IsString() version?: string;
 
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1990)
   @Max(new Date().getFullYear() + 2)
-  year: number;
+  year?: number;
 
-  @IsString() @IsNotEmpty() color: string;
+  @IsOptional()
+  @IsString()
+  color?: string;
 }
 
 @Controller('reservations')

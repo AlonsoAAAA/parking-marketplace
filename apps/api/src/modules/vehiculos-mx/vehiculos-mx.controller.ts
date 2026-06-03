@@ -41,4 +41,21 @@ export class VehiculosMxController {
   ) {
     return { versiones: this.svc.listarVersiones(marca, modelo) };
   }
+
+  /**
+   * GET /api/v1/vehiculos/buscar?q=jetta&categories=auto,suv_camioneta
+   * Búsqueda libre para el dropdown de selección en la página de parking.
+   * Devuelve: { data: [{ make, model, category }] }
+   * La categoría es la de facturación (auto | suv_camioneta | pickup | moto).
+   */
+  @Get('buscar')
+  buscar(
+    @Query('q')          q          = '',
+    @Query('categories') categories = '',
+  ) {
+    const cats = categories
+      ? (categories.split(',').map(c => c.trim()).filter(Boolean) as any[])
+      : undefined;
+    return { data: this.svc.buscar(q, cats) };
+  }
 }
