@@ -15,6 +15,22 @@ import * as path from 'path';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const DB = require(path.join(__dirname, '../../data/vehiculos_mexico_v4.json'));
 
+// Alias comunes para que los usuarios puedan buscar abreviaciones
+const BRAND_ALIASES: Record<string, string> = {
+  'vw':      'volkswagen',
+  'volks':   'volkswagen',
+  'volkswagen': 'volkswagen',
+  'chevy':   'chevrolet',
+  'chev':    'chevrolet',
+  'chry':    'chrysler',
+  'harley':  'harley-davidson',
+  'hd':      'harley-davidson',
+  'bmwm':    'bmw motorrad',
+  'alfa':    'alfa romeo',
+  'merc':    'mercedes',
+  'benz':    'mercedes',
+};
+
 // ── Umbrales de largo (metros) ────────────────────────────────────────
 const UMBRALES = {
   MOTO_MAX: 2.50,   // ≤ 2.50m → Moto
@@ -115,9 +131,16 @@ export class VehiculosMxService {
         const modelName: string = modeloObj.nombre;
         const combined  = `${makeKey} ${modelName.toLowerCase()}`;
 
-        // Filtro de texto
-        if (qLower && !combined.includes(qLower) && !modelName.toLowerCase().includes(qLower)) {
-          continue;
+        // Filtro de texto: substring directo O alias O prefijo de palabra
+        if (qLower) {
+          const aliasTarget = BRAND_ALIASES[qLower];
+          const directMatch = combined.includes(qLower) || modelName.toLowerCase().includes(qLower);
+          // Alias: "vw" → busca marcas que contengan "volkswagen"
+          const aliasMatch  = aliasTarget ? makeKey.includes(aliasTarget) : false;
+          // Prefijo de palabra: "vol" coincide con "Volkswagen", "volv" con "Volvo"
+          const wordPrefix  = makeKey.split(/[\s\-]+/).some(w => w.startsWith(qLower)) ||
+                              modelName.toLowerCase().split(/[\s\-]+/).some(w => w.startsWith(qLower));
+          if (!directMatch && !aliasMatch && !wordPrefix) continue;
         }
 
         // Clasificar por tipo y dimensiones (sin version, conservador)
