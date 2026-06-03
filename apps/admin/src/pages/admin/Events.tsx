@@ -8,29 +8,44 @@ interface Props { token: string; }
 const STATUS_OPTS = ['all', 'active', 'draft', 'sold_out', 'finished'];
 const STATUS_TAB_LABELS: Record<string, string> = { all: 'Todos', active: 'Activos', draft: 'Borrador', sold_out: 'Agotado', finished: 'Finalizado' };
 
-const EMPTY_EVENT = { id: '', name: '', venueName: '', parkingId: '', startsAt: '', endsAt: '', price: '', totalSlots: '', status: 'active' as const };
+const CATEGORIES = [
+  { value: 'conciertos', label: 'Conciertos 🎵' },
+  { value: 'deportes',   label: 'Deportes ⚽'   },
+  { value: 'teatro',     label: 'Teatro 🎭'     },
+  { value: 'festival',   label: 'Festival 🎪'   },
+];
+
+const EMPTY_EVENT = {
+  id: '', name: '', venueId: '', venueName: '',
+  startsAt: '', endsAt: '',
+  price: '', priceAuto: '', priceSub: '', pricePickup: '', priceMoto: '',
+  status: 'active' as const,
+  category: '',
+};
 
 export default function AdminEvents({ token }: Props) {
-  const [events, setEvents]     = useState<Event[]>([]);
-  const [parkings, setParkings] = useState<any[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [filter, setFilter]     = useState('all');
-  const [search, setSearch]     = useState('');
-  const [modal, setModal]       = useState<any | null>(null);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState('');
+  const [events, setEvents]   = useState<Event[]>([]);
+  const [venues, setVenues]   = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter]   = useState('all');
+  const [search, setSearch]   = useState('');
+  const [modal, setModal]         = useState<any | null>(null);
+  const [deleteId, setDeleteId]   = useState<string | null>(null);
+  const [saving, setSaving]       = useState(false);
+  const [deleting, setDeleting]   = useState(false);
+  const [error, setError]         = useState('');
 
   const load = () => {
     setLoading(true);
-    api.events.list()
+    api.admin.events(token)
       .then(d => setEvents((d as any)?.data || []))
       .catch(() => setEvents([]))
       .finally(() => setLoading(false));
   };
   useEffect(load, [token]);
   useEffect(() => {
-    api.admin.parkings(token)
-      .then(d => setParkings((d as any)?.data || []))
+    api.admin.venues(token)
+      .then(d => setVenues((d as any)?.data || d || []))
       .catch(() => {});
   }, [token]);
 
@@ -49,15 +64,19 @@ export default function AdminEvents({ token }: Props) {
     if (!modal?.name?.trim()) { setError('El nombre es requerido'); return; }
     setSaving(true); setError('');
     try {
+      const num = (v: string) => v !== '' ? parseFloat(v) : undefined;
       const data = {
-        name: modal.name,
-        venueName: modal.venueName,
-        parkingId: modal.parkingId || undefined,
-        startsAt: modal.startsAt ? new Date(modal.startsAt).toISOString() : undefined,
-        endsAt:   modal.endsAt   ? new Date(modal.endsAt).toISOString()   : undefined,
-        price: parseFloat(modal.price) || 0,
-        totalSlots: parseInt(modal.totalSlots) || 0,
-        status: modal.status,
+        name:       modal.name,
+        venueName:  modal.venueName,
+        startsAt:   modal.startsAt ? new Date(modal.startsAt).toISOString() : undefined,
+        endsAt:     modal.endsAt   ? new Date(modal.endsAt).toISOString()   : undefined,
+        price:    parseFloat(modal.price) || 0,
+        status:   modal.status,
+        category: modal.category || undefined,
+        priceAuto:    num(modal.priceAuto),
+        priceSub:     num(modal.priceSub),
+        pricePickup:  num(modal.pricePickup),
+        priceMoto:    num(modal.priceMoto),
       };
       if (modal.id) await api.admin.updateEvent(token, modal.id, data);
       else          await api.admin.createEvent(token, data);
@@ -67,8 +86,21 @@ export default function AdminEvents({ token }: Props) {
     finally { setSaving(false); }
   };
 
-  const fmtDate = (iso: string) => iso ? new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
-  const fmtPrice = (p: number | string) => `$${parseFloat(p as string).toLocaleString('es-MX')}`;
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await api.admin.deleteEvent(token, deleteId);
+      setDeleteId(null);
+      load();
+    } catch (e: any) { setError(e.message || 'Error al eliminar'); }
+    finally { setDeleting(false); }
+  };
+
+  const IVA_RATE = 0.16;
+  const fmtDate  = (iso: string) => iso ? new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
+  const fmtMXN   = (n: number)   => `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const calcIva  = (base: number | string) => { const b = parseFloat(base as string) || 0; return { base: b, iva: b * IVA_RATE, total: b * (1 + IVA_RATE) }; };
 
   return (
     <>
@@ -99,21 +131,37 @@ export default function AdminEvents({ token }: Props) {
               <div className="adm-empty"><div className="adm-empty-icon">📅</div><div className="adm-empty-text">Sin eventos</div></div>
             ) : (
               <table className="adm-t">
-                <thead><tr><th>Evento</th><th>Venue</th><th>Fecha</th><th>Precio</th><th>Lugares</th><th>Status</th><th></th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Evento</th><th>Venue</th><th>Fecha</th>
+                    <th style={{ textAlign: 'right' }}>Precio base</th>
+                    <th style={{ textAlign: 'right' }}>IVA 16%</th>
+                    <th style={{ textAlign: 'right' }}>Total</th>
+                    <th>Lugares</th><th>Status</th><th></th>
+                  </tr>
+                </thead>
                 <tbody>
                   {filtered.map(e => {
                     const total    = Number(e.totalSlots || e.total_slots) || 0;
                     const reserved = Number(e.slotsReserved || e.slots_reserved) || 0;
                     const sc       = STATUS_COLORS[e.status] || STATUS_COLORS.draft;
+                    const pv       = calcIva(e.price);
+                    const openEdit = () => { const vn = e.venueName||e.venue_name||''; const mv = venues.find((v:any) => v.name === vn); setModal({ id: e.id, name: e.name, venueId: mv?.id||'', venueName: vn, startsAt: (e.startsAt||e.starts_at||'').slice(0,16), endsAt: (e.endsAt||e.ends_at||'').slice(0,16), price: String(e.price), priceAuto: String((e as any).price_auto||''), priceSub: String((e as any).price_sub||''), pricePickup: String((e as any).price_pickup||''), priceMoto: String((e as any).price_moto||''), status: e.status, category: (e as any).category||'' }); setError(''); };
                     return (
-                      <tr key={e.id} onClick={() => { setModal({ id: e.id, name: e.name, venueName: e.venueName||e.venue_name||'', startsAt: (e.startsAt||e.starts_at||'').slice(0,16), endsAt: (e.endsAt||e.ends_at||'').slice(0,16), price: String(e.price), totalSlots: String(total), status: e.status }); setError(''); }}>
+                      <tr key={e.id} onClick={openEdit}>
                         <td style={{ fontWeight: 600 }}>{e.name}</td>
                         <td style={{ color: '#555' }}>{e.venueName || e.venue_name}</td>
                         <td style={{ color: '#555', fontSize: 12 }}>{fmtDate(e.startsAt || e.starts_at || '')}</td>
-                        <td style={{ fontWeight: 600 }}>{fmtPrice(e.price)}</td>
+                        <td style={{ textAlign: 'right', color: '#555' }}>{fmtMXN(pv.base)}</td>
+                        <td style={{ textAlign: 'right', color: '#888', fontSize: 12 }}>{fmtMXN(pv.iva)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 700 }}>{fmtMXN(pv.total)}</td>
                         <td><span style={{ fontWeight: 600 }}>{reserved}</span><span style={{ color: '#bbb' }}>/{total}</span></td>
                         <td><span className="adm-pill" style={sc}>{STATUS_LABELS[e.status]}</span></td>
-                        <td><button className="adm-btn adm-btn-ghost adm-btn-sm" onClick={ev => { ev.stopPropagation(); setModal({ id: e.id, name: e.name, venueName: e.venueName||e.venue_name||'', startsAt: (e.startsAt||e.starts_at||'').slice(0,16), endsAt: (e.endsAt||e.ends_at||'').slice(0,16), price: String(e.price), totalSlots: String(total), status: e.status }); setError(''); }}>Editar</button></td>
+                        <td style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                          <button className="adm-btn adm-btn-ghost adm-btn-sm" onClick={ev => { ev.stopPropagation(); openEdit(); }}>Editar</button>
+                          <button className="adm-btn adm-btn-ghost adm-btn-sm" style={{ color:'#dc2626', borderColor:'rgba(220,38,38,.25)' }}
+                            onClick={ev => { ev.stopPropagation(); setDeleteId(e.id); setError(''); }}>Eliminar</button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -124,25 +172,118 @@ export default function AdminEvents({ token }: Props) {
         )}
       </div>
 
+      {/* Modal de confirmación de eliminación */}
+      {deleteId && (
+        <div className="adm-overlay">
+          <div className="adm-modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <div className="adm-modal-title">Eliminar evento</div>
+            <p style={{ fontSize: 14, color: '#555', marginBottom: 20, lineHeight: 1.5 }}>
+              ¿Estás seguro que quieres eliminar este evento? Esta acción no se puede deshacer y se borrarán todas las reservaciones asociadas.
+            </p>
+            {error && <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:8, padding:'10px 14px', fontSize:12, color:'#991b1b', marginBottom:16 }}>{error}</div>}
+            <div className="adm-modal-footer">
+              <button className="adm-btn adm-btn-ghost" onClick={() => { setDeleteId(null); setError(''); }}>Cancelar</button>
+              <button className="adm-btn" style={{ background:'#dc2626' }} onClick={confirmDelete} disabled={deleting}>
+                {deleting ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modal && (
-        <div className="adm-overlay" onClick={() => setModal(null)}>
+        <div className="adm-overlay">
           <div className="adm-modal" onClick={e => e.stopPropagation()}>
             <div className="adm-modal-title">{modal.id ? 'Editar evento' : 'Nuevo evento'}</div>
             {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#991b1b', marginBottom: 16 }}>{error}</div>}
-            <div className="adm-field"><label className="adm-label">Nombre</label><input className="adm-input" value={modal.name} onChange={e => setModal((m: any) => ({...m, name: e.target.value}))} placeholder="Natanael Cano" /></div>
-            <div className="adm-field"><label className="adm-label">Venue</label><input className="adm-input" value={modal.venueName} onChange={e => setModal((m: any) => ({...m, venueName: e.target.value}))} placeholder="Foro Sol" /></div>
+            <div className="adm-field"><label className="adm-label">Nombre</label><input className="adm-input" value={modal.name} onChange={e => setModal((m: any) => ({...m, name: e.target.value}))} placeholder="Natanael Cano" autoFocus /></div>
             <div className="adm-field">
-              <label className="adm-label">Estacionamiento</label>
-              <select className="adm-input" value={modal.parkingId} onChange={e => setModal((m: any) => ({...m, parkingId: e.target.value}))}>
-                <option value="">— Selecciona —</option>
-                {parkings.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <label className="adm-label">Venue</label>
+              {venues.length > 0 ? (
+                <select
+                  className="adm-input"
+                  value={modal.venueId}
+                  onChange={e => {
+                    const v = venues.find((v: any) => v.id === e.target.value);
+                    setModal((m: any) => ({ ...m, venueId: e.target.value, venueName: v?.name || '' }));
+                  }}
+                >
+                  <option value="">— Selecciona un venue —</option>
+                  {venues.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.name}{v.city ? ` · ${v.city}` : ''}</option>
+                  ))}
+                </select>
+              ) : (
+                <input className="adm-input" value={modal.venueName} onChange={e => setModal((m: any) => ({...m, venueName: e.target.value}))} placeholder="Foro Sol" />
+              )}
+              {modal.venueId && (() => { const v = venues.find((x:any) => x.id === modal.venueId); return v ? <p style={{ fontSize: 11, color: '#bbb', marginTop: 5 }}>{v.address}{v.capacity ? ` · ${v.capacity.toLocaleString()} cap.` : ''}</p> : null; })()}
+            </div>
+            <div className="adm-field">
+              <label className="adm-label">Categoría</label>
+              <select
+                className="adm-input"
+                value={modal.category}
+                onChange={e => setModal((m: any) => ({ ...m, category: e.target.value }))}
+              >
+                <option value="">— Sin categoría —</option>
+                {CATEGORIES.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
               </select>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div className="adm-field"><label className="adm-label">Inicio</label><input className="adm-input" type="datetime-local" value={modal.startsAt} onChange={e => setModal((m: any) => ({...m, startsAt: e.target.value}))} /></div>
-              <div className="adm-field"><label className="adm-label">Fin</label><input className="adm-input" type="datetime-local" value={modal.endsAt} onChange={e => setModal((m: any) => ({...m, endsAt: e.target.value}))} /></div>
-              <div className="adm-field"><label className="adm-label">Precio (MXN)</label><input className="adm-input" type="number" value={modal.price} onChange={e => setModal((m: any) => ({...m, price: e.target.value}))} placeholder="180" /></div>
-              <div className="adm-field"><label className="adm-label">Total slots</label><input className="adm-input" type="number" value={modal.totalSlots} onChange={e => setModal((m: any) => ({...m, totalSlots: e.target.value}))} placeholder="150" /></div>
+
+            {/* Fechas — apiladas para evitar overflow del datetime picker */}
+            <div className="adm-field">
+              <label className="adm-label">Inicio del evento</label>
+              <input className="adm-input" type="datetime-local" value={modal.startsAt} onChange={e => setModal((m: any) => ({...m, startsAt: e.target.value}))} style={{ width: '100%', minWidth: 0 }} />
+            </div>
+            <div className="adm-field">
+              <label className="adm-label">Fin del evento</label>
+              <input className="adm-input" type="datetime-local" value={modal.endsAt} onChange={e => setModal((m: any) => ({...m, endsAt: e.target.value}))} style={{ width: '100%', minWidth: 0 }} />
+            </div>
+
+            {/* Precios por tipo de vehículo */}
+            <div style={{ marginBottom: 16 }}>
+              <label className="adm-label" style={{ marginBottom: 10, display: 'block' }}>Precios por tipo de vehículo (MXN)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {([
+                  { key: 'price',       label: 'Base',    placeholder: '180', icon: '🚗' },
+                  { key: 'priceAuto',   label: 'Auto',    placeholder: 'ej. 180', icon: '🚘' },
+                  { key: 'priceSub',    label: 'SUV',     placeholder: 'ej. 220', icon: '🚙' },
+                  { key: 'pricePickup', label: 'Pick Up', placeholder: 'ej. 250', icon: '🛻' },
+                  { key: 'priceMoto',   label: 'Moto',    placeholder: 'ej. 80',  icon: '🏍️' },
+                ] as const).map(({ key, label, placeholder, icon }) => {
+                  const rawVal = (modal as any)[key];
+                  const pv = calcIva(rawVal);
+                  const hasVal = rawVal !== '' && parseFloat(rawVal) > 0;
+                  return (
+                    <div key={key} style={{ background: '#f9f9f9', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: '#999', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 6 }}>
+                        {icon} {label}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>$</span>
+                        <input
+                          type="number"
+                          value={rawVal}
+                          onChange={e => setModal((m: any) => ({...m, [key]: e.target.value}))}
+                          placeholder={placeholder}
+                          style={{ background: 'none', border: 'none', outline: 'none', fontSize: 15, fontWeight: 700, color: '#1a1a1a', width: '100%', fontFamily: 'Inter, sans-serif', minWidth: 0 }}
+                        />
+                      </div>
+                      {hasVal && (
+                        <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#aaa' }}>
+                          <span>IVA&nbsp;{fmtMXN(pv.iva)}</span>
+                          <span style={{ fontWeight: 700, color: '#555' }}>Total {fmtMXN(pv.total)}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: 11, color: '#bbb', marginTop: 8 }}>
+                El precio base se aplica cuando el tipo de vehículo no tiene precio específico.
+              </p>
             </div>
             <div className="adm-field">
               <label className="adm-label">Status</label>
@@ -153,8 +294,16 @@ export default function AdminEvents({ token }: Props) {
                 <option value="finished">Finalizado</option>
               </select>
             </div>
-            <div className="adm-modal-footer">
-              <button className="adm-btn adm-btn-ghost" onClick={() => setModal(null)}>Cancelar</button>
+            <div className="adm-modal-footer" style={{ justifyContent:'space-between' }}>
+              <div style={{ display:'flex', gap:8 }}>
+                <button className="adm-btn adm-btn-ghost" onClick={() => setModal(null)}>Cancelar</button>
+                {modal.id && (
+                  <button className="adm-btn adm-btn-ghost" style={{ color:'#dc2626', borderColor:'rgba(220,38,38,.25)' }}
+                    onClick={() => { setDeleteId(modal.id); setModal(null); }}>
+                    Eliminar
+                  </button>
+                )}
+              </div>
               <button className="adm-btn" onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
             </div>
           </div>

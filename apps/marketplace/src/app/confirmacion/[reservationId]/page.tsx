@@ -25,18 +25,49 @@ export default function ConfirmacionPage() {
   const reservationId = params.reservationId as string;
   const [ticket, setTicket] = useState<TicketData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [qrError, setQrError] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setTimeout(() => {
-      const token = localStorage.getItem('token');
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/reservations/${reservationId}/ticket`, {
-        headers: { Authorization: `Bearer ${token}` },
+  const fetchTicket = (attempt = 1) => {
+    const token = localStorage.getItem('token');
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/reservations/${reservationId}/ticket`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        const data = d.data;
+        if (data?.qrToken) {
+          setTicket(data);
+          setLoading(false);
+        } else if (attempt < 8) {
+          // Webhook aún procesando — reintenta con backoff
+          setTimeout(() => fetchTicket(attempt + 1), attempt * 1500);
+        } else {
+          if (!data?.qrToken) setQrError(true);
+          setTicket(data || MOCK);
+          setLoading(false);
+        }
       })
-        .then(r => r.json()).then(d => setTicket(d.data || MOCK))
-        .catch(() => setTicket(MOCK))
-        .finally(() => setLoading(false));
-    }, 1200);
+      .catch(() => { setTicket(MOCK); setLoading(false); });
+  };
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const paymentIntentId = searchParams.get('payment_intent');
+    const token = localStorage.getItem('token');
+
+    // Stripe redirige con redirect_status=succeeded — sincronizar con backend
+    // antes de empezar el polling para no depender del webhook en dev
+    if (searchParams.get('redirect_status') === 'succeeded' && paymentIntentId && token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/payments/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ paymentIntentId }),
+      }).catch(() => {});
+    }
+
+    const timer = setTimeout(() => fetchTicket(), 1500);
+    return () => clearTimeout(timer);
   }, [reservationId]);
 
   useEffect(() => {
@@ -48,8 +79,9 @@ export default function ConfirmacionPage() {
     try {
       const QRCode = (await import('qrcode')).default;
       const canvas = document.createElement('canvas');
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
       await QRCode.toCanvas(canvas, JSON.stringify({ t: token }), {
-        width: 200, margin: 2,
+        width: isDesktop ? 260 : 200, margin: 2,
         color: { dark: '#1a1a1a', light: '#ffffff' },
         errorCorrectionLevel: 'H',
       });
@@ -64,7 +96,7 @@ export default function ConfirmacionPage() {
     <div style={{minHeight:'100vh',background:'#EDEDED',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,fontFamily:'Inter,sans-serif'}}>
       <div style={{width:28,height:28,border:'2px solid #ddd',borderTop:'2px solid #1a1a1a',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}/>
       <p style={{fontSize:11,letterSpacing:'2px',textTransform:'uppercase',color:'#bbb'}}>Confirmando pago...</p>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style suppressHydrationWarning>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
@@ -73,14 +105,18 @@ export default function ConfirmacionPage() {
 
   return (
     <>
-      <style>{SHARED_CSS + `
+      <style suppressHydrationWarning>{SHARED_CSS + `
         @keyframes checkPop { 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
         .cnw { min-height:100vh; background:#EDEDED; }
         .cnb { padding:24px 24px 48px; max-width:480px; margin:0 auto; }
         @media(min-width:640px){ .cnb { padding:36px 40px 64px; } }
+        @media(min-width:1024px){ .cnb { max-width:640px; padding:48px 0 80px; } }
         .cc { width:64px; height:64px; background:#1a1a1a; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 18px; animation:checkPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+        @media(min-width:1024px){ .cc { width:80px; height:80px; } }
         .qw { background:#fff; border-radius:20px; padding:28px; display:flex; flex-direction:column; align-items:center; gap:16px; margin-bottom:14px; }
+        @media(min-width:1024px){ .qw { padding:40px; } }
         .qb { width:200px; height:200px; display:flex; align-items:center; justify-content:center; }
+        @media(min-width:1024px){ .qb { width:260px; height:260px; } }
         .qh { font-size:12px; color:#999; text-align:center; line-height:1.6; max-width:240px; }
         .qi { font-size:10px; color:#bbb; font-family:'Courier New',monospace; letter-spacing:2px; background:#f5f5f5; padding:5px 12px; border-radius:6px; }
         .tc { background:#fff; border-radius:16px; overflow:hidden; margin-bottom:14px; }
@@ -115,7 +151,10 @@ export default function ConfirmacionPage() {
           </div>
           <div className="qw">
             <div className="qb" ref={qrRef}>
-              <div style={{width:28,height:28,border:'2px solid #eee',borderTop:'2px solid #1a1a1a',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}/>
+              {qrError
+                ? <p style={{color:'#bbb',fontSize:12,textAlign:'center',lineHeight:1.6}}>QR enviado<br/>por WhatsApp</p>
+                : <div style={{width:28,height:28,border:'2px solid #eee',borderTop:'2px solid #1a1a1a',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}/>
+              }
             </div>
             <p className="qh">Muestra este QR al llegar al estacionamiento.<br/><strong>Solo es válido una vez.</strong></p>
             <div className="qi">{ticketId}</div>
@@ -123,16 +162,18 @@ export default function ConfirmacionPage() {
           <div className="tc">
             <div className="th"><span className="tht">Detalle del boleto</span></div>
             {[
-              ['Evento', ticket.event.name],
-              ['Venue', ticket.event.venueName],
-              ['Fecha', new Date(ticket.event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long'})],
-              ['Estacionamiento', ticket.event.parkingName],
-              ['Dirección', ticket.event.parkingAddress],
-              ['Total pagado', `$${ticket.payment.amount.toFixed(2)} MXN`],
-            ].map(([label,value]) => (
-              <div key={label} className="tr">
-                <span className="tl">{label}</span>
-                <span className="tv">{value}</span>
+              ['Evento',          ticket.event.name,          false],
+              ['Venue',           ticket.event.venueName,     false],
+              ['Fecha',           new Date(ticket.event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long'}), false],
+              ['Estacionamiento', ticket.event.parkingName,   false],
+              ['Dirección',       ticket.event.parkingAddress,false],
+              ['Subtotal',        `$${(ticket.payment.amount / 1.16).toFixed(2)} MXN`, false],
+              ['IVA (16%)',       `$${(ticket.payment.amount - ticket.payment.amount / 1.16).toFixed(2)} MXN`, false],
+              ['Total pagado',    `$${ticket.payment.amount.toFixed(2)} MXN`, true],
+            ].map(([label, value, isTotal]) => (
+              <div key={label as string} className="tr" style={isTotal ? { background: '#f9f9f9' } : {}}>
+                <span className="tl" style={isTotal ? { fontWeight: 600, color: '#1a1a1a' } : {}}>{label}</span>
+                <span className="tv" style={isTotal ? { fontSize: 15, fontWeight: 700, color: '#1a1a1a' } : {}}>{value}</span>
               </div>
             ))}
           </div>

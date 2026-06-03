@@ -18,13 +18,20 @@ export class UsersService {
     return this.repo.findOne({ where: { id } });
   }
 
-  create(data: { phone: string; name: string; role: string; channel: string }) {
-    const user = this.repo.create(data);
+  create(data: { phone: string; name: string; role: string; channel: string; parentOperatorId?: string | null }) {
+    const user = this.repo.create({ ...data, isActive: true });
     return this.repo.save(user);
   }
 
-  async update(id: string, data: { name?: string; email?: string }) {
+  async update(id: string, data: { name?: string; email?: string; phone?: string; isActive?: boolean }) {
     await this.repo.update(id, data);
     return this.repo.findOne({ where: { id } });
+  }
+
+  findByParentOperator(parentOperatorId: string) {
+    return this.repo.find({
+      where: { parentOperatorId, role: 'sub_operator' },
+      order: { createdAt: 'DESC' },
+    });
   }
 }

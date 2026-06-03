@@ -1,10 +1,25 @@
-const BASE = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+const BASE = (import.meta as any).env?.VITE_API_URL ?? '/api/v1';
+const TOKEN_KEY = 'pm_admin_token';
+
+function storedToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
 
 async function req<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
+  // Usar token explícito o caer a localStorage automáticamente
+  const authToken = token ?? storedToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
   const res = await fetch(`${BASE}${path}`, { ...init, headers });
   if (!res.ok) {
+    // Solo redirigir al login si el 401 vino de un endpoint protegido
+    // (es decir, se envió un token de sesión). Si no había token, el 401
+    // es de credenciales incorrectas y debe manejarlo el componente.
+    if (res.status === 401 && authToken) {
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.href = '/';
+      throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+    }
     const err = await res.json().catch(() => ({}));
     throw new Error(Array.isArray(err.message) ? err.message[0] : err.message || `HTTP ${res.status}`);
   }
@@ -14,7 +29,7 @@ async function req<T>(path: string, init: RequestInit = {}, token?: string): Pro
 export const api = {
   auth: {
     sendOtp: (phone: string) =>
-      req('/auth/send-otp', { method: 'POST', body: JSON.stringify({ phone }) }),
+      req<{ message: string; devOtp?: string }>('/auth/send-otp', { method: 'POST', body: JSON.stringify({ phone }) }),
     verifyOtp: (phone: string, otp: string) =>
       req<{ token: string; access_token: string; isNewUser: boolean }>('/auth/verify-otp', {
         method: 'POST',
@@ -45,7 +60,11 @@ export const api = {
     createParking:    (token: string, data: object)      => req<any>('/admin/parkings', { method: 'POST', body: JSON.stringify(data) }, token),
     updateParking:    (token: string, id: string, data: object) => req<any>(`/admin/parkings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
     deleteParking:    (token: string, id: string)        => req<void>(`/admin/parkings/${id}`, { method: 'DELETE' }, token),
+    parkingVenues:    (token: string, id: string)        => req<any>(`/admin/parkings/${id}/venues`, {}, token),
+    setParkingVenues: (token: string, id: string, venues: object[]) => req<any>(`/admin/parkings/${id}/venues`, { method: 'PUT', body: JSON.stringify({ venues }) }, token),
     customers:        (token: string)                    => req<any>('/admin/users', {}, token),
+    createUser:       (token: string, data: object)      => req<any>('/admin/users', { method: 'POST', body: JSON.stringify(data) }, token),
+    updateUserRole:   (token: string, id: string, role: string) => req<any>(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify({ role }) }, token),
     claims:           (token: string)                    => req<any>('/admin/claims', {}, token),
     createClaim:      (token: string, data: object)      => req<any>('/admin/claims', { method: 'POST', body: JSON.stringify(data) }, token),
     updateClaim:      (token: string, id: string, data: object) => req<any>(`/admin/claims/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
@@ -70,6 +89,19 @@ export const api = {
   operator: {
     updateProfile: (token: string, data: object) =>
       req<any>('/users/me', { method: 'PATCH', body: JSON.stringify(data) }, token),
+    events: (token: string) =>
+      req<any>('/admin/operator/events', {}, token),
+    updateEventPrices: (token: string, id: string, data: object) =>
+      req<any>(`/admin/operator/events/${id}/prices`, { method: 'PATCH', body: JSON.stringify(data) }, token),
+    // Sub-operator team management
+    listTeam: (token: string) =>
+      req<{ data: any[] }>('/operator/team', {}, token),
+    createSubOperator: (token: string, data: { name: string; phone: string; role: string; otp: string }) =>
+      req<{ data: any }>('/operator/team', { method: 'POST', body: JSON.stringify(data) }, token),
+    updateSubOperator: (token: string, id: string, data: { name?: string; isActive?: boolean }) =>
+      req<{ data: any }>(`/operator/team/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
+    deleteSubOperator: (token: string, id: string) =>
+      req<any>(`/operator/team/${id}`, { method: 'DELETE' }, token),
   },
   scan: (token: string, qrToken: string) =>
     req<any>('/scan', { method: 'POST', body: JSON.stringify({ token: qrToken }) }, token),

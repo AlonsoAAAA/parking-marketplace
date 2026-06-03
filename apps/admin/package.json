@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite --port 3002",
     "build": "tsc && vite build",
+    "build:mobile": "tsc && vite build --base=/op/ && cp -r dist/. ../marketplace/public/op/",
     "preview": "vite preview --port 3002"
   },
   "dependencies": {

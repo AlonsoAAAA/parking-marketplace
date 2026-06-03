@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
@@ -66,8 +66,22 @@ export class AdminService {
 
   listParkings() {
     return this.db.query(`
-      SELECT p.*, u.name AS "ownerName", u.phone AS "ownerPhone",
-             (SELECT COUNT(*) FROM events e WHERE e.parking_id = p.id)::int AS "eventsCount"
+      SELECT p.*,
+             u.name  AS "ownerName",
+             u.phone AS "ownerPhone",
+             (SELECT COUNT(*) FROM events e WHERE e.parking_id = p.id)::int AS "eventsCount",
+             (SELECT COALESCE(json_agg(
+                json_build_object('vehicleType', sp.vehicle_type, 'slots', sp.slots, 'price', sp.price)
+                ORDER BY sp.vehicle_type
+              ), '[]'::json)
+              FROM parking_slots_pricing sp WHERE sp.parking_id = p.id
+             ) AS pricing,
+             (SELECT COALESCE(json_agg(
+                json_build_object('id', v.id, 'name', v.name, 'distanceMeters', vp.distance_meters, 'walkMinutes', vp.walk_minutes)
+                ORDER BY v.name
+              ), '[]'::json)
+              FROM venue_parkings vp JOIN venues v ON v.id = vp.venue_id WHERE vp.parking_id = p.id
+             ) AS venues
       FROM parkings p
       LEFT JOIN users u ON u.id = p.owner_id
       ORDER BY p.created_at DESC
@@ -76,19 +90,31 @@ export class AdminService {
 
   async createParking(data: {
     ownerId?: string; name: string; address: string;
-    lat?: number; lng?: number; totalCapacity: number;
+    lat?: number; lng?: number;
+    pricing?: Array<{ vehicleType: string; slots: number; price: number }>;
   }) {
+    const totalCapacity = (data.pricing ?? []).reduce((s, p) => s + (Number(p.slots) || 0), 0);
+
     const [row] = await this.db.query(
       `INSERT INTO parkings (owner_id, name, address, lat, lng, total_capacity)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [data.ownerId ?? null, data.name, data.address, data.lat ?? null, data.lng ?? null, data.totalCapacity ?? 0],
+      [data.ownerId ?? null, data.name, data.address, data.lat ?? null, data.lng ?? null, totalCapacity],
     );
+
+    await this.upsertPricing(row.id, data.pricing ?? []);
     return row;
   }
 
   async updateParking(id: string, data: Partial<{
-    name: string; address: string; totalCapacity: number; isActive: boolean; ownerId: string;
+    name: string; address: string; isActive: boolean; ownerId: string;
+    pricing: Array<{ vehicleType: string; slots: number; price: number }>;
   }>) {
+    let totalCapacity: number | null = null;
+    if (data.pricing) {
+      totalCapacity = data.pricing.reduce((s, p) => s + (Number(p.slots) || 0), 0);
+      await this.upsertPricing(id, data.pricing);
+    }
+
     await this.db.query(
       `UPDATE parkings
        SET name           = COALESCE($1, name),
@@ -97,16 +123,65 @@ export class AdminService {
            is_active      = COALESCE($4, is_active),
            owner_id       = COALESCE($5, owner_id)
        WHERE id = $6`,
-      [data.name, data.address, data.totalCapacity, data.isActive, data.ownerId ?? null, id],
+      [data.name, data.address, totalCapacity, data.isActive, data.ownerId ?? null, id],
     );
     const rows = await this.db.query(`SELECT * FROM parkings WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Estacionamiento no encontrado');
     return rows[0];
   }
 
+  private async upsertPricing(
+    parkingId: string,
+    pricing: Array<{ vehicleType: string; slots: number; price: number }>,
+  ) {
+    for (const p of pricing) {
+      await this.db.query(
+        `INSERT INTO parking_slots_pricing (parking_id, vehicle_type, price, slots)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (parking_id, vehicle_type)
+         DO UPDATE SET price = EXCLUDED.price, slots = EXCLUDED.slots`,
+        [parkingId, p.vehicleType, Number(p.price) || 0, Number(p.slots) || 0],
+      );
+    }
+  }
+
   async deleteParking(id: string) {
     await this.db.query(`DELETE FROM parkings WHERE id = $1`, [id]);
     return { message: 'Estacionamiento eliminado' };
+  }
+
+  // ─── Venue-Parking associations ───────────────────────────────────────────
+
+  listParkingVenues(parkingId: string) {
+    return this.db.query(
+      `SELECT v.id, v.name, v.city, v.address,
+              vp.distance_meters AS "distanceMeters",
+              vp.walk_minutes    AS "walkMinutes"
+       FROM venue_parkings vp
+       JOIN venues v ON v.id = vp.venue_id
+       WHERE vp.parking_id = $1
+       ORDER BY v.name`,
+      [parkingId],
+    );
+  }
+
+  async setParkingVenues(
+    parkingId: string,
+    venues: Array<{ venueId: string; distanceMeters?: number; walkMinutes?: number }>,
+  ) {
+    await this.db.query(`DELETE FROM venue_parkings WHERE parking_id = $1`, [parkingId]);
+    for (const v of venues) {
+      const walkMins = v.walkMinutes ?? Math.round((v.distanceMeters ?? 0) / 80);
+      await this.db.query(
+        `INSERT INTO venue_parkings (venue_id, parking_id, distance_meters, walk_minutes)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (venue_id, parking_id) DO UPDATE
+           SET distance_meters = EXCLUDED.distance_meters,
+               walk_minutes    = EXCLUDED.walk_minutes`,
+        [v.venueId, parkingId, v.distanceMeters ?? 0, walkMins],
+      );
+    }
+    return this.listParkingVenues(parkingId);
   }
 
   // ─── Events (admin CRUD) ──────────────────────────────────────────────────
@@ -118,7 +193,7 @@ export class AdminService {
     return this.db.query(
       `SELECT e.*, p.name AS "parkingName", p.address AS "parkingAddress"
        FROM events e
-       JOIN parkings p ON p.id = e.parking_id
+       LEFT JOIN parkings p ON p.id = e.parking_id
        ${where}
        ORDER BY e.starts_at DESC`,
       params,
@@ -126,21 +201,26 @@ export class AdminService {
   }
 
   async createEvent(data: {
-    parkingId: string; name: string; venueName: string;
-    startsAt: string; endsAt: string; price: number; totalSlots: number; status?: string;
+    parkingId?: string; name: string; venueName: string;
+    startsAt: string; endsAt: string; price: number; status?: string;
+    priceAuto?: number; priceSub?: number; pricePickup?: number; priceMoto?: number;
   }) {
     const [row] = await this.db.query(
-      `INSERT INTO events (parking_id, name, venue_name, starts_at, ends_at, price, total_slots, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [data.parkingId, data.name, data.venueName, data.startsAt, data.endsAt,
-       data.price, data.totalSlots, data.status ?? 'draft'],
+      `INSERT INTO events (parking_id, name, venue_name, starts_at, ends_at, price, total_slots, status,
+                           category, price_auto, price_sub, price_pickup, price_moto)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+      [data.parkingId ?? null, data.name, data.venueName, data.startsAt, data.endsAt,
+       data.price, 0, data.status ?? 'draft',
+       (data as any).category ?? null,
+       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null],
     );
     return row;
   }
 
   async updateEvent(id: string, data: Partial<{
     name: string; venueName: string; startsAt: string; endsAt: string;
-    price: number; totalSlots: number; status: string; parkingId: string;
+    price: number; status: string; category: string;
+    priceAuto: number; priceSub: number; pricePickup: number; priceMoto: number;
   }>) {
     await this.db.query(
       `UPDATE events
@@ -149,15 +229,50 @@ export class AdminService {
            starts_at    = COALESCE($3::timestamptz, starts_at),
            ends_at      = COALESCE($4::timestamptz, ends_at),
            price        = COALESCE($5, price),
-           total_slots  = COALESCE($6, total_slots),
-           status       = COALESCE($7, status),
-           parking_id   = COALESCE($8::uuid, parking_id)
-       WHERE id = $9`,
+           status       = COALESCE($6, status),
+           category     = COALESCE($7, category),
+           price_auto   = COALESCE($8,  price_auto),
+           price_sub    = COALESCE($9,  price_sub),
+           price_pickup = COALESCE($10, price_pickup),
+           price_moto   = COALESCE($11, price_moto)
+       WHERE id = $12`,
       [data.name, data.venueName, data.startsAt ?? null, data.endsAt ?? null,
-       data.price, data.totalSlots, data.status, data.parkingId ?? null, id],
+       data.price, data.status, data.category ?? null,
+       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null, id],
     );
     const rows = await this.db.query(`SELECT * FROM events WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Evento no encontrado');
+    return rows[0];
+  }
+
+  async listOperatorEvents(operatorId: string) {
+    return this.db.query(
+      `SELECT e.*, p.name AS "parkingName"
+       FROM events e
+       JOIN parkings p ON p.id = e.parking_id
+       WHERE p.owner_id = $1
+       ORDER BY e.starts_at DESC`,
+      [operatorId],
+    );
+  }
+
+  async updateEventPrices(eventId: string, operatorId: string, prices: {
+    priceAuto?: number; priceSub?: number; pricePickup?: number; priceMoto?: number;
+  }) {
+    const rows = await this.db.query(
+      `UPDATE events e
+       SET price_auto   = COALESCE($1, e.price_auto),
+           price_sub    = COALESCE($2, e.price_sub),
+           price_pickup = COALESCE($3, e.price_pickup),
+           price_moto   = COALESCE($4, e.price_moto)
+       FROM parkings p
+       WHERE e.id = $5 AND e.parking_id = p.id AND p.owner_id = $6
+       RETURNING e.*`,
+      [prices.priceAuto ?? null, prices.priceSub ?? null,
+       prices.pricePickup ?? null, prices.priceMoto ?? null,
+       eventId, operatorId],
+    );
+    if (!rows.length) throw new NotFoundException('Evento no encontrado o sin permiso');
     return rows[0];
   }
 
@@ -167,6 +282,28 @@ export class AdminService {
   }
 
   // ─── Users ────────────────────────────────────────────────────────────────
+
+  async createUser(data: { phone: string; name: string; role: string }) {
+    const clean = data.phone.replace(/\D/g, '');
+    try {
+      const rows = await this.db.query(
+        `INSERT INTO users (phone, name, role, channel)
+         VALUES ($1, $2, $3, 'web') RETURNING *`,
+        [clean, data.name, data.role],
+      );
+      return rows[0];
+    } catch (e: any) {
+      if (e.code === '23505') throw new ConflictException('Ya existe un usuario con ese teléfono');
+      throw e;
+    }
+  }
+
+  async updateUserRole(id: string, role: string) {
+    await this.db.query(`UPDATE users SET role = $1 WHERE id = $2`, [role, id]);
+    const rows = await this.db.query(`SELECT * FROM users WHERE id = $1`, [id]);
+    if (!rows[0]) throw new NotFoundException('Usuario no encontrado');
+    return rows[0];
+  }
 
   listUsers(search?: string) {
     const q = search ? `%${search}%` : null;

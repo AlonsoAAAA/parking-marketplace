@@ -1,6 +1,17 @@
 export type AdminPage = 'dashboard' | 'venues' | 'events' | 'parkings' | 'customers' | 'claims' | 'promotions' | 'payments' | 'fraud';
-export type OperatorPage = 'dashboard' | 'reservations' | 'scanner' | 'profile';
-export type UserRole = 'admin' | 'operator';
+export type OperatorPage    = 'dashboard' | 'reservations' | 'scanner' | 'profile' | 'settings';
+export type SubOperatorPage = 'reservations' | 'scanner';
+export type SubAdminPage    = 'dashboard' | 'reservations' | 'scanner';
+export type UserRole        = 'admin' | 'operator' | 'sub_admin' | 'sub_operator';
+
+export interface SubOperator {
+  id: string;
+  name: string;
+  phone: string;
+  role: 'sub_operator' | 'sub_admin';
+  is_active: boolean;
+  created_at: string;
+}
 
 export interface AuthUser {
   sub: string;
@@ -21,6 +32,11 @@ export interface Reservation {
   amount?: number;
   has_ticket?: boolean;
   scanned_at?: string;
+  // Vehicle check-in data (from vehicle_checkins join)
+  plates?: string;
+  vehicle_type?: string;
+  vehicle_model?: string;
+  assigned_spot?: string;
 }
 
 export interface Event {

@@ -20,6 +20,12 @@ export class UserEntity {
   @Column({ default: 'whatsapp' })
   channel: string;
 
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
+  @Column({ name: 'parent_operator_id', nullable: true, type: 'uuid' })
+  parentOperatorId: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

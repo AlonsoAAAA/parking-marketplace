@@ -10,7 +10,7 @@ export class CheckinController {
   constructor(private checkinService: CheckinService) {}
 
   @Post(':reservationId')
-  @Roles('operator', 'admin')
+  @Roles('operator', 'sub_operator', 'sub_admin', 'admin')
   create(
     @Param('reservationId') reservationId: string,
     @Body() dto: CreateCheckinDto,

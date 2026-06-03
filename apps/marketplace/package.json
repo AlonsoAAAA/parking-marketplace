@@ -8,11 +8,14 @@
   },
   "dependencies": {
     "@parking/shared": "workspace:*",
-    "@stripe/stripe-js": "^4.0.0",
+    "@stripe/react-stripe-js": "^6.4.0",
+    "@stripe/stripe-js": "^9.6.0",
+    "maplibre-gl": "^5.24.0",
     "next": "^14.2.0",
     "qrcode": "^1.5.3",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "react-map-gl": "^8.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

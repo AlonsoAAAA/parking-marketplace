@@ -1,11 +1,11 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Body, Param, Query,
+  Controller, Get, Post, Put, Patch, Delete,
+  Body, Param, Query, Req,
   UseGuards,
 } from '@nestjs/common';
 import {
-  IsString, IsNumber, IsOptional, IsBoolean,
-  IsIn, IsDateString, Min, MaxLength,
+  IsString, IsNumber, IsOptional, IsBoolean, IsArray,
+  IsIn, IsDateString, Min, MaxLength, ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AdminService } from './admin.service';
@@ -13,6 +13,16 @@ import { JwtGuard, RolesGuard } from '../auth/guards/guards';
 import { Roles } from '../auth/decorators/roles.decorator';
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
+
+class CreateUserDto {
+  @IsString() phone: string;
+  @IsString() name: string;
+  @IsIn(['user', 'operator', 'admin']) role: string;
+}
+
+class UpdateUserRoleDto {
+  @IsIn(['user', 'operator', 'admin']) role: string;
+}
 
 class CreateVenueDto {
   @IsString() @MaxLength(200) name: string;
@@ -28,32 +38,52 @@ class UpdateVenueDto {
   @IsOptional() @IsNumber() @Type(() => Number) capacity?: number;
 }
 
+class ParkingPricingDto {
+  @IsIn(['Auto', 'Sub', 'Pick Up', 'Moto']) vehicleType: string;
+  @IsNumber() @Min(0) @Type(() => Number) slots: number;
+  @IsNumber() @Min(0) @Type(() => Number) price: number;
+}
+
 class CreateParkingDto {
   @IsString() @MaxLength(150) name: string;
   @IsString() address: string;
   @IsOptional() @IsString() ownerId?: string;
   @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
-  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) totalCapacity?: number;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ParkingPricingDto) pricing?: ParkingPricingDto[];
 }
 
 class UpdateParkingDto {
   @IsOptional() @IsString() name?: string;
   @IsOptional() @IsString() address?: string;
-  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) totalCapacity?: number;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsString() ownerId?: string;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ParkingPricingDto) pricing?: ParkingPricingDto[];
+}
+
+class VenueParkingItemDto {
+  @IsString() venueId: string;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) distanceMeters?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) walkMinutes?: number;
+}
+
+class SetParkingVenuesDto {
+  @IsArray() @ValidateNested({ each: true }) @Type(() => VenueParkingItemDto) venues: VenueParkingItemDto[];
 }
 
 class CreateEventDto {
-  @IsString() parkingId: string;
+  @IsOptional() @IsString() parkingId?: string;
   @IsString() @MaxLength(200) name: string;
   @IsString() venueName: string;
   @IsDateString() startsAt: string;
   @IsDateString() endsAt: string;
   @IsNumber() @Type(() => Number) price: number;
-  @IsNumber() @Min(1) @Type(() => Number) totalSlots: number;
   @IsOptional() @IsIn(['draft', 'active', 'sold_out', 'finished']) status?: string;
+  @IsOptional() @IsIn(['conciertos', 'deportes', 'teatro', 'festival']) category?: string;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceAuto?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceSub?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) pricePickup?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceMoto?: number;
 }
 
 class UpdateEventDto {
@@ -62,9 +92,19 @@ class UpdateEventDto {
   @IsOptional() @IsDateString() startsAt?: string;
   @IsOptional() @IsDateString() endsAt?: string;
   @IsOptional() @IsNumber() @Type(() => Number) price?: number;
-  @IsOptional() @IsNumber() @Min(1) @Type(() => Number) totalSlots?: number;
   @IsOptional() @IsIn(['draft', 'active', 'sold_out', 'finished']) status?: string;
-  @IsOptional() @IsString() parkingId?: string;
+  @IsOptional() @IsIn(['conciertos', 'deportes', 'teatro', 'festival']) category?: string;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceAuto?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceSub?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) pricePickup?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceMoto?: number;
+}
+
+class UpdateEventPricesDto {
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceAuto?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceSub?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) pricePickup?: number;
+  @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceMoto?: number;
 }
 
 class CreateClaimDto {
@@ -154,6 +194,16 @@ export class AdminController {
     return this.adminService.deleteParking(id);
   }
 
+  @Get('parkings/:id/venues')
+  async listParkingVenues(@Param('id') id: string) {
+    return { data: await this.adminService.listParkingVenues(id) };
+  }
+
+  @Put('parkings/:id/venues')
+  async setParkingVenues(@Param('id') id: string, @Body() dto: SetParkingVenuesDto) {
+    return { data: await this.adminService.setParkingVenues(id, dto.venues) };
+  }
+
   // Events
   @Get('events')
   async listEvents(@Query('status') status?: string) {
@@ -179,6 +229,16 @@ export class AdminController {
   @Get('users')
   async listUsers(@Query('search') search?: string) {
     return { data: await this.adminService.listUsers(search) };
+  }
+
+  @Post('users')
+  async createUser(@Body() dto: CreateUserDto) {
+    return { data: await this.adminService.createUser(dto) };
+  }
+
+  @Patch('users/:id')
+  async updateUserRole(@Param('id') id: string, @Body() dto: UpdateUserRoleDto) {
+    return { data: await this.adminService.updateUserRole(id, dto.role) };
   }
 
   // Claims
@@ -232,5 +292,25 @@ export class AdminController {
   @Get('payments')
   async listPayments(@Query('status') status?: string) {
     return { data: await this.adminService.listPayments(status) };
+  }
+
+  // ─── Operator event price management ──────────────────────────────────────
+
+  @Get('operator/events')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('operator', 'admin')
+  async operatorEvents(@Req() req: any) {
+    return { data: await this.adminService.listOperatorEvents(req.user.id) };
+  }
+
+  @Patch('operator/events/:id/prices')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('operator', 'admin')
+  async updateEventPrices(
+    @Param('id') id: string,
+    @Body() dto: UpdateEventPricesDto,
+    @Req() req: any,
+  ) {
+    return this.adminService.updateEventPrices(id, req.user.id, dto);
   }
 }

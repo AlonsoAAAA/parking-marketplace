@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: #EDEDED; font-family: 'Inter', -apple-system, sans-serif; color: #1a1a1a; -webkit-font-smoothing: antialiased; height: 100%; }
+html, body { background: #EDEDED; font-family: 'Inter', -apple-system, sans-serif; color: #1a1a1a; -webkit-font-smoothing: antialiased; height: 100%; color-scheme: light; }
 #root { height: 100%; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

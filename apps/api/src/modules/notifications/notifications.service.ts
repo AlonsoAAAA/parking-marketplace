@@ -40,21 +40,19 @@ export class NotificationsService {
   }
 
   private async sendWhatsAppTicket(data: any, qrImageBase64: string): Promise<void> {
-    const isDev = this.config.get('NODE_ENV') === 'development';
+    const accountSid = this.config.get('TWILIO_ACCOUNT_SID');
+    const authToken  = this.config.get('TWILIO_AUTH_TOKEN');
+    const fromNumber = this.config.get('TWILIO_WHATSAPP_NUMBER'); // ya incluye 'whatsapp:+...'
 
-    if (isDev) {
-      console.log(`📱 Boleto enviado a WhatsApp +${data.phone}`);
-      console.log(`   Evento: ${data.event_name}`);
-      console.log(`   Venue: ${data.venue_name}`);
-      console.log(`   Fecha: ${new Date(data.starts_at).toLocaleString('es-MX')}`);
+    if (!accountSid || !authToken || !fromNumber) {
+      console.log(`📱 [WhatsApp desactivado] Boleto para +${data.phone} — ${data.event_name}`);
       return;
     }
 
-    const accountSid = this.config.get('TWILIO_ACCOUNT_SID');
-    const authToken = this.config.get('TWILIO_AUTH_TOKEN');
-    const fromNumber = this.config.get('TWILIO_WHATSAPP_NUMBER');
-
-    const twilio = require('twilio')(accountSid, authToken);
+    const fecha = new Date(data.starts_at).toLocaleString('es-MX', {
+      weekday: 'long', year: 'numeric', month: 'long',
+      day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
 
     const message = [
       `✅ *¡Tu lugar está confirmado!*`,
@@ -62,24 +60,36 @@ export class NotificationsService {
       `🎉 *${data.event_name}*`,
       `📍 ${data.venue_name || data.parking_name}`,
       `🏠 ${data.parking_address}`,
-      `📅 ${new Date(data.starts_at).toLocaleString('es-MX', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })}`,
+      `📅 ${fecha}`,
       ``,
-      `Presenta este código QR al llegar. Solo es válido una vez.`,
+      `Tu código QR está adjunto. Preséntalo al llegar — solo es válido una vez.`,
     ].join('\n');
 
-    await twilio.messages.create({
+    const twilio = require('twilio')(accountSid, authToken);
+
+    // Números mexicanos: 52 + 10 dígitos → 521 + 10 dígitos para WhatsApp
+    const phone = data.phone as string;
+    const waPhone = phone.length === 12 && phone.startsWith('52')
+      ? `521${phone.slice(2)}`
+      : phone;
+
+    // Construir payload — agregar mediaUrl si hay URL pública del QR
+    const publicUrl = this.config.get('PUBLIC_API_URL'); // e.g. ngrok URL
+    const payload: any = {
       body: message,
-      from: `whatsapp:${fromNumber}`,
-      to: `whatsapp:+${data.phone}`,
-      // En producción aquí iría la URL pública de la imagen QR
-      // mediaUrl: [`https://tu-dominio.com/api/v1/qr/${data.id}/image`],
-    });
+      from: fromNumber,
+      to: `whatsapp:+${waPhone}`,
+    };
+
+    if (publicUrl && data.id) {
+      payload.mediaUrl = [`${publicUrl}/api/v1/qr/${data.id}/image`];
+    }
+
+    try {
+      const sent = await twilio.messages.create(payload);
+      console.log(`✅ WhatsApp enviado a +${data.phone} — SID: ${sent.sid}`);
+    } catch (e: any) {
+      console.error(`❌ WhatsApp error para +${data.phone}:`, e?.message);
+    }
   }
 }

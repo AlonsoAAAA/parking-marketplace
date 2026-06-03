@@ -89,7 +89,7 @@ export default function AdminVenues({ token }: Props) {
       </div>
 
       {modal && (
-        <div className="adm-overlay" onClick={() => setModal(null)}>
+        <div className="adm-overlay">
           <div className="adm-modal" onClick={e => e.stopPropagation()}>
             <div className="adm-modal-title">{modal.id ? 'Editar venue' : 'Nuevo venue'}</div>
             {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#991b1b', marginBottom: 16 }}>{error}</div>}

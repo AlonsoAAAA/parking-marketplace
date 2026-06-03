@@ -20,4 +20,11 @@ export class EventsController {
     if (!data) throw new NotFoundException('Evento no encontrado');
     return { data };
   }
+
+  // GET /api/v1/events/:id/parkings
+  @Get(':id/parkings')
+  async findParkings(@Param('id') id: string) {
+    const data = await this.eventsService.findParkings(id);
+    return { data };
+  }
 }

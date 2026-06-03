@@ -102,8 +102,10 @@ export class WebhooksController {
     // 6. Generar QR
     const token = await this.qrService.generateQR(reservationId);
 
-    // 7. Notificar usuario (WhatsApp + email si tiene)
-    await this.notificationsService.sendTicket(reservationId, token);
+    // 7. Notificar — fire-and-forget so QR is immediately visible in DB
+    this.notificationsService.sendTicket(reservationId, token).catch(e =>
+      console.error('Notification error:', e?.message),
+    );
 
     console.log(`✅ Pago confirmado y QR generado para reserva: ${reservationId}`);
 

@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const cleanPhone = () => `52${phone.replace(/\D/g, '')}`;
+  const cleanPhone = () => `521${phone.replace(/\D/g, '').slice(-10)}`;
 
   const sendOtp = async () => {
     if (phone.replace(/\D/g,'').length < 10) { setError('Ingresa 10 dígitos'); return; }
@@ -42,7 +42,7 @@ export default function LoginPage() {
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('token', data.access_token || data.token);
       data.isNewUser ? setStep('name') : router.push(nextUrl);
     } catch { setError('Código incorrecto o expirado.'); } finally { setLoading(false); }
   };
@@ -69,19 +69,24 @@ export default function LoginPage() {
 
   return (
     <>
-      <style>{SHARED_CSS + `
+      <style suppressHydrationWarning>{SHARED_CSS + `
         .lw { min-height:100vh; background:#EDEDED; display:flex; flex-direction:column; }
         .lb { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
         .lc { width:100%; max-width:400px; background:#fff; border-radius:20px; padding:32px 28px; animation:fadeUp 0.4s ease both; }
+        @media(min-width:1024px){
+          .lw { background:#EDEDED radial-gradient(circle at 20% 50%, rgba(0,0,0,.03) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(0,0,0,.03) 0%, transparent 60%); }
+          .lb { padding:48px; }
+          .lc { max-width:480px; padding:48px 44px; border-radius:24px; box-shadow:0 4px 40px rgba(0,0,0,.08); }
+        }
         .li { font-size:40px; margin-bottom:20px; display:block; }
         .lt { font-size:22px; font-weight:700; letter-spacing:-0.4px; color:#1a1a1a; margin-bottom:6px; }
         .ls { font-size:13px; font-weight:300; color:#999; line-height:1.55; margin-bottom:28px; }
         .pr { display:flex; gap:8px; }
         .pp { padding:13px 14px; background:#f5f5f5; border:1px solid rgba(0,0,0,0.1); border-radius:10px; font-size:14px; font-weight:600; color:#1a1a1a; flex-shrink:0; }
-        .pi { flex:1; padding:13px 16px; background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:10px; font-size:14px; color:#1a1a1a; font-family:'Inter',sans-serif; transition:border-color 0.2s; }
+        .pi { flex:1; padding:13px 16px; background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:10px; font-size:14px; color:#1a1a1a; font-family:Inter,sans-serif; transition:border-color 0.2s; }
         .pi:focus { outline:none; border-color:#1a1a1a; }
         .pi::placeholder { color:#ccc; }
-        .oi { width:100%; padding:18px; border:1px solid rgba(0,0,0,0.1); border-radius:10px; font-size:28px; font-weight:700; color:#1a1a1a; text-align:center; letter-spacing:10px; font-family:'Inter',sans-serif; }
+        .oi { width:100%; padding:18px; border:1px solid rgba(0,0,0,0.1); border-radius:10px; font-size:28px; font-weight:700; color:#1a1a1a; text-align:center; letter-spacing:10px; font-family:Inter,sans-serif; }
         .oi:focus { outline:none; border-color:#1a1a1a; }
         .bg { display:flex; flex-direction:column; gap:10px; margin-top:20px; }
         .lg { font-size:11px; color:#bbb; text-align:center; margin-top:20px; line-height:1.6; }
@@ -92,7 +97,7 @@ export default function LoginPage() {
       `}</style>
       <div className="lw">
         <header className="pm-header">
-          <Link href="/" className="pm-logo">Park<span>MX</span></Link>
+          <Link href="/" className="pm-logo" style={{ textDecoration: 'none' }}>Park<span>MX</span></Link>
         </header>
         <div className="lb">
           <div className="lc">

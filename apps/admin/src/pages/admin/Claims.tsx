@@ -92,7 +92,7 @@ export default function AdminClaims({ token }: Props) {
       </div>
 
       {selected && (
-        <div className="adm-overlay" onClick={() => setSelected(null)}>
+        <div className="adm-overlay">
           <div className="adm-modal" onClick={e => e.stopPropagation()}>
             <div className="adm-modal-title">Reclamo</div>
             <div style={{ marginBottom: 16 }}>

@@ -15,10 +15,11 @@ export default function Login({ onLogin }: Props) {
     if (!phone.trim()) return;
     setLoading(true); setError('');
     try {
-      await api.auth.sendOtp(phone.replace(/\D/g, ''));
+      const res = await api.auth.sendOtp(phone.replace(/\D/g, '')) as any;
+      if (res?.devOtp) setOtp(res.devOtp);
       setStep('otp');
     } catch {
-      setStep('otp'); // dev: allow any phone
+      setStep('otp');
     } finally { setLoading(false); }
   };
 
@@ -29,13 +30,7 @@ export default function Login({ onLogin }: Props) {
       const res = await api.auth.verifyOtp(phone.replace(/\D/g, ''), otp);
       onLogin(res.token || res.access_token);
     } catch {
-      if (otp === '123456') {
-        const clean = phone.replace(/\D/g, '');
-        const role = clean === '5512345678' ? 'operator' : 'admin';
-        onLogin(`mock_${role}_token_${Date.now()}`);
-      } else {
-        setError('Código incorrecto. Demo: usa 123456');
-      }
+      setError('Código incorrecto o expirado.');
     } finally { setLoading(false); }
   };
 
@@ -80,9 +75,10 @@ export default function Login({ onLogin }: Props) {
                 {loading ? 'Enviando...' : 'Enviar código'}
               </button>
               <div className="ldemo">
-                <div>Demo rápido — usa código <strong>123456</strong></div>
-                <div><strong>5512345678</strong> → Operador</div>
-                <div>Cualquier otro → Admin General</div>
+                <div style={{marginBottom:6}}>Credenciales de prueba</div>
+                <div>Admin → <strong>5511111111</strong></div>
+                <div>Operador → <strong>5512345678</strong></div>
+                <div style={{marginTop:4}}>OTP: <strong>111222</strong> (siempre)</div>
               </div>
             </>
           ) : (
@@ -97,7 +93,7 @@ export default function Login({ onLogin }: Props) {
               <button className="lb-btn" onClick={verifyOtp} disabled={loading || otp.length < 6}>
                 {loading ? 'Verificando...' : 'Verificar'}
               </button>
-              <p className="lhint">Demo: usa el código <strong>123456</strong></p>
+              <p className="lhint">Demo: el código es siempre <strong>111222</strong></p>
               <button className="lb-back" onClick={() => { setStep('phone'); setOtp(''); setError(''); }}>← Cambiar número</button>
             </>
           )}
