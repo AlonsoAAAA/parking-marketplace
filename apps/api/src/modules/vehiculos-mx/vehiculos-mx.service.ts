@@ -41,6 +41,8 @@ const UMBRALES = {
 // Tipos del JSON que SIEMPRE son Pickup (independiente del largo)
 const TIPOS_PICKUP = new Set(['pickup', 'pickup-s', 'pickup-d']);
 const TIPOS_MOTO   = new Set(['moto']);
+// Tipos del JSON que SIEMPRE son SUV/Camioneta (independiente del largo)
+const TIPOS_SUV    = new Set(['suv', 'camioneta', 'van', 'van-l']);
 
 export type VehiculoCategoria = 'moto' | 'auto' | 'suv_camioneta' | 'pickup';
 
@@ -151,6 +153,8 @@ export class VehiculosMxService {
           categoria = 'moto';
         } else if (TIPOS_PICKUP.has(tipo)) {
           categoria = 'pickup';
+        } else if (TIPOS_SUV.has(tipo)) {
+          categoria = 'suv_camioneta';
         } else {
           const largo: number =
             modeloObj.largo_m ??
@@ -232,6 +236,7 @@ export class VehiculosMxService {
   private clasificarPorLargo(tipo_base: string, largo_m: number): VehiculoCategoria {
     if (TIPOS_MOTO.has(tipo_base))   return 'moto';
     if (TIPOS_PICKUP.has(tipo_base)) return 'pickup';
+    if (TIPOS_SUV.has(tipo_base))    return 'suv_camioneta';
     if (largo_m <= UMBRALES.MOTO_MAX) return 'moto';   // fallback
     if (largo_m <= UMBRALES.AUTO_MAX) return 'auto';
     return 'suv_camioneta';

@@ -5,8 +5,55 @@ import { CARD_COLORS, SHARED_CSS } from '@/lib/design';
 
 interface ParkingDetail {
   id: string; name: string; address: string;
-  distanceMeters: number; walkMinutes: number; available: number;
+  distanceMeters: number; walkMinutes: number; available: number; totalSlots: number;
   pricing: Record<string, number>;
+}
+
+interface PricingConfig {
+  marginMin: number; marginMax: number;
+  weightDistance: number; weightAnticipation: number; weightDemand: number;
+}
+
+// ─── Motor de precios (espejo del servicio) ───────────────────────────────────
+const IVA = 0.16;
+const MULT_MIN = { distance: 0.8, anticipation: 0.9, demand: 0.85 };
+const MULT_MAX = { distance: 1.5, anticipation: 1.6, demand: 1.40 };
+function lerp(x: number, x0: number, y0: number, x1: number, y1: number) {
+  if (x <= x0) return y0; if (x >= x1) return y1;
+  return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+}
+function distMult(km: number) {
+  if (km <= 0.5) return 1.5;
+  if (km <= 1.0) return lerp(km, 0.5, 1.5, 1.0, 1.2);
+  if (km <= 2.0) return lerp(km, 1.0, 1.2, 2.0, 1.0);
+  if (km <= 3.0) return lerp(km, 2.0, 1.0, 3.0, 0.8);
+  return 0.8;
+}
+function antMult(h: number) {
+  if (h <= 0)   return 1.6; if (h <= 6)   return lerp(h, 0, 1.6, 6, 1.3);
+  if (h <= 24)  return lerp(h, 6, 1.3, 24, 1.1);
+  if (h <= 72)  return lerp(h, 24, 1.1, 72, 1.0);
+  if (h <= 168) return lerp(h, 72, 1.0, 168, 0.9);
+  return 0.9;
+}
+function demMult(pct: number) {
+  const p = Math.max(0, Math.min(100, pct));
+  if (p <= 50) return lerp(p, 0, 0.85, 50, 1.0);
+  if (p <= 80) return lerp(p, 50, 1.0, 80, 1.2);
+  return lerp(p, 80, 1.2, 100, 1.4);
+}
+function computeFinalPrice(contractPrice: number, distKm: number, antHours: number, occupancy: number, cfg: PricingConfig) {
+  const mDist = distMult(distKm), mAnt = antMult(antHours), mDem = demMult(occupancy);
+  const { weightDistance: wd, weightAnticipation: wa, weightDemand: wdem, marginMin, marginMax } = cfg;
+  const composite = wd * mDist + wa * mAnt + wdem * mDem;
+  const compMin = wd * MULT_MIN.distance + wa * MULT_MIN.anticipation + wdem * MULT_MIN.demand;
+  const compMax = wd * MULT_MAX.distance + wa * MULT_MAX.anticipation + wdem * MULT_MAX.demand;
+  const score = compMax > compMin ? Math.max(0, Math.min(1, (composite - compMin) / (compMax - compMin))) : 0.5;
+  const marginPct = marginMin + score * (marginMax - marginMin);
+  const basePrice = +(contractPrice * (1 + marginPct / 100)).toFixed(2);
+  const ivaAmount = +(basePrice * IVA).toFixed(2);
+  const finalPrice = Math.round(basePrice + ivaAmount);
+  return { finalPrice, basePrice, ivaAmount, marginPct: +marginPct.toFixed(1) };
 }
 interface EventInfo {
   id: string; name: string; venueName: string; startsAt: string; category?: string;
@@ -49,6 +96,9 @@ export default function ParkingDetailPage() {
   const [versiones, setVersiones] = useState<string[]>([]);
   const [loadingMarcas, setLoadingMarcas] = useState(true);
   const [categoria, setCategoria] = useState<VehicleCategory | null>(null);
+  const [pricingCfg, setPricingCfg] = useState<PricingConfig>({
+    marginMin: 15, marginMax: 60, weightDistance: 0.40, weightAnticipation: 0.35, weightDemand: 0.25,
+  });
 
   // Other form fields
   const [plate, setPlate] = useState('');
@@ -73,6 +123,13 @@ export default function ParkingDetailPage() {
       setParking(pk ?? null);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [eventId, parkingId]);
+
+  // ── Load pricing config ────────────────────────────────────────────────────
+  useEffect(() => {
+    apiFetch('/api/v1/pricing-config')
+      .then(d => { if (d.data) setPricingCfg(d.data); })
+      .catch(() => {});
+  }, []);
 
   // ── Load marcas on mount ───────────────────────────────────────────────────
   useEffect(() => {
@@ -207,7 +264,17 @@ export default function ParkingDetailPage() {
   );
   if (!parking || !event) return null;
 
-  const price      = categoria ? (parking.pricing[categoria] ?? null) : null;
+  const contractPrice = categoria ? (parking.pricing[categoria] ?? null) : null;
+  const priceCalc = contractPrice !== null && parking && event
+    ? computeFinalPrice(
+        contractPrice,
+        parking.distanceMeters / 1000,
+        (new Date(event.startsAt).getTime() - Date.now()) / 3_600_000,
+        parking.totalSlots > 0 ? (1 - parking.available / parking.totalSlots) * 100 : 50,
+        pricingCfg,
+      )
+    : null;
+  const price      = priceCalc?.finalPrice ?? null;  // alias para compatibilidad
   const soldOut    = parking.available === 0;
   const vehiculoOk = !!marca && !!modelo && (!tieneVersion || !!version);
   const canReserve = vehiculoOk && plate.trim().length >= 3 && name.trim().length >= 2 && !soldOut && !reserving;
@@ -410,17 +477,30 @@ export default function ParkingDetailPage() {
                   </div>
                 )}
 
-                {/* Precio del vehículo seleccionado */}
-                {price !== null && categoria && (
-                  <div style={{ padding: '9px 14px', background: '#f0fdf4', borderRadius: 10,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    border: '1px solid #bbf7d0' }}>
-                    <span style={{ fontSize: 12, color: '#166534' }}>
-                      {CATEGORY_ICONS[categoria]} {CATEGORY_LABELS[categoria]}
-                    </span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#166534' }}>
-                      ${price} MXN
-                    </span>
+                {/* Precio del vehículo seleccionado — con desglose IVA */}
+                {priceCalc !== null && categoria && (
+                  <div style={{ background: '#f5f5f5', borderRadius: 12, overflow: 'hidden' }}>
+                    {/* Categoría */}
+                    <div style={{ padding: '8px 14px', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', fontWeight: 600, letterSpacing: 1 }}>
+                        {CATEGORY_ICONS[categoria]} {CATEGORY_LABELS[categoria].toUpperCase()}
+                      </span>
+                    </div>
+                    {/* Desglose */}
+                    <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#999' }}>
+                        <span>Subtotal</span>
+                        <span>${priceCalc.basePrice.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#999' }}>
+                        <span>IVA 16%</span>
+                        <span>+${priceCalc.ivaAmount.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, color: '#1a1a1a', borderTop: '1px solid #e8e8e8', paddingTop: 6, marginTop: 2 }}>
+                        <span>Total</span>
+                        <span>${priceCalc.finalPrice} MXN</span>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -455,13 +535,13 @@ export default function ParkingDetailPage() {
 
             {/* CTA desktop */}
             <div className="pp-cta-desk">
-              {price !== null ? (
+              {priceCalc !== null ? (
                 <div>
                   <div className="pp-cta-price">
-                    ${price} <span style={{ fontSize: 12, fontWeight: 500, color: '#999' }}>MXN</span>
+                    ${priceCalc.finalPrice} <span style={{ fontSize: 12, fontWeight: 500, color: '#999' }}>MXN</span>
                   </div>
                   <div className="pp-cta-sub">
-                    {categoria ? `${CATEGORY_ICONS[categoria]} ${marca} ${modelo}` : ''}
+                    {categoria ? `${CATEGORY_ICONS[categoria]} · IVA incluido` : ''}
                   </div>
                 </div>
               ) : (
