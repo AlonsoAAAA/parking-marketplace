@@ -44,7 +44,7 @@ function ModelDropdown({ pricing, selected, onSelect }: {
       setLoading(true);
       try {
         const cats = availableCategories.join(',');
-        const url  = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/vehicles?q=${encodeURIComponent(q)}&categories=${encodeURIComponent(cats)}`;
+        const url  = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/vehicles?q=${encodeURIComponent(q)}&categories=${encodeURIComponent(cats)}`;
         const data = await fetch(url).then(r => r.json()) as { data: CarModel[] };
         setResults(data.data ?? []);
       } catch { setResults([]); }
@@ -203,7 +203,7 @@ export default function ParkingDetailPage() {
 
   // Load event + parking
   useEffect(() => {
-    const API = process.env.NEXT_PUBLIC_API_URL;
+    const API = process.env.NEXT_PUBLIC_API_URL || "";
     Promise.all([
       fetch(`${API}/api/v1/events/${eventId}`).then(r => r.json()),
       fetch(`${API}/api/v1/events/${eventId}/parkings`).then(r => r.json()),
@@ -234,7 +234,7 @@ export default function ParkingDetailPage() {
 
     // Pre-fill nombre desde perfil si ya hay sesión
     if (!token) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/me`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then(r => r.json()).then(d => {
       if (d.data?.name) setName(d.data.name);
@@ -263,7 +263,7 @@ export default function ParkingDetailPage() {
     setError('');
 
     try {
-      const API = process.env.NEXT_PUBLIC_API_URL;
+      const API = process.env.NEXT_PUBLIC_API_URL || "";
 
       // 1 — Crear reservación
       const res1 = await fetch(`${API}/api/v1/reservations`, {

@@ -43,7 +43,7 @@ export default function HomePage() {
   useEffect(() => {
     setLoading(true);
     const q = category ? `?category=${category}` : '';
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/venues${q}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/venues${q}`)
       .then(r => r.json())
       .then(d => setVenues(d.data?.length ? d.data : MOCK_VENUES))
       .catch(() => setVenues(MOCK_VENUES))

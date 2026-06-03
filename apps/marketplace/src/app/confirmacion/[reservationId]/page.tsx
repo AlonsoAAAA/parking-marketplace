@@ -30,7 +30,7 @@ export default function ConfirmacionPage() {
 
   const fetchTicket = (attempt = 1) => {
     const token = localStorage.getItem('token');
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/reservations/${reservationId}/ticket`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/reservations/${reservationId}/ticket`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())
@@ -59,7 +59,7 @@ export default function ConfirmacionPage() {
     // Stripe redirige con redirect_status=succeeded — sincronizar con backend
     // antes de empezar el polling para no depender del webhook en dev
     if (searchParams.get('redirect_status') === 'succeeded' && paymentIntentId && token) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/payments/sync`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/payments/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ paymentIntentId }),

@@ -22,7 +22,7 @@ export default function VenuePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const API = process.env.NEXT_PUBLIC_API_URL;
+    const API = process.env.NEXT_PUBLIC_API_URL || "";
     Promise.all([
       fetch(`${API}/api/v1/venues/${id}`).then(r => r.json()),
       fetch(`${API}/api/v1/venues/${id}/events`).then(r => r.json()),

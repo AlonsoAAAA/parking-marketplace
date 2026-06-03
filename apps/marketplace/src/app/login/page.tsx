@@ -23,7 +23,7 @@ function LoginContent() {
     if (phone.replace(/\D/g,'').length < 10) { setError('Ingresa 10 dígitos'); return; }
     setLoading(true); setError('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/send-otp`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/auth/send-otp`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ phone: cleanPhone() }),
       });
@@ -36,7 +36,7 @@ function LoginContent() {
     if (otp.length !== 6) { setError('El código debe ser de 6 dígitos'); return; }
     setLoading(true); setError('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/verify-otp`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/auth/verify-otp`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ phone: cleanPhone(), otp }),
       });
@@ -50,7 +50,7 @@ function LoginContent() {
   const saveName = async () => {
     if (name.trim()) {
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/me`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/users/me`, {
           method:'PATCH',
           headers:{'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('token')}`},
           body: JSON.stringify({ name: name.trim() }),

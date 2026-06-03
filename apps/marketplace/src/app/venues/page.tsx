@@ -31,7 +31,7 @@ export default function VenuesPage() {
   useEffect(() => {
     setLoading(true);
     const q = category ? `?category=${category}` : '';
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/venues${q}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/venues${q}`)
       .then(r => r.json())
       .then(d => setVenues(d.data || []))
       .catch(() => setVenues([]))

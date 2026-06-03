@@ -26,7 +26,7 @@ export default function VehiclePage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/reservations/${reservationId}/pricing`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/reservations/${reservationId}/pricing`)
       .then(r => r.json()).then(setPricing).catch(() => {});
   }, [reservationId]);
 
@@ -45,7 +45,7 @@ export default function VehiclePage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/reservations/${reservationId}/vehicle`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/reservations/${reservationId}/vehicle`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

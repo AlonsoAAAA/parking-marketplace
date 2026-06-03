@@ -42,7 +42,7 @@ export default function EventDetailPage() {
   const emoji = EMOJIS[idx];
 
   useEffect(() => {
-    const API = process.env.NEXT_PUBLIC_API_URL;
+    const API = process.env.NEXT_PUBLIC_API_URL || "";
     Promise.all([
       fetch(`${API}/api/v1/events/${params.id}`).then(r => r.json()),
       fetch(`${API}/api/v1/events/${params.id}/parkings`).then(r => r.json()),

@@ -153,7 +153,7 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
     if (digits.length >= 10) {
       const token = localStorage.getItem('token');
       const fullPhone = digits.startsWith('52') ? digits : `52${digits}`;
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/me`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/users/me`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ phone: fullPhone }),
@@ -276,7 +276,7 @@ export default function CheckoutPage() {
     const token = localStorage.getItem('token');
     if (!token) { router.push('/login'); return; }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/payments/create-intent`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/payments/create-intent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ reservationId }),
