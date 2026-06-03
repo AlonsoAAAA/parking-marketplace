@@ -12,6 +12,7 @@ import AdminClaims     from './pages/admin/Claims';
 import AdminPromotions from './pages/admin/Promotions';
 import AdminPayments   from './pages/admin/Payments';
 import AdminFraud      from './pages/admin/Fraud';
+import AdminPricing    from './pages/admin/Pricing';
 
 import OperatorDashboard    from './pages/operator/Dashboard';
 import OperatorReservations from './pages/operator/Reservations';
@@ -54,6 +55,7 @@ const ADMIN_NAV: NavItem[] = [
   { id: 'promotions',  label: 'Promociones',       shortLabel: 'Promos',   icon: a => ic(<><path d="M17 3L3 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="5.5" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="14.5" cy="14.5" r="2.5" stroke="currentColor" strokeWidth="1.4"/></>, a) },
   { id: 'payments',    label: 'Pagos',             shortLabel: 'Pagos',    icon: a => ic(<><rect x="2" y="5" width="16" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M2 9h16" stroke="currentColor" strokeWidth="1.4"/><rect x="5" y="12" width="3" height="1.5" rx="0.5" fill="currentColor"/></>, a) },
   { id: 'fraud',       label: 'Fraude',            shortLabel: 'Fraude',   icon: a => ic(<><path d="M10 2L3 6v5c0 4.4 3 8.5 7 9.5 4-1 7-5.1 7-9.5V6L10 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></>, a) },
+  { id: 'pricing',     label: 'Precios',           shortLabel: 'Precios',  icon: a => ic(<><path d="M12 2a7 7 0 1 0 0 14A7 7 0 0 0 12 2z" stroke="currentColor" strokeWidth="1.4"/><path d="M12 6v1.5M12 14.5V16M9.5 8.5C9.5 7.4 10.6 6.5 12 6.5s2.5.9 2.5 2-.9 1.8-2.5 2c-1.6.2-2.5 1-2.5 2.2s1.1 2 2.5 2 2.5-.9 2.5-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></>, a) },
 ];
 
 // ── Operator nav (full) ────────────────────────────────────────────────────────
@@ -93,6 +95,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
       {page === 'promotions' && <AdminPromotions {...props} />}
       {page === 'payments'   && <AdminPayments   {...props} />}
       {page === 'fraud'      && <AdminFraud      {...props} />}
+      {page === 'pricing'    && <AdminPricing    {...props} />}
     </Layout>
   );
 }

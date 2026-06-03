@@ -1,4 +1,4 @@
-export type AdminPage = 'dashboard' | 'venues' | 'events' | 'parkings' | 'customers' | 'claims' | 'promotions' | 'payments' | 'fraud';
+export type AdminPage = 'dashboard' | 'venues' | 'events' | 'parkings' | 'customers' | 'claims' | 'promotions' | 'payments' | 'fraud' | 'pricing';
 export type OperatorPage    = 'dashboard' | 'reservations' | 'scanner' | 'profile' | 'settings';
 export type SubOperatorPage = 'reservations' | 'scanner';
 export type SubAdminPage    = 'dashboard' | 'reservations' | 'scanner';
