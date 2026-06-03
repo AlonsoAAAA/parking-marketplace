@@ -11,6 +11,17 @@ import { FraudService } from '../fraud/fraud.service';
 import { QrService } from '../qr/qr.service';
 import { VehiculosMxService } from '../vehiculos-mx/vehiculos-mx.service';
 
+/**
+ * Normaliza cualquier variante de número mexicano a formato display: +52 XXXXXXXXXX
+ * Acepta: 10d, 52+10d (12d), 521+10d (13d — formato Twilio legacy)
+ */
+function formatPhoneDisplay(raw: string): string {
+  const d = raw.replace(/\D/g, '');
+  if (d.startsWith('521') && d.length === 13) return `+52 ${d.slice(3)}`;
+  if (d.startsWith('52')  && d.length === 12) return `+52 ${d.slice(2)}`;
+  return `+52 ${d}`;
+}
+
 @Injectable()
 export class ReservationsService {
   constructor(
@@ -370,7 +381,7 @@ export class ReservationsService {
       },
       payment: { amount: parseFloat(row.amount ?? '0') },
       qrToken,
-      userPhone: row.user_phone ? `+52 ${row.user_phone}` : null,
+      userPhone: row.user_phone ? formatPhoneDisplay(row.user_phone) : null,
     };
   }
 }

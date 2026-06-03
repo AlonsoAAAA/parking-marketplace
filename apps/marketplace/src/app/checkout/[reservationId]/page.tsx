@@ -141,7 +141,10 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
       if (!token) return '';
       const payload = JSON.parse(atob(token.split('.')[1]));
       const raw = (payload.phone as string) ?? '';
-      return raw.startsWith('52') ? raw.slice(2) : raw;
+      // Normalizar a 10 dígitos para mostrar en el campo
+      if (raw.startsWith('521') && raw.length === 13) return raw.slice(3); // legacy Twilio
+      if (raw.startsWith('52')  && raw.length === 12) return raw.slice(2); // estándar
+      return raw;
     } catch { return ''; }
   });
 
@@ -153,7 +156,13 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
     const digits = phone.replace(/\D/g, '');
     if (digits.length >= 10) {
       const token = localStorage.getItem('token');
-      const fullPhone = digits.startsWith('52') ? digits : `52${digits}`;
+      // Normalizar a 52+10dígitos: quitar prefijo 521 (legacy Twilio) o 52, luego agregar 52
+      const bare = digits.startsWith('521') && digits.length === 13
+        ? digits.slice(3)
+        : digits.startsWith('52') && digits.length === 12
+          ? digits.slice(2)
+          : digits;
+      const fullPhone = `52${bare}`;
       fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/users/me`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

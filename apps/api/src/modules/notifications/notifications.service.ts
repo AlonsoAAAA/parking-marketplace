@@ -67,11 +67,8 @@ export class NotificationsService {
 
     const twilio = require('twilio')(accountSid, authToken);
 
-    // Números mexicanos: 52 + 10 dígitos → 521 + 10 dígitos para WhatsApp
-    const phone = data.phone as string;
-    const waPhone = phone.length === 12 && phone.startsWith('52')
-      ? `521${phone.slice(2)}`
-      : phone;
+    // Usar número tal como está almacenado (formato E.164 sin '+': 52XXXXXXXXXX)
+    const waPhone = data.phone as string;
 
     // Construir payload — agregar mediaUrl si hay URL pública del QR
     const publicUrl = this.config.get('PUBLIC_API_URL'); // e.g. ngrok URL
