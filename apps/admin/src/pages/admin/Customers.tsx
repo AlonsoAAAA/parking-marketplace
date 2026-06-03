@@ -45,6 +45,27 @@ export default function AdminCustomers({ token }: Props) {
   const [saving, setSaving] = useState(false);
   const [formErr, setFormErr] = useState('');
 
+  // ── Edit role modal ──────────────────────────────────────────────────────────
+  const [editUser, setEditUser]   = useState<Customer | null>(null);
+  const [editRole, setEditRole]   = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editErr, setEditErr]     = useState('');
+
+  const openEdit = (c: Customer) => { setEditUser(c); setEditRole(c.role); setEditErr(''); };
+  const closeEdit = () => setEditUser(null);
+
+  const handleRoleChange = async () => {
+    if (!editUser) return;
+    setEditSaving(true); setEditErr('');
+    try {
+      await api.admin.updateUserRole(token, editUser.id, editRole);
+      setCustomers(prev => prev.map(c => c.id === editUser.id ? { ...c, role: editRole } : c));
+      closeEdit();
+    } catch (e: any) {
+      setEditErr(e.message || 'Error al actualizar rol');
+    } finally { setEditSaving(false); }
+  };
+
   const load = () => {
     setLoading(true);
     api.admin.customers(token)
@@ -110,7 +131,7 @@ export default function AdminCustomers({ token }: Props) {
             <p style={{ fontSize: 11, color: '#bbb', marginBottom: 10 }}>{filtered.length} de {customers.length} usuarios</p>
             <div className="adm-tw">
               <table className="adm-t">
-                <thead><tr><th>Usuario</th><th>Teléfono</th><th>Email</th><th>Rol</th><th>Registro</th></tr></thead>
+                <thead><tr><th>Usuario</th><th>Teléfono</th><th>Email</th><th>Rol</th><th>Registro</th><th></th></tr></thead>
                 <tbody>
                   {filtered.map(c => (
                     <tr key={c.id}>
@@ -119,6 +140,15 @@ export default function AdminCustomers({ token }: Props) {
                       <td style={{ color: '#555', fontSize: 12 }}>{c.email || '—'}</td>
                       <td>{roleBadge(c.role)}</td>
                       <td style={{ fontSize: 12, color: '#bbb' }}>{fmtDate(c.created_at)}</td>
+                      <td>
+                        <button
+                          onClick={() => openEdit(c)}
+                          className="adm-btn adm-btn-ghost adm-btn-sm"
+                          title="Cambiar rol"
+                        >
+                          Editar rol
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -127,6 +157,48 @@ export default function AdminCustomers({ token }: Props) {
           </>
         )}
       </div>
+
+      {/* ── Edit role modal ── */}
+      {editUser && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && closeEdit()}>
+          <div className="modal-card">
+            <div className="modal-title">Cambiar rol</div>
+            <div className="modal-sub">{editUser.name || editUser.phone}</div>
+
+            {editErr && <div className="modal-err">{editErr}</div>}
+
+            <label className="modal-lbl">Rol</label>
+            <select
+              className="modal-select"
+              value={editRole}
+              onChange={e => setEditRole(e.target.value)}
+              autoFocus
+            >
+              {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+            </select>
+
+            {editRole !== editUser.role && (
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e', marginBottom: 14 }}>
+                ⚠️ Cambiarás el rol de <strong>{ROLE_LABELS[editUser.role]}</strong> a <strong>{ROLE_LABELS[editRole]}</strong>.
+                {editRole === 'operator' && ' Este usuario podrá acceder al panel de operador.'}
+                {editRole === 'admin' && ' Este usuario tendrá acceso completo al panel de administración.'}
+                {editRole === 'user' && ' Este usuario perderá acceso al panel.'}
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button className="modal-btn-secondary" onClick={closeEdit}>Cancelar</button>
+              <button
+                className="modal-btn-primary"
+                onClick={handleRoleChange}
+                disabled={editSaving || editRole === editUser.role}
+              >
+                {editSaving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && closeModal()}>
