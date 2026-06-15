@@ -30,7 +30,7 @@ async function bootstrap() {
   // ── Body parser con límite y rawBody para Stripe webhooks ───────────────────
   app.use(
     express.json({
-      limit: '1mb',
+      limit: '25mb',
       verify: (req: any, _res, buf) => {
         req.rawBody = buf;
       },
