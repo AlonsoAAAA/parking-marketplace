@@ -29,8 +29,6 @@ services:
         sync: false
       - key: PRODUCTION_URL
         sync: false
-      - key: PUBLIC_API_URL
-        sync: false
       # Stripe en modo TEST para staging
       - key: STRIPE_SECRET_KEY
         sync: false
