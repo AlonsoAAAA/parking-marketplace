@@ -6,7 +6,7 @@ services:
     region: oregon
     branch: staging
     buildCommand: npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm --filter api build
-    startCommand: pnpm --filter api migration:run && pnpm --filter api start
+    startCommand: pnpm --filter api db:migrate:sql && pnpm --filter api start
     envVars:
       - key: NODE_VERSION
         value: 20.20.2
