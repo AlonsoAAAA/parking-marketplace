@@ -191,6 +191,21 @@ export default function ConfirmacionPage() {
             ))}
           </div>
           <div style={{
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            borderLeft: '3px solid #22c55e',
+            borderRadius: 12,
+            padding: '14px 16px',
+            marginBottom: 14,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 6, letterSpacing: .3 }}>
+              🅿️ Tiempo de estacionamiento incluido
+            </div>
+            <div style={{ fontSize: 12, color: '#15803d', lineHeight: 1.65 }}>
+              Tu boleto incluye <strong>6 horas de estacionamiento</strong> a partir de tu hora de entrada.
+            </div>
+          </div>
+          <div style={{
             background: '#fff8f0',
             border: '1px solid #fde68a',
             borderLeft: '3px solid #f59e0b',

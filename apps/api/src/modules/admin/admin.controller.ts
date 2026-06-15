@@ -298,9 +298,9 @@ export class AdminController {
 
   @Get('operator/events')
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('operator', 'admin')
-  async operatorEvents(@Req() req: any) {
-    return { data: await this.adminService.listOperatorEvents(req.user.id) };
+  @Roles('operator', 'sub_operator', 'sub_admin', 'admin')
+  async operatorEvents(@Req() req: any, @Query('status') status?: string) {
+    return { data: await this.adminService.listOperatorEvents(req.user.id, status) };
   }
 
   @Patch('operator/events/:id/prices')

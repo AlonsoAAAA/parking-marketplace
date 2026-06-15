@@ -246,14 +246,21 @@ export class AdminService {
     return rows[0];
   }
 
-  async listOperatorEvents(operatorId: string) {
+  async listOperatorEvents(operatorId: string, status?: string) {
     return this.db.query(
-      `SELECT e.*, p.name AS "parkingName"
+      `SELECT e.*, p.name AS "parkingName", p.address AS "parkingAddress"
        FROM events e
        JOIN parkings p ON p.id = e.parking_id
-       WHERE p.owner_id = $1
+       WHERE (
+         p.owner_id = $1
+         OR p.owner_id = (
+           SELECT parent_operator_id FROM users
+           WHERE id = $1 AND role IN ('sub_operator', 'sub_admin')
+         )
+       )
+       ${status ? 'AND e.status = $2' : ''}
        ORDER BY e.starts_at DESC`,
-      [operatorId],
+      status ? [operatorId, status] : [operatorId],
     );
   }
 

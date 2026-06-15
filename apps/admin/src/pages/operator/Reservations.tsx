@@ -97,7 +97,7 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
   const [selected, setSelected]           = useState<Reservation | null>(null);
 
   useEffect(() => {
-    api.events.list()
+    api.operator.events(token)
       .then(d => {
         const list = (d as any).data || [];
         setEvents(list);

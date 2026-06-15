@@ -28,7 +28,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
   const today = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
 
   useEffect(() => {
-    api.events.list({ status: 'active' })
+    api.operator.events(token, 'active')
       .then(async d => {
         const evList: Event[] = (d as any).data || [];
         setEvents(evList);

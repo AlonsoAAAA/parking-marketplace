@@ -89,8 +89,8 @@ export const api = {
   operator: {
     updateProfile: (token: string, data: object) =>
       req<any>('/users/me', { method: 'PATCH', body: JSON.stringify(data) }, token),
-    events: (token: string) =>
-      req<any>('/admin/operator/events', {}, token),
+    events: (token: string, status?: string) =>
+      req<any>(`/admin/operator/events${status ? `?status=${status}` : ''}`, {}, token),
     updateEventPrices: (token: string, id: string, data: object) =>
       req<any>(`/admin/operator/events/${id}/prices`, { method: 'PATCH', body: JSON.stringify(data) }, token),
     // Sub-operator team management
