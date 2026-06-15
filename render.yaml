@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: parking-api-staging
+    runtime: node
+    plan: free
+    region: oregon
+    branch: staging
+    buildCommand: npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm --filter api build
+    startCommand: pnpm --filter api migration:run && pnpm --filter api start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.20.2
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: parking-db-staging
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: QR_SECRET
+        generateValue: true
+      # URLs del frontend de staging (Vercel preview) — completar tras crearlo
+      - key: MARKETPLACE_URL
+        sync: false
+      - key: ADMIN_URL
+        sync: false
+      - key: PRODUCTION_URL
+        sync: false
+      - key: PUBLIC_API_URL
+        sync: false
+      # Stripe en modo TEST para staging
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # Twilio sandbox de WhatsApp (o el número de producción, para validar antes de pasarlo a prod real)
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_NUMBER
+        sync: false
+
+databases:
+  - name: parking-db-staging
+    plan: free
+    databaseName: parking_staging
+    user: parking_staging
