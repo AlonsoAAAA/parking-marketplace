@@ -43,6 +43,11 @@ export default function BoletoDetailPage() {
   const [ticket,  setTicket]  = useState<TicketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
+  const [refundOpen,    setRefundOpen]    = useState(false);
+  const [refundReason,  setRefundReason]  = useState('');
+  const [refundPhotos,  setRefundPhotos]  = useState<string[]>([]);
+  const [refundSending, setRefundSending] = useState(false);
+  const [refundDone,    setRefundDone]    = useState(false);
 
   /* ── fetch ticket ── */
   useEffect(() => {
@@ -117,11 +122,6 @@ export default function BoletoDetailPage() {
   const isUsed   = ticket.reservation.status === 'used';
   const hasQR    = isPaid || isUsed;
   const canRefund = isPaid && new Date(ticket.event.startsAt) > new Date(Date.now() + 6 * 3600 * 1000);
-  const [refundOpen, setRefundOpen] = useState(false);
-  const [refundReason, setRefundReason] = useState('');
-  const [refundPhotos, setRefundPhotos] = useState<string[]>([]);
-  const [refundSending, setRefundSending] = useState(false);
-  const [refundDone, setRefundDone] = useState(false);
 
   return (
     <>
