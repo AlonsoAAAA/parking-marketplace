@@ -5,6 +5,7 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main",
+    "start:prod": "node scripts/run-sql-migrations.js && node dist/main",
     "migration:generate": "typeorm migration:generate",
     "migration:run": "typeorm migration:run -d src/database/data-source.ts",
     "db:migrate:sql": "node scripts/run-sql-migrations.js",
