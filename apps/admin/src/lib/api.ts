@@ -69,6 +69,7 @@ export const api = {
     createClaim:      (token: string, data: object)      => req<any>('/admin/claims', { method: 'POST', body: JSON.stringify(data) }, token),
     updateClaim:      (token: string, id: string, data: object) => req<any>(`/admin/claims/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
     deleteClaim:      (token: string, id: string)        => req<void>(`/admin/claims/${id}`, { method: 'DELETE' }, token),
+    approveRefund:    (token: string, claimId: string)   => req<any>(`/admin/claims/${claimId}/approve-refund`, { method: 'POST' }, token),
     promotions:       (token: string)                    => req<any>('/admin/promotions', {}, token),
     createPromotion:  (token: string, data: object)      => req<any>('/admin/promotions', { method: 'POST', body: JSON.stringify(data) }, token),
     updatePromotion:  (token: string, id: string, data: object) => req<any>(`/admin/promotions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token),

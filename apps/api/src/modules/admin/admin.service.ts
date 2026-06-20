@@ -1,11 +1,19 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import Stripe from 'stripe';
 import { normalizePhone } from '../../lib/phone';
 
 @Injectable()
 export class AdminService {
-  constructor(@InjectDataSource() private db: DataSource) {}
+  private stripe: Stripe;
+  constructor(
+    @InjectDataSource() private db: DataSource,
+    private config: ConfigService,
+  ) {
+    this.stripe = new Stripe(this.config.get('STRIPE_SECRET_KEY'), { apiVersion: '2023-10-16' });
+  }
 
   // ─── Metrics ──────────────────────────────────────────────────────────────
 
@@ -467,5 +475,37 @@ export class AdminService {
        ORDER BY pay.created_at DESC`,
       params,
     );
+  }
+
+  async approveRefund(claimId: string) {
+    const [claim] = await this.db.query(
+      `SELECT id, type, status, reservation_id, description FROM claims WHERE id = $1`,
+      [claimId],
+    );
+    if (!claim) throw new NotFoundException('Reclamo no encontrado');
+    if (claim.type !== 'refund_request') throw new BadRequestException('Este reclamo no es una solicitud de reembolso');
+    if (claim.status === 'resolved') throw new BadRequestException('Este reclamo ya fue resuelto');
+
+    const [payment] = await this.db.query(
+      `SELECT id, provider_payment_id, amount FROM payments WHERE reservation_id = $1 AND status = 'completed'`,
+      [claim.reservation_id],
+    );
+    if (!payment) throw new BadRequestException('No se encontró un pago completado para esta reserva');
+
+    const refund = await this.stripe.refunds.create({ payment_intent: payment.provider_payment_id });
+
+    await this.db.query(
+      `UPDATE payments SET status='refunded', refund_id=$1, refunded_at=NOW(), refund_reason=$2 WHERE id=$3`,
+      [refund.id, claim.description, payment.id],
+    );
+    await this.db.query(
+      `UPDATE reservations SET status='cancelled' WHERE id=$1`,
+      [claim.reservation_id],
+    );
+    await this.db.query(
+      `UPDATE claims SET status='resolved', admin_notes='Reembolso aprobado y procesado.', resolved_at=NOW(), updated_at=NOW() WHERE id=$1`,
+      [claimId],
+    );
+    return { refundId: refund.id };
   }
 }

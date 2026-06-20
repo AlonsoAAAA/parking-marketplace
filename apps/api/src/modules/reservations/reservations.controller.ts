@@ -11,13 +11,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  IsString, IsNotEmpty, IsOptional,
-  IsInt, Min, Max,
+  IsString, IsNotEmpty, IsOptional, IsArray,
+  IsInt, Min, Max, MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ReservationsService } from './reservations.service';
 import { JwtGuard, RolesGuard } from '../auth/guards/guards';
 import { Roles } from '../auth/decorators/roles.decorator';
+
+class CreateRefundRequestDto {
+  @IsString() @IsNotEmpty() @MaxLength(500) reason: string;
+  @IsOptional() @IsArray() evidencePhotos?: string[];
+}
 
 class CreateReservationDto {
   @IsString()
@@ -114,5 +119,11 @@ export class ReservationsController {
   async getTicket(@Param('id') id: string, @Req() req: any) {
     const data = await this.reservationsService.getTicket(id, req.user.id);
     return { data };
+  }
+
+  @Post(':id/refund-request')
+  @UseGuards(JwtGuard)
+  async requestRefund(@Param('id') id: string, @Body() dto: CreateRefundRequestDto, @Req() req: any) {
+    return this.reservationsService.createRefundRequest(id, req.user.id, dto.reason, dto.evidencePhotos ?? []);
   }
 }

@@ -248,6 +248,11 @@ export class AdminController {
   }
 
   // Claims
+  @Post('claims/:id/approve-refund')
+  async approveRefund(@Param('id') id: string) {
+    return { data: await this.adminService.approveRefund(id) };
+  }
+
   @Get('claims')
   async listClaims(@Query('status') status?: string) {
     return { data: await this.adminService.listClaims(status) };
