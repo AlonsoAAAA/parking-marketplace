@@ -276,6 +276,18 @@ export default function BoletoDetailPage() {
                 <span className="bd-val">{ticket.event.parkingAddress}</span>
               </div>
             )}
+            {ticket.event.startsAt && (
+              <>
+                <div className="bd-row">
+                  <span className="bd-lbl">Hora de entrada</span>
+                  <span className="bd-val">{fmtTime(ticket.event.startsAt)}</span>
+                </div>
+                <div className="bd-row">
+                  <span className="bd-lbl">Hora máx. de salida</span>
+                  <span className="bd-val">{fmtTime(new Date(new Date(ticket.event.startsAt).getTime() + 6 * 3600 * 1000).toISOString())} <span style={{ fontSize: 10, color: '#999' }}>(6 hrs)</span></span>
+                </div>
+              </>
+            )}
             {ticket.payment.amount > 0 && (
               <>
                 <div className="bd-row">
@@ -414,6 +426,22 @@ export default function BoletoDetailPage() {
               ✅ Tu solicitud de reembolso fue enviada. El equipo la revisará en breve.
             </div>
           )}
+
+          {/* Política de cancelación */}
+          <div style={{
+            background: '#fff8f0', border: '1px solid #fde68a',
+            borderLeft: '3px solid #f59e0b', borderRadius: 12,
+            padding: '14px 16px', marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 6, letterSpacing: .3 }}>
+              ⚠️ Política de cancelación
+            </div>
+            <div style={{ fontSize: 12, color: '#b45309', lineHeight: 1.65 }}>
+              Puedes solicitar reembolso hasta <strong>6 horas antes</strong> del inicio del evento.
+              Pasado ese plazo, no se aceptan cancelaciones ni reembolsos.
+              El boleto es de uso único e intransferible.
+            </div>
+          </div>
 
           <Link href="/mis-boletos" className="pm-btn-secondary" style={{ display: 'flex', textDecoration: 'none' }}>
             ← Ver todos mis boletos
