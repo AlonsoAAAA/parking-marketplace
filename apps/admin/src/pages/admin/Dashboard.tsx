@@ -3,7 +3,7 @@ import { Event } from '../../types';
 import { ADMIN_CSS, STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
-interface Props { token: string; }
+interface Props { token: string; onNavigate: (page: string) => void; }
 
 const fmtMoney = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: 0 });
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
@@ -17,7 +17,7 @@ const SHORTCUTS = [
   { id: 'payments',   label: 'Pagos',              icon: '💳' },
 ];
 
-export default function AdminDashboard({ token }: Props) {
+export default function AdminDashboard({ token, onNavigate }: Props) {
   const [events, setEvents]     = useState<Event[]>([]);
   const [metrics, setMetrics]   = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
@@ -131,7 +131,7 @@ export default function AdminDashboard({ token }: Props) {
         <p className="adm-section-lbl">Acceso rápido</p>
         <div className="shortcuts">
           {SHORTCUTS.map(s => (
-            <button key={s.id} className="sc-btn">
+            <button key={s.id} className="sc-btn" onClick={() => onNavigate(s.id)}>
               <div className="sc-icon">{s.icon}</div>
               <div className="sc-label">{s.label}</div>
             </button>

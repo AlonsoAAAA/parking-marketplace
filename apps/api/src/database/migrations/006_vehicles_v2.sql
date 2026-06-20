@@ -20,7 +20,19 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS price_pickup DECIMAL(10,2);
 ALTER TABLE events ADD COLUMN IF NOT EXISTS price_moto   DECIMAL(10,2);
 ALTER TABLE events ADD COLUMN IF NOT EXISTS category     VARCHAR(50);
 
--- ── 3. Migrar nombres de categoría en parking_slots_pricing ─────────────────
+-- ── 3. Asegurar que parking_slots_pricing existe (para entornos frescos) ─────
+CREATE TABLE IF NOT EXISTS parking_slots_pricing (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  parking_id   UUID NOT NULL REFERENCES parkings(id) ON DELETE CASCADE,
+  vehicle_type VARCHAR(30) NOT NULL
+                 CHECK (vehicle_type IN ('auto', 'suv_camioneta', 'pickup', 'moto')),
+  price        DECIMAL(10,2) NOT NULL DEFAULT 0,
+  slots        INT NOT NULL DEFAULT 0,
+  created_at   TIMESTAMP DEFAULT NOW(),
+  CONSTRAINT uq_parking_slot_type UNIQUE (parking_id, vehicle_type)
+);
+
+-- ── 4. Migrar nombres de categoría en parking_slots_pricing ─────────────────
 DO $$
 BEGIN
   -- Quitar constraint viejo (si existe con valores anteriores)
@@ -46,23 +58,11 @@ EXCEPTION WHEN duplicate_object THEN NULL;
            WHEN undefined_table  THEN NULL;
 END $$;
 
--- ── 4. Migrar vehicle_type en reservaciones existentes ───────────────────────
+-- ── 5. Migrar vehicle_type en reservaciones existentes ───────────────────────
 UPDATE reservations SET vehicle_type = 'auto'           WHERE vehicle_type = 'Auto';
 UPDATE reservations SET vehicle_type = 'suv_camioneta'   WHERE vehicle_type = 'Sub';
 UPDATE reservations SET vehicle_type = 'pickup'         WHERE vehicle_type = 'Pick Up';
 UPDATE reservations SET vehicle_type = 'moto'           WHERE vehicle_type = 'Moto';
-
--- ── 5. Asegurar que parking_slots_pricing existe (para entornos frescos) ─────
-CREATE TABLE IF NOT EXISTS parking_slots_pricing (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  parking_id   UUID NOT NULL REFERENCES parkings(id) ON DELETE CASCADE,
-  vehicle_type VARCHAR(30) NOT NULL
-                 CHECK (vehicle_type IN ('auto', 'suv_camioneta', 'pickup', 'moto')),
-  price        DECIMAL(10,2) NOT NULL DEFAULT 0,
-  slots        INT NOT NULL DEFAULT 0,
-  created_at   TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT uq_parking_slot_type UNIQUE (parking_id, vehicle_type)
-);
 
 -- ── 6. parking_id en reservations (si no existe) ────────────────────────────
 ALTER TABLE reservations ADD COLUMN IF NOT EXISTS parking_id UUID REFERENCES parkings(id) ON DELETE SET NULL;

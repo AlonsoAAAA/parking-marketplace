@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 
 interface Props { token: string; }
 
-const EMPTY: Venue = { id: '', name: '', city: 'Ciudad de México', address: '', capacity: undefined };
+const EMPTY: Venue = { id: '', name: '', city: 'Ciudad de México', address: '', capacity: undefined, lat: undefined, lng: undefined };
 
 export default function AdminVenues({ token }: Props) {
   const [venues, setVenues]   = useState<Venue[]>([]);
@@ -27,7 +27,7 @@ export default function AdminVenues({ token }: Props) {
     if (!modal?.name.trim() || !modal?.address.trim()) { setError('Nombre y dirección son requeridos'); return; }
     setSaving(true); setError('');
     try {
-      const data = { name: modal.name, city: modal.city, address: modal.address, capacity: modal.capacity };
+      const data = { name: modal.name, city: modal.city, address: modal.address, capacity: modal.capacity, lat: modal.lat, lng: modal.lng };
       if (modal.id) await api.admin.updateVenue(token, modal.id, data);
       else          await api.admin.createVenue(token, data);
       setModal(null);
@@ -97,6 +97,10 @@ export default function AdminVenues({ token }: Props) {
             <div className="adm-field"><label className="adm-label">Ciudad</label><input className="adm-input" value={modal.city} onChange={e => setModal(m => m && ({...m, city: e.target.value}))} /></div>
             <div className="adm-field"><label className="adm-label">Dirección</label><input className="adm-input" value={modal.address} onChange={e => setModal(m => m && ({...m, address: e.target.value}))} placeholder="Av. Principal 123, Col. Centro" /></div>
             <div className="adm-field"><label className="adm-label">Capacidad</label><input className="adm-input" type="number" value={modal.capacity ?? ''} onChange={e => setModal(m => m && ({...m, capacity: Number(e.target.value) || undefined}))} placeholder="65000" /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="adm-field"><label className="adm-label">Latitud</label><input className="adm-input" type="number" step="any" value={modal.lat ?? ''} onChange={e => setModal(m => m && ({...m, lat: e.target.value ? Number(e.target.value) : undefined}))} placeholder="19.4326" /></div>
+              <div className="adm-field"><label className="adm-label">Longitud</label><input className="adm-input" type="number" step="any" value={modal.lng ?? ''} onChange={e => setModal(m => m && ({...m, lng: e.target.value ? Number(e.target.value) : undefined}))} placeholder="-99.1332" /></div>
+            </div>
             <div className="adm-modal-footer">
               <button className="adm-btn adm-btn-ghost" onClick={() => setModal(null)}>Cancelar</button>
               <button className="adm-btn" onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>

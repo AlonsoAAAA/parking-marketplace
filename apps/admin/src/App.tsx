@@ -86,7 +86,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
   const props = { token };
   return (
     <Layout navItems={ADMIN_NAV} page={page} setPage={p => setPage(p as AdminPage)} onLogout={onLogout} role="admin">
-      {page === 'dashboard'  && <AdminDashboard  {...props} />}
+      {page === 'dashboard'  && <AdminDashboard  {...props} onNavigate={p => setPage(p as AdminPage)} />}
       {page === 'venues'     && <AdminVenues     {...props} />}
       {page === 'events'     && <AdminEvents     {...props} />}
       {page === 'parkings'   && <AdminParkings   {...props} />}

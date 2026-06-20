@@ -63,14 +63,14 @@ export default function AdminParkings({ token }: Props) {
   }, [token]);
 
   const openCreate = () => {
-    setModal({ id: '', name: '', address: '', ownerId: '' });
+    setModal({ id: '', name: '', address: '', ownerId: '', lat: '', lng: '' });
     setPricing(EMPTY_PRICING());
     setVenueLinks([]);
     setError('');
   };
 
   const openEdit = (p: any) => {
-    setModal({ id: p.id, name: p.name, address: p.address, ownerId: p.owner_id ?? '' });
+    setModal({ id: p.id, name: p.name, address: p.address, ownerId: p.owner_id ?? '', lat: p.lat ?? '', lng: p.lng ?? '' });
     setPricing(buildPricing(p.pricing || []));
     setError('');
     // Load existing venue associations
@@ -113,7 +113,7 @@ export default function AdminParkings({ token }: Props) {
           slots: parseInt(r.slots) || 0,
           price: parseFloat(r.price) || 0,
         }));
-      const data = { name: modal.name, address: modal.address, pricing: pricingPayload, ownerId: modal.ownerId || undefined };
+      const data = { name: modal.name, address: modal.address, pricing: pricingPayload, ownerId: modal.ownerId || undefined, lat: modal.lat ? Number(modal.lat) : undefined, lng: modal.lng ? Number(modal.lng) : undefined };
       let savedId = modal.id;
       if (modal.id) {
         await api.admin.updateParking(token, modal.id, data);
@@ -252,6 +252,12 @@ export default function AdminParkings({ token }: Props) {
             <div className="adm-field">
               <label className="adm-label">Dirección</label>
               <input className="adm-input" value={modal.address || ''} onChange={e => setModal((m: any) => ({ ...m, address: e.target.value }))} placeholder="Av. Insurgentes Sur 123, CDMX" />
+            </div>
+
+            {/* Coordenadas */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="adm-field"><label className="adm-label">Latitud</label><input className="adm-input" type="number" step="any" value={modal.lat || ''} onChange={e => setModal((m: any) => ({ ...m, lat: e.target.value }))} placeholder="19.4326" /></div>
+              <div className="adm-field"><label className="adm-label">Longitud</label><input className="adm-input" type="number" step="any" value={modal.lng || ''} onChange={e => setModal((m: any) => ({ ...m, lng: e.target.value }))} placeholder="-99.1332" /></div>
             </div>
 
             {/* Operador responsable */}

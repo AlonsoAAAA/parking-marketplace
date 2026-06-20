@@ -29,6 +29,8 @@ class CreateVenueDto {
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsNumber() @Type(() => Number) capacity?: number;
+  @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
+  @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
 }
 
 class UpdateVenueDto {
@@ -36,6 +38,8 @@ class UpdateVenueDto {
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsNumber() @Type(() => Number) capacity?: number;
+  @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
+  @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
 }
 
 class ParkingPricingDto {
@@ -58,6 +62,8 @@ class UpdateParkingDto {
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsString() ownerId?: string;
+  @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
+  @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ParkingPricingDto) pricing?: ParkingPricingDto[];
 }
 
@@ -242,6 +248,11 @@ export class AdminController {
   }
 
   // Claims
+  @Post('claims/:id/approve-refund')
+  async approveRefund(@Param('id') id: string) {
+    return { data: await this.adminService.approveRefund(id) };
+  }
+
   @Get('claims')
   async listClaims(@Query('status') status?: string) {
     return { data: await this.adminService.listClaims(status) };

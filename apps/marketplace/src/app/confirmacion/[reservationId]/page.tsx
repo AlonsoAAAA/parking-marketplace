@@ -43,12 +43,12 @@ export default function ConfirmacionPage() {
           // Webhook aún procesando — reintenta con backoff
           setTimeout(() => fetchTicket(attempt + 1), attempt * 1500);
         } else {
-          if (!data?.qrToken) setQrError(true);
-          setTicket(data || MOCK);
+          setQrError(true);
+          setTicket(data ?? null);
           setLoading(false);
         }
       })
-      .catch(() => { setTicket(MOCK); setLoading(false); });
+      .catch(() => { setQrError(true); setLoading(false); });
   };
 
   useEffect(() => {
@@ -100,7 +100,14 @@ export default function ConfirmacionPage() {
     </div>
   );
 
-  if (!ticket) return null;
+  if (!ticket) return (
+    <div style={{minHeight:'100vh',background:'#EDEDED',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,fontFamily:'Inter,sans-serif',padding:24,textAlign:'center'}}>
+      <div style={{fontSize:40}}>🅿️</div>
+      <p style={{fontSize:16,fontWeight:700,color:'#1a1a1a'}}>¡Pago confirmado!</p>
+      <p style={{fontSize:13,color:'#666',maxWidth:280,lineHeight:1.6}}>Tu reserva está lista. Recibirás tu código QR por WhatsApp en los próximos minutos.</p>
+      <Link href="/" style={{marginTop:8,fontSize:12,color:'#1a1a1a',fontWeight:600,textDecoration:'underline'}}>Ir al inicio</Link>
+    </div>
+  );
   const ticketId = `TKT-${reservationId.slice(0,8).toUpperCase()}`;
 
   return (

@@ -17,8 +17,8 @@ export class EventsService {
            e.category,
            p.name             AS "parkingName",
            p.address          AS "parkingAddress",
-           COALESCE(p.lat, v.lat) AS lat,
-           COALESCE(p.lng, v.lng) AS lng,
+           COALESCE(p.lat, v.lat)::float AS lat,
+           COALESCE(p.lng, v.lng)::float AS lng,
            COALESCE(
              (SELECT SUM(ep.total_slots)    FROM event_parkings ep WHERE ep.event_id = e.id),
              (SELECT SUM(pk.total_capacity) FROM venue_parkings vp JOIN parkings pk ON pk.id = vp.parking_id WHERE vp.venue_id = e.venue_id AND pk.is_active = true),
@@ -94,7 +94,9 @@ export class EventsService {
              WHERE ep2.event_id = $1 AND ep2.parking_id = vp.parking_id
            )
        )
-       SELECT p.id, p.name, p.address, p.lat, p.lng,
+       SELECT p.id, p.name, p.address,
+              COALESCE(p.lat, v.lat)::float AS lat,
+              COALESCE(p.lng, v.lng)::float AS lng,
               src.distance_meters AS "distanceMeters",
               src.walk_minutes    AS "walkMinutes",
               src.total_slots     AS "totalSlots",
@@ -107,9 +109,11 @@ export class EventsService {
               ) AS pricing
        FROM src
        JOIN parkings p ON p.id = src.parking_id
+       JOIN events ev ON ev.id = $1
+       LEFT JOIN venues v ON v.id = ev.venue_id
        LEFT JOIN parking_slots_pricing sp ON sp.parking_id = p.id
        WHERE p.is_active = true
-       GROUP BY p.id, p.name, p.address, p.lat, p.lng,
+       GROUP BY p.id, p.name, p.address, COALESCE(p.lat, v.lat), COALESCE(p.lng, v.lng),
                 src.distance_meters, src.walk_minutes, src.total_slots, src.slots_reserved
        ORDER BY src.distance_meters ASC`,
       [eventId],

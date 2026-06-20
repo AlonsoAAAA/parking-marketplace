@@ -116,6 +116,12 @@ export default function BoletoDetailPage() {
   const isPending = ticket.reservation.status === 'pending';
   const isUsed   = ticket.reservation.status === 'used';
   const hasQR    = isPaid || isUsed;
+  const canRefund = isPaid && new Date(ticket.event.startsAt) > new Date(Date.now() + 6 * 3600 * 1000);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundPhotos, setRefundPhotos] = useState<string[]>([]);
+  const [refundSending, setRefundSending] = useState(false);
+  const [refundDone, setRefundDone] = useState(false);
 
   return (
     <>
@@ -270,6 +276,18 @@ export default function BoletoDetailPage() {
                 <span className="bd-val">{ticket.event.parkingAddress}</span>
               </div>
             )}
+            {ticket.event.startsAt && (
+              <>
+                <div className="bd-row">
+                  <span className="bd-lbl">Hora de entrada</span>
+                  <span className="bd-val">{fmtTime(ticket.event.startsAt)}</span>
+                </div>
+                <div className="bd-row">
+                  <span className="bd-lbl">Hora máx. de salida</span>
+                  <span className="bd-val">{fmtTime(new Date(new Date(ticket.event.startsAt).getTime() + 6 * 3600 * 1000).toISOString())} <span style={{ fontSize: 10, color: '#999' }}>(6 hrs)</span></span>
+                </div>
+              </>
+            )}
             {ticket.payment.amount > 0 && (
               <>
                 <div className="bd-row">
@@ -325,6 +343,105 @@ export default function BoletoDetailPage() {
               </p>
             </div>
           )}
+
+          {/* Solicitar reembolso */}
+          {canRefund && !refundDone && (
+            <div style={{ marginBottom: 20 }}>
+              {!refundOpen ? (
+                <button onClick={() => setRefundOpen(true)} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 12, color: '#999', textDecoration: 'underline', padding: 0,
+                }}>
+                  Solicitar reembolso →
+                </button>
+              ) : (
+                <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 14, padding: 16 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#1a1a1a' }}>Solicitar reembolso</p>
+                  <p style={{ fontSize: 11, color: '#999', marginBottom: 12, lineHeight: 1.5 }}>
+                    Solo disponible más de 6 horas antes del evento. El equipo revisará tu solicitud.
+                  </p>
+                  <textarea
+                    value={refundReason}
+                    onChange={e => setRefundReason(e.target.value)}
+                    maxLength={500}
+                    placeholder="Cuéntanos el motivo de tu solicitud..."
+                    style={{ width: '100%', minHeight: 90, borderRadius: 10, border: '1px solid #ddd',
+                      padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                  <label style={{ display: 'block', marginTop: 10, marginBottom: 4, fontSize: 12, color: '#666' }}>
+                    Adjuntar fotos (opcional)
+                  </label>
+                  <input type="file" accept="image/*" multiple onChange={async e => {
+                    const files = Array.from(e.target.files ?? []);
+                    const toBase64 = (f: File) => new Promise<string>(res => {
+                      const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f);
+                    });
+                    setRefundPhotos(await Promise.all(files.map(toBase64)));
+                  }} style={{ fontSize: 12 }} />
+                  {refundPhotos.length > 0 && (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                      {refundPhotos.map((src, i) => (
+                        <img key={i} src={src} alt="" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid #eee' }} />
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                    <button onClick={() => setRefundOpen(false)} style={{
+                      flex: 1, padding: '10px 0', borderRadius: 10, border: '1px solid #ddd',
+                      background: '#fff', fontSize: 13, cursor: 'pointer',
+                    }}>
+                      Cancelar
+                    </button>
+                    <button
+                      disabled={!refundReason.trim() || refundSending}
+                      onClick={async () => {
+                        setRefundSending(true);
+                        try {
+                          const token = localStorage.getItem('token');
+                          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/reservations/${id}/refund-request`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                            body: JSON.stringify({ reason: refundReason, evidencePhotos: refundPhotos }),
+                          });
+                          if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Error'); }
+                          setRefundDone(true);
+                          setRefundOpen(false);
+                        } catch (e: any) {
+                          alert(e.message || 'Error al enviar la solicitud');
+                        } finally { setRefundSending(false); }
+                      }}
+                      style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+                        background: refundReason.trim() ? '#1a1a1a' : '#ccc', color: '#fff', fontSize: 13, cursor: 'pointer' }}
+                    >
+                      {refundSending ? 'Enviando...' : 'Enviar solicitud'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {refundDone && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12,
+              padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#166534', lineHeight: 1.55 }}>
+              ✅ Tu solicitud de reembolso fue enviada. El equipo la revisará en breve.
+            </div>
+          )}
+
+          {/* Política de cancelación */}
+          <div style={{
+            background: '#fff8f0', border: '1px solid #fde68a',
+            borderLeft: '3px solid #f59e0b', borderRadius: 12,
+            padding: '14px 16px', marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 6, letterSpacing: .3 }}>
+              ⚠️ Política de cancelación
+            </div>
+            <div style={{ fontSize: 12, color: '#b45309', lineHeight: 1.65 }}>
+              Puedes solicitar reembolso hasta <strong>6 horas antes</strong> del inicio del evento.
+              Pasado ese plazo, no se aceptan cancelaciones ni reembolsos.
+              El boleto es de uso único e intransferible.
+            </div>
+          </div>
 
           <Link href="/mis-boletos" className="pm-btn-secondary" style={{ display: 'flex', textDecoration: 'none' }}>
             ← Ver todos mis boletos

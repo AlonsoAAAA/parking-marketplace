@@ -1,11 +1,19 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import Stripe from 'stripe';
 import { normalizePhone } from '../../lib/phone';
 
 @Injectable()
 export class AdminService {
-  constructor(@InjectDataSource() private db: DataSource) {}
+  private stripe: Stripe;
+  constructor(
+    @InjectDataSource() private db: DataSource,
+    private config: ConfigService,
+  ) {
+    this.stripe = new Stripe(this.config.get('STRIPE_SECRET_KEY'), { apiVersion: '2023-10-16' });
+  }
 
   // ─── Metrics ──────────────────────────────────────────────────────────────
 
@@ -34,24 +42,26 @@ export class AdminService {
     return this.db.query(`SELECT * FROM venues ORDER BY name`);
   }
 
-  async createVenue(data: { name: string; city: string; address: string; capacity: number }) {
+  async createVenue(data: { name: string; city: string; address: string; capacity: number; lat?: number; lng?: number }) {
     const [row] = await this.db.query(
-      `INSERT INTO venues (name, city, address, capacity)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [data.name, data.city ?? 'CDMX', data.address ?? '', data.capacity ?? 0],
+      `INSERT INTO venues (name, city, address, capacity, lat, lng)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [data.name, data.city ?? 'CDMX', data.address ?? '', data.capacity ?? 0, data.lat ?? null, data.lng ?? null],
     );
     return row;
   }
 
-  async updateVenue(id: string, data: Partial<{ name: string; city: string; address: string; capacity: number }>) {
+  async updateVenue(id: string, data: Partial<{ name: string; city: string; address: string; capacity: number; lat: number; lng: number }>) {
     await this.db.query(
       `UPDATE venues
        SET name     = COALESCE($1, name),
            city     = COALESCE($2, city),
            address  = COALESCE($3, address),
-           capacity = COALESCE($4, capacity)
-       WHERE id = $5`,
-      [data.name, data.city, data.address, data.capacity, id],
+           capacity = COALESCE($4, capacity),
+           lat      = COALESCE($5, lat),
+           lng      = COALESCE($6, lng)
+       WHERE id = $7`,
+      [data.name, data.city, data.address, data.capacity, data.lat, data.lng, id],
     );
     const rows = await this.db.query(`SELECT * FROM venues WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Venue no encontrado');
@@ -107,7 +117,7 @@ export class AdminService {
   }
 
   async updateParking(id: string, data: Partial<{
-    name: string; address: string; isActive: boolean; ownerId: string;
+    name: string; address: string; isActive: boolean; ownerId: string; lat: number; lng: number;
     pricing: Array<{ vehicleType: string; slots: number; price: number }>;
   }>) {
     let totalCapacity: number | null = null;
@@ -122,9 +132,11 @@ export class AdminService {
            address        = COALESCE($2, address),
            total_capacity = COALESCE($3, total_capacity),
            is_active      = COALESCE($4, is_active),
-           owner_id       = COALESCE($5, owner_id)
+           owner_id       = COALESCE($5, owner_id),
+           lat            = COALESCE($7, lat),
+           lng            = COALESCE($8, lng)
        WHERE id = $6`,
-      [data.name, data.address, totalCapacity, data.isActive, data.ownerId ?? null, id],
+      [data.name, data.address, totalCapacity, data.isActive, data.ownerId ?? null, id, data.lat ?? null, data.lng ?? null],
     );
     const rows = await this.db.query(`SELECT * FROM parkings WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Estacionamiento no encontrado');
@@ -463,5 +475,37 @@ export class AdminService {
        ORDER BY pay.created_at DESC`,
       params,
     );
+  }
+
+  async approveRefund(claimId: string) {
+    const [claim] = await this.db.query(
+      `SELECT id, type, status, reservation_id, description FROM claims WHERE id = $1`,
+      [claimId],
+    );
+    if (!claim) throw new NotFoundException('Reclamo no encontrado');
+    if (claim.type !== 'refund_request') throw new BadRequestException('Este reclamo no es una solicitud de reembolso');
+    if (claim.status === 'resolved') throw new BadRequestException('Este reclamo ya fue resuelto');
+
+    const [payment] = await this.db.query(
+      `SELECT id, provider_payment_id, amount FROM payments WHERE reservation_id = $1 AND status = 'completed'`,
+      [claim.reservation_id],
+    );
+    if (!payment) throw new BadRequestException('No se encontró un pago completado para esta reserva');
+
+    const refund = await this.stripe.refunds.create({ payment_intent: payment.provider_payment_id });
+
+    await this.db.query(
+      `UPDATE payments SET status='refunded', refund_id=$1, refunded_at=NOW(), refund_reason=$2 WHERE id=$3`,
+      [refund.id, claim.description, payment.id],
+    );
+    await this.db.query(
+      `UPDATE reservations SET status='cancelled' WHERE id=$1`,
+      [claim.reservation_id],
+    );
+    await this.db.query(
+      `UPDATE claims SET status='resolved', admin_notes='Reembolso aprobado y procesado.', resolved_at=NOW(), updated_at=NOW() WHERE id=$1`,
+      [claimId],
+    );
+    return { refundId: refund.id };
   }
 }

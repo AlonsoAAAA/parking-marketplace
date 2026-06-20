@@ -65,6 +65,8 @@ export interface Venue {
   city: string;
   address: string;
   capacity?: number;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Parking {
@@ -92,6 +94,8 @@ export interface Claim {
   subject?: string;
   description: string;
   status: 'open' | 'in_progress' | 'resolved';
+  type?: 'complaint' | 'refund_request';
+  evidence_photos?: string[];
   admin_notes?: string;
   resolved_at?: string;
   created_at: string;
