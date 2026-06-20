@@ -386,7 +386,7 @@ export class ReservationsService {
   }
 
   async createRefundRequest(reservationId: string, userId: string, reason: string, evidencePhotos: string[]) {
-    const [row] = await this.db.query(
+    const [row] = await this.dataSource.query(
       `SELECT r.id, r.status, r.user_id,
               e.starts_at
        FROM reservations r
@@ -403,7 +403,7 @@ export class ReservationsService {
       throw new BadRequestException('El plazo para solicitar reembolso (6 horas antes del evento) ha vencido');
     }
 
-    const [claim] = await this.db.query(
+    const [claim] = await this.dataSource.query(
       `INSERT INTO claims (user_id, reservation_id, subject, description, type, evidence_photos)
        VALUES ($1, $2, 'Solicitud de reembolso', $3, 'refund_request', $4)
        RETURNING id`,
