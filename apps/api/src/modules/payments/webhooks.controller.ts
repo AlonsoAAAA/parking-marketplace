@@ -74,14 +74,19 @@ export class WebhooksController {
     const intent = event.data.object as Stripe.PaymentIntent;
     const reservationId = intent.metadata.reservation_id;
 
-    // 3. Idempotencia — no procesar dos veces
+    // 3. Idempotencia + validación de amount
     const payment = await this.dataSource.query(
-      `SELECT status FROM payments WHERE provider_payment_id = $1`,
+      `SELECT status, amount FROM payments WHERE provider_payment_id = $1`,
       [intent.id],
     );
 
     if (payment[0]?.status === 'completed') {
       console.log(`⚠️ Webhook duplicado ignorado: ${intent.id}`);
+      return { received: true };
+    }
+
+    if (payment[0] && Math.round(Number(payment[0].amount) * 100) !== intent.amount) {
+      console.error(`🚨 Amount mismatch en webhook: esperado ${Math.round(Number(payment[0].amount) * 100)}, recibido ${intent.amount} (${intent.id})`);
       return { received: true };
     }
 
