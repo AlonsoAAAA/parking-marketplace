@@ -149,7 +149,7 @@ export default function AdminClaims({ token }: Props) {
             )}
 
             {/* Botón aprobar reembolso */}
-            {selected.type === 'refund_request' && selected.status !== 'resolved' && (
+            {selected.status !== 'resolved' && (
               <div style={{ marginBottom: 16, padding: '14px 16px', background: '#fef2f2', borderRadius: 10, border: '1px solid #fecaca' }}>
                 <p style={{ fontSize: 12, color: '#991b1b', marginBottom: 10, fontWeight: 600 }}>Acción de reembolso</p>
                 <button
