@@ -62,6 +62,8 @@ class UpdateParkingDto {
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsString() ownerId?: string;
+  @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
+  @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ParkingPricingDto) pricing?: ParkingPricingDto[];
 }
 

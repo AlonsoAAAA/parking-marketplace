@@ -109,7 +109,7 @@ export class AdminService {
   }
 
   async updateParking(id: string, data: Partial<{
-    name: string; address: string; isActive: boolean; ownerId: string;
+    name: string; address: string; isActive: boolean; ownerId: string; lat: number; lng: number;
     pricing: Array<{ vehicleType: string; slots: number; price: number }>;
   }>) {
     let totalCapacity: number | null = null;
@@ -124,9 +124,11 @@ export class AdminService {
            address        = COALESCE($2, address),
            total_capacity = COALESCE($3, total_capacity),
            is_active      = COALESCE($4, is_active),
-           owner_id       = COALESCE($5, owner_id)
+           owner_id       = COALESCE($5, owner_id),
+           lat            = COALESCE($7, lat),
+           lng            = COALESCE($8, lng)
        WHERE id = $6`,
-      [data.name, data.address, totalCapacity, data.isActive, data.ownerId ?? null, id],
+      [data.name, data.address, totalCapacity, data.isActive, data.ownerId ?? null, id, data.lat ?? null, data.lng ?? null],
     );
     const rows = await this.db.query(`SELECT * FROM parkings WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Estacionamiento no encontrado');
