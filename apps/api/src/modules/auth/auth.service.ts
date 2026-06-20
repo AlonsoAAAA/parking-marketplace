@@ -103,11 +103,10 @@ export class AuthService {
       throw new UnauthorizedException('Tu cuenta está desactivada. Contacta a tu operador.');
     }
 
-    const token = this.jwtService.sign({
-      sub: user.id,
-      phone: user.phone,
-      role: user.role,
-    });
+    const token = this.jwtService.sign(
+      { sub: user.id, phone: user.phone, role: user.role },
+      { expiresIn: process.env.JWT_EXPIRES_IN ?? '30d' },
+    );
 
     return { access_token: token, token, isNewUser };
   }

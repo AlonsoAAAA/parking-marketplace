@@ -44,7 +44,7 @@ async function bootstrap() {
     'https://estacionat.mx',
     'https://www.estacionat.mx',
     // Vercel preview URLs
-    /https:\/\/parking-marketplace.*\.vercel\.app$/,
+    /https:\/\/estacionat-marketplace.*\.vercel\.app$/,
     // Env-var overrides (para otros dominios en el futuro)
     ...(process.env.MARKETPLACE_URL  ? [process.env.MARKETPLACE_URL]  : []),
     ...(process.env.ADMIN_URL        ? [process.env.ADMIN_URL]        : []),

@@ -65,6 +65,8 @@ export interface Venue {
   city: string;
   address: string;
   capacity?: number;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Parking {
