@@ -72,11 +72,21 @@ export class NotificationsService {
     // Usar número tal como está almacenado (formato E.164 sin '+': 52XXXXXXXXXX)
     const waPhone = data.phone as string;
 
-    const payload: any = {
-      body: message,
-      from: fromNumber,
-      to: `whatsapp:+${waPhone}`,
-    };
+    // Plantilla aprobada por Meta (producción). Sin SID → texto libre (solo sandbox).
+    const templateSid = this.config.get('TWILIO_TICKET_TEMPLATE_SID');
+
+    const payload: any = { from: fromNumber, to: `whatsapp:+${waPhone}` };
+    if (templateSid) {
+      payload.contentSid = templateSid;
+      payload.contentVariables = JSON.stringify({
+        '1': data.event_name,
+        '2': data.venue_name || data.parking_name,
+        '3': fecha,
+        '4': `${marketplaceUrl}/mis-boletos/${data.id}`,
+      });
+    } else {
+      payload.body = message;
+    }
 
 
     try {

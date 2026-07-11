@@ -139,13 +139,20 @@ export class AuthService {
       return;
     }
 
+    // Plantilla aprobada por Meta (producción). Si no está configurada, se usa
+    // texto libre — válido solo con el sandbox de Twilio para pruebas.
+    const templateSid = this.config.get('TWILIO_OTP_TEMPLATE_SID');
+
     try {
       const twilio = require('twilio')(accountSid, authToken);
-      await twilio.messages.create({
-        body: `Tu código de verificación para ParkingMX es: *${otp}*\n\nVálido por 10 minutos.`,
-        from: fromNumber,
-        to: `whatsapp:+${waPhone}`,
-      });
+      const payload: any = { from: fromNumber, to: `whatsapp:+${waPhone}` };
+      if (templateSid) {
+        payload.contentSid = templateSid;
+        payload.contentVariables = JSON.stringify({ '1': otp });
+      } else {
+        payload.body = `Tu código de verificación para EstacionaT es: *${otp}*\n\nVálido por 10 minutos.`;
+      }
+      await twilio.messages.create(payload);
       console.log(`✅ WhatsApp enviado a +${waPhone}`);
     } catch (e) {
       console.error(`❌ Twilio error: ${e?.message} (código: ${e?.code})`);
