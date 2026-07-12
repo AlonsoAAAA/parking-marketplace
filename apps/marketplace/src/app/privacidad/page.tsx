@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { SHARED_CSS } from '@/lib/design';
+import NeoHeader from '@/components/ui/NeoHeader';
 
 export const metadata = {
   title: 'Aviso de Privacidad · Estacionat',
@@ -8,8 +8,8 @@ export const metadata = {
 export default function PrivacidadPage() {
   return (
     <>
-      <style suppressHydrationWarning>{SHARED_CSS + `
-        .pp-wrap { min-height:100vh; background:#EDEDED; font-family:Inter,-apple-system,sans-serif; }
+      <style suppressHydrationWarning>{`
+        .pp-wrap { min-height:100vh; background:#f8f9fa; font-family:Inter,-apple-system,sans-serif; }
         .pp-body { max-width:720px; margin:0 auto; padding:32px 24px 80px; }
         @media(min-width:640px){ .pp-body { padding:40px 40px 80px; } }
         @media(min-width:1024px){ .pp-body { padding:48px 0 80px; } }
@@ -25,10 +25,7 @@ export default function PrivacidadPage() {
       `}</style>
 
       <div className="pp-wrap">
-        <header className="pm-header">
-          <Link href="/" className="pm-logo">Estaciona<span>t</span></Link>
-          <Link href="/" className="pm-nav-link">← Inicio</Link>
-        </header>
+        <NeoHeader showTickets={false} />
 
         <div className="pp-body">
           <p className="pp-kicker">Aviso de Privacidad</p>

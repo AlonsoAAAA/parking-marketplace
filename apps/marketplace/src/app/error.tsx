@@ -8,26 +8,22 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   }, [error]);
 
   return (
-    <div style={{
-      minHeight: '100vh', background: '#EDEDED', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 12,
-      fontFamily: 'Inter, sans-serif', padding: 24, textAlign: 'center',
-    }}>
-      <div style={{ fontSize: 40 }}>⚠️</div>
-      <p style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a' }}>Algo salió mal</p>
-      <p style={{ fontSize: 13, color: '#666', maxWidth: 280, lineHeight: 1.6 }}>
+    <div className="min-h-screen bg-background font-sans flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <div className="text-4xl">⚠️</div>
+      <p className="font-extrabold text-base uppercase tracking-tight text-on-surface">Algo salió mal</p>
+      <p className="text-[13px] font-medium text-on-surface-variant max-w-[280px] leading-relaxed">
         Ocurrió un error inesperado. Puedes intentar de nuevo o regresar al inicio.
       </p>
-      <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+      <div className="flex gap-3 mt-2">
         <button
           onClick={reset}
-          style={{ fontSize: 13, fontWeight: 600, padding: '10px 20px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
+          className="px-5 py-3 rounded-xl border-[3px] border-on-surface bg-white neo-brutal-shadow active-press font-extrabold text-xs uppercase tracking-wider text-on-surface cursor-pointer"
         >
           Intentar de nuevo
         </button>
         <Link
           href="/"
-          style={{ fontSize: 13, fontWeight: 600, padding: '10px 20px', borderRadius: 10, background: '#1a1a1a', color: '#fff', textDecoration: 'none' }}
+          className="px-5 py-3 rounded-xl border-[3px] border-on-surface bg-primary-container neo-brutal-shadow active-press font-extrabold text-xs uppercase tracking-wider text-on-surface no-underline"
         >
           Ir al inicio
         </Link>
