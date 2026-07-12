@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CARD_COLORS, SHARED_CSS } from '@/lib/design';
+import { MapPin, Lock } from 'lucide-react';
+import NeoHeader from '@/components/ui/NeoHeader';
+import { NeoButton, NeoSpinner, NeoInput, NeoLabel } from '@/components/ui/neo';
 
 interface ParkingDetail {
   id: string; name: string; address: string;
@@ -108,9 +110,6 @@ export default function ParkingDetailPage() {
   const PENDING_KEY   = `pm_pending_${eventId}_${parkingId}`;
 
   const tieneVersion = !!modelos.find(m => m.nombre === modelo)?.tieneVersion;
-
-  const idx   = Number(String(eventId).replace(/\D/g, '').slice(-1) || 0) % CARD_COLORS.length;
-  const color = CARD_COLORS[idx];
 
   // ── Load event + parking ───────────────────────────────────────────────────
   useEffect(() => {
@@ -262,9 +261,9 @@ export default function ParkingDetailPage() {
   };
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#EDEDED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 24, height: 24, border: '2px solid #ddd', borderTop: '2px solid #1a1a1a', borderRadius: '50%', animation: 'spin .7s linear infinite' }}/>
-      <style suppressHydrationWarning>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="back" />
+      <NeoSpinner label="Cargando..." />
     </div>
   );
   if (!parking || !event) return null;
@@ -289,314 +288,241 @@ export default function ParkingDetailPage() {
   const fmtTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) + ' hrs';
 
-  const selectStyle: React.CSSProperties = {
-    width: '100%', padding: '14px 16px', background: '#f5f5f5',
-    border: '2px solid transparent', borderRadius: 12, fontSize: 14,
-    fontWeight: 500, color: '#1a1a1a', fontFamily: 'Inter,sans-serif',
-    outline: 'none', transition: 'border-color .15s', boxSizing: 'border-box',
-    appearance: 'none', cursor: 'pointer',
-  };
-  const selectDisabledStyle: React.CSSProperties = { ...selectStyle, opacity: 0.45, cursor: 'not-allowed' };
+  const selectClass =
+    'w-full bg-white border-[3px] border-on-surface rounded-xl px-4 py-3.5 font-sans font-semibold text-sm text-on-surface focus:outline-none focus:neo-brutal-shadow transition-shadow appearance-none cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed';
+
+  const sectionHead = (
+    label: string,
+  ) => (
+    <div className="bg-on-surface px-4 py-2.5 border-b-[3px] border-on-surface">
+      <span className="font-extrabold text-[10px] tracking-[3px] uppercase text-primary-container">{label}</span>
+    </div>
+  );
 
   return (
-    <>
-      <style suppressHydrationWarning>{SHARED_CSS + `
-        .pp-page { min-height:100vh; background:#EDEDED; }
+    <div className="min-h-screen bg-background font-sans pb-32 lg:pb-12">
+      <NeoHeader back="back" />
 
-        .pp-hero { padding:20px 16px 0; }
-        @media(min-width:640px){ .pp-hero { padding:24px 32px 0; } }
-        @media(min-width:1024px){ .pp-hero { padding:28px 56px 8px; } }
-
-        .pp-body { padding:12px 16px 160px; }
-        @media(min-width:640px){ .pp-body { padding:16px 32px 160px; } }
-        @media(min-width:1024px){
-          .pp-body { display:grid; grid-template-columns:1fr 1fr; gap:16px;
-            padding:16px 56px 60px; align-items:start; }
-        }
-
-        .pp-col { display:flex; flex-direction:column; gap:12px; }
-
-        .pp-sec { background:#fff; border-radius:16px; overflow:hidden; }
-        .pp-sec-hd { background:#1a1a1a; padding:11px 18px; }
-        .pp-sec-lb { font-size:9px; font-weight:600; letter-spacing:3px;
-          text-transform:uppercase; color:rgba(255,255,255,.45); }
-        .pp-sec-bd { padding:0 18px; }
-        .pp-row  { display:flex; justify-content:space-between; padding:12px 0;
-          border-bottom:1px solid #f5f5f5; font-size:13px; }
-        .pp-row:last-child { border:none; }
-        .pp-rl { color:#999; flex-shrink:0; }
-        .pp-rv { color:#1a1a1a; font-weight:500; text-align:right; max-width:60%; }
-
-        .pp-input { width:100%; padding:14px 16px; background:#f5f5f5; border:2px solid transparent;
-          border-radius:12px; font-size:14px; font-weight:500; color:#1a1a1a;
-          font-family:Inter,sans-serif; outline:none; transition:border-color .15s; box-sizing:border-box; }
-        .pp-input:focus { border-color:#1a1a1a; background:#fff; }
-        .pp-input::placeholder { color:#bbb; font-weight:400; }
-        .pp-label { font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase;
-          color:#bbb; display:block; margin-bottom:7px; }
-        .pp-plate { text-transform:uppercase; letter-spacing:3px; font-weight:700; font-size:16px; }
-        .pp-select-wrap { position:relative; }
-        .pp-select-wrap::after { content:''; position:absolute; right:16px; top:50%; transform:translateY(-50%);
-          width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent;
-          border-top:5px solid #999; pointer-events:none; }
-
-        .pp-cta { position:fixed; bottom:0; left:0; right:0;
-          background:rgba(237,237,237,.95); backdrop-filter:blur(16px);
-          border-top:1px solid rgba(0,0,0,.07);
-          padding:16px 20px calc(16px + env(safe-area-inset-bottom));
-          display:flex; align-items:center; justify-content:space-between; gap:16px; z-index:50; }
-        @media(min-width:640px){ .pp-cta { max-width:640px; margin:0 auto;
-          left:50%; transform:translateX(-50%); right:auto; } }
-        @media(min-width:1024px){ .pp-cta { display:none; } }
-        .pp-cta-price { font-size:26px; font-weight:700; letter-spacing:-.5px; color:#1a1a1a; }
-        .pp-cta-sub   { font-size:11px; color:#bbb; margin-top:2px; }
-
-        .pp-cta-desk { display:none; }
-        @media(min-width:1024px){
-          .pp-cta-desk { display:flex; align-items:center; justify-content:space-between; gap:16px;
-            background:#fff; border-radius:16px; padding:20px 18px; }
-        }
-      `}</style>
-
-      <div className="pp-page">
-        <header className="pm-header" style={{ background: color.bg }}>
-          <button className="pm-back" onClick={() => router.back()}>← Elegir otro</button>
-          <span className="pm-logo">Estaciona<span>t</span></span>
-        </header>
-
-        <div className="pp-hero">
-          <div style={{ paddingTop: 18, paddingBottom: 10 }}>
-            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#bbb', marginBottom: 6 }}>
-              ESTACIONAMIENTO
-            </div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-.4px', color: '#1a1a1a', margin: 0 }}>
-              {parking.name}
-            </h1>
-            <p style={{ fontSize: 13, color: '#999', marginTop: 4 }}>📍 {parking.address}</p>
-          </div>
-        </div>
-
-        <div className="pp-body">
-
-          {/* Columna izquierda */}
-          <div className="pp-col">
-            <div className="pp-sec">
-              <div className="pp-sec-hd"><span className="pp-sec-lb">Detalle de reservación</span></div>
-              <div className="pp-sec-bd">
-                {[
-                  ['Evento',      event.name],
-                  ['Venue',       event.venueName],
-                  ['Fecha',       fmtDate(event.startsAt)],
-                  ['Hora',        fmtTime(event.startsAt)],
-                  ['Distancia',   `${parking.distanceMeters} m · ${parking.walkMinutes} min caminando`],
-                  ['Disponibles', `${parking.available} lugares`],
-                ].map(([l, v]) => (
-                  <div key={l} className="pp-row">
-                    <span className="pp-rl">{l}</span>
-                    <span className="pp-rv">{v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pp-sec">
-              <div className="pp-sec-hd"><span className="pp-sec-lb">Incluye</span></div>
-              <div className="pp-sec-bd">
-                {[
-                  'Lugar garantizado para tu vehículo',
-                  'Código QR de acceso único',
-                  'Boleto enviado por WhatsApp',
-                  'Sin cobros adicionales al llegar',
-                ].map(item => (
-                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '11px 0', borderBottom: '1px solid #f5f5f5', fontSize: 13, color: '#444' }}>
-                    <div style={{ width: 20, height: 20, background: '#1a1a1a', borderRadius: '50%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-                        <path d="M1 3.5L3 5.5L8 1" stroke="#EDEDED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Columna derecha */}
-          <div className="pp-col">
-            <div className="pp-sec">
-              <div className="pp-sec-hd"><span className="pp-sec-lb">Tu vehículo y datos</span></div>
-              <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                {/* Marca */}
-                <div>
-                  <span className="pp-label">Marca</span>
-                  <div className="pp-select-wrap">
-                    <select
-                      style={loadingMarcas ? selectDisabledStyle : selectStyle}
-                      value={marca}
-                      onChange={e => setMarca(e.target.value)}
-                      disabled={loadingMarcas}
-                    >
-                      <option value="">
-                        {loadingMarcas ? 'Cargando marcas…' : 'Selecciona una marca'}
-                      </option>
-                      {marcas.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Modelo */}
-                <div>
-                  <span className="pp-label">Modelo</span>
-                  <div className="pp-select-wrap">
-                    <select
-                      style={(!marca || modelos.length === 0) ? selectDisabledStyle : selectStyle}
-                      value={modelo}
-                      onChange={e => setModelo(e.target.value)}
-                      disabled={!marca || modelos.length === 0}
-                    >
-                      <option value="">
-                        {!marca ? 'Primero elige una marca' : modelos.length === 0 ? 'Cargando…' : 'Selecciona un modelo'}
-                      </option>
-                      {modelos.map(m => <option key={m.nombre} value={m.nombre}>{m.nombre}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Versión — solo si aplica */}
-                {tieneVersion && (
-                  <div>
-                    <span className="pp-label">Versión / Cabina</span>
-                    <div className="pp-select-wrap">
-                      <select
-                        style={selectStyle}
-                        value={version}
-                        onChange={e => setVersion(e.target.value)}
-                      >
-                        <option value="">Selecciona una versión</option>
-                        {versiones.map(v => <option key={v} value={v}>{v}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Precio del vehículo seleccionado — con desglose IVA */}
-                {priceCalc !== null && categoria && (
-                  <div style={{ background: '#f5f5f5', borderRadius: 12, overflow: 'hidden' }}>
-                    {/* Categoría */}
-                    <div style={{ padding: '8px 14px', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', fontWeight: 600, letterSpacing: 1 }}>
-                        {CATEGORY_ICONS[categoria]} {CATEGORY_LABELS[categoria].toUpperCase()}
-                      </span>
-                    </div>
-                    {/* Desglose */}
-                    <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#999' }}>
-                        <span>Subtotal</span>
-                        <span>${priceCalc.basePrice.toFixed(2)}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#999' }}>
-                        <span>IVA 16%</span>
-                        <span>+${priceCalc.ivaAmount.toFixed(2)}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, color: '#1a1a1a', borderTop: '1px solid #e8e8e8', paddingTop: 6, marginTop: 2 }}>
-                        <span>Total</span>
-                        <span>${priceCalc.finalPrice} MXN</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Placas */}
-                <div>
-                  <span className="pp-label">Placas del vehículo</span>
-                  <input
-                    className="pp-input pp-plate"
-                    value={plate}
-                    onChange={e => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9\s-]/g, '').slice(0, 10))}
-                    placeholder="ABC 123 D"
-                    autoComplete="off"
-                  />
-                </div>
-
-                {/* Nombre */}
-                <div>
-                  <span className="pp-label">Nombre del titular</span>
-                  <input
-                    className="pp-input"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Tu nombre completo"
-                    autoComplete="name"
-                  />
-                </div>
-
-              </div>
-            </div>
-
-            {error && <div className="pm-error">{error}</div>}
-
-            {/* CTA desktop */}
-            <div className="pp-cta-desk">
-              {priceCalc !== null ? (
-                <div>
-                  <div className="pp-cta-price">
-                    ${priceCalc.finalPrice} <span style={{ fontSize: 12, fontWeight: 500, color: '#999' }}>MXN</span>
-                  </div>
-                  <div className="pp-cta-sub">
-                    {categoria ? `${CATEGORY_ICONS[categoria]} · IVA incluido` : ''}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ fontSize: 13, color: '#bbb' }}>Completa los datos</div>
-              )}
-              <button
-                className="pm-btn-primary"
-                style={{ width: 'auto', minWidth: 155, opacity: canReserve ? 1 : 0.4 }}
-                disabled={!canReserve}
-                onClick={handleReserve}>
-                {reserving
-                  ? <span style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <span style={{ width:13,height:13,border:'2px solid rgba(255,255,255,.3)',borderTop:'2px solid #fff',borderRadius:'50%',animation:'spin .7s linear infinite',display:'inline-block' }}/>
-                      Reservando...
-                    </span>
-                  : soldOut ? 'Agotado' : '🔒 Reservar y pagar'}
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        {/* CTA fija móvil */}
-        <div className="pp-cta">
-          {price !== null ? (
-            <div>
-              <div className="pp-cta-price">
-                ${price} <span style={{ fontSize: 12, fontWeight: 500, color: '#999' }}>MXN</span>
-              </div>
-              <div className="pp-cta-sub">
-                {categoria ? `${CATEGORY_ICONS[categoria]} ${marca} ${modelo}` : ''}
-              </div>
-            </div>
-          ) : (
-            <div style={{ fontSize: 13, color: '#bbb' }}>Completa los datos</div>
-          )}
-          <button
-            className="pm-btn-primary"
-            style={{ width: 'auto', minWidth: 155, opacity: canReserve ? 1 : 0.4 }}
-            disabled={!canReserve}
-            onClick={handleReserve}>
-            {reserving
-              ? <span style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ width:13,height:13,border:'2px solid rgba(255,255,255,.3)',borderTop:'2px solid #fff',borderRadius:'50%',animation:'spin .7s linear infinite',display:'inline-block' }}/>
-                  Reservando...
-                </span>
-              : soldOut ? 'Agotado' : '🔒 Reservar y pagar'}
-          </button>
+      {/* Hero */}
+      <div className="max-w-5xl mx-auto px-5 md:px-8 pt-8 pb-2">
+        <p className="font-extrabold text-[10px] tracking-[2px] uppercase text-on-surface-variant mb-2">Estacionamiento</p>
+        <h1 className="font-extrabold text-2xl md:text-3xl uppercase tracking-tight text-on-surface">{parking.name}</h1>
+        <div className="flex items-center gap-1.5 mt-2 text-on-surface-variant">
+          <MapPin className="w-4 h-4" strokeWidth={2.5} />
+          <span className="text-sm font-semibold">{parking.address}</span>
         </div>
       </div>
-    </>
+
+      <div className="max-w-5xl mx-auto px-5 md:px-8 pt-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start flex flex-col gap-4">
+
+        {/* Columna izquierda */}
+        <div className="flex flex-col gap-4">
+          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden">
+            {sectionHead('Detalle de reservación')}
+            <div className="px-4">
+              {[
+                ['Evento',      event.name],
+                ['Venue',       event.venueName],
+                ['Fecha',       fmtDate(event.startsAt)],
+                ['Hora',        fmtTime(event.startsAt)],
+                ['Distancia',   `${parking.distanceMeters} m · ${parking.walkMinutes} min caminando`],
+                ['Disponibles', `${parking.available} lugares`],
+              ].map(([l, v], i, arr) => (
+                <div key={l} className={`flex justify-between gap-4 py-3 text-[13px] ${i < arr.length - 1 ? 'border-b-2 border-dashed border-on-surface/10' : ''}`}>
+                  <span className="font-extrabold text-[10px] uppercase tracking-widest text-on-surface-variant pt-0.5 flex-shrink-0">{l}</span>
+                  <span className="font-semibold text-on-surface text-right max-w-[60%] capitalize">{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden">
+            {sectionHead('Incluye')}
+            <div className="px-4">
+              {[
+                'Lugar garantizado para tu vehículo',
+                'Código QR de acceso único',
+                'Boleto enviado por WhatsApp',
+                'Sin cobros adicionales al llegar',
+              ].map((item, i, arr) => (
+                <div key={item} className={`flex items-center gap-3 py-3 text-[13px] font-semibold text-on-surface ${i < arr.length - 1 ? 'border-b-2 border-dashed border-on-surface/10' : ''}`}>
+                  <div className="w-5 h-5 bg-primary-container border-2 border-on-surface rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                      <path d="M1 3.5L3 5.5L8 1" stroke="#191c1d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Columna derecha */}
+        <div className="flex flex-col gap-4">
+          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden">
+            {sectionHead('Tu vehículo y datos')}
+            <div className="p-4 flex flex-col gap-4">
+
+              {/* Marca */}
+              <div>
+                <NeoLabel>Marca</NeoLabel>
+                <div className="relative">
+                  <select
+                    className={selectClass}
+                    value={marca}
+                    onChange={e => setMarca(e.target.value)}
+                    disabled={loadingMarcas}
+                  >
+                    <option value="">
+                      {loadingMarcas ? 'Cargando marcas…' : 'Selecciona una marca'}
+                    </option>
+                    {marcas.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-on-surface" />
+                </div>
+              </div>
+
+              {/* Modelo */}
+              <div>
+                <NeoLabel>Modelo</NeoLabel>
+                <div className="relative">
+                  <select
+                    className={selectClass}
+                    value={modelo}
+                    onChange={e => setModelo(e.target.value)}
+                    disabled={!marca || modelos.length === 0}
+                  >
+                    <option value="">
+                      {!marca ? 'Primero elige una marca' : modelos.length === 0 ? 'Cargando…' : 'Selecciona un modelo'}
+                    </option>
+                    {modelos.map(m => <option key={m.nombre} value={m.nombre}>{m.nombre}</option>)}
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-on-surface" />
+                </div>
+              </div>
+
+              {/* Versión — solo si aplica */}
+              {tieneVersion && (
+                <div>
+                  <NeoLabel>Versión / Cabina</NeoLabel>
+                  <div className="relative">
+                    <select
+                      className={selectClass}
+                      value={version}
+                      onChange={e => setVersion(e.target.value)}
+                    >
+                      <option value="">Selecciona una versión</option>
+                      {versiones.map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-on-surface" />
+                  </div>
+                </div>
+              )}
+
+              {/* Precio del vehículo seleccionado — con desglose IVA */}
+              {priceCalc !== null && categoria && (
+                <div className="border-[3px] border-on-surface rounded-xl overflow-hidden neo-brutal-shadow-sm">
+                  <div className="px-3.5 py-2 bg-on-surface flex items-center justify-between">
+                    <span className="font-extrabold text-[11px] tracking-widest text-primary-container">
+                      {CATEGORY_ICONS[categoria]} {CATEGORY_LABELS[categoria].toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="px-3.5 py-2.5 flex flex-col gap-1 bg-white">
+                    <div className="flex justify-between font-mono text-xs font-bold text-on-surface-variant">
+                      <span>Subtotal</span>
+                      <span>${priceCalc.basePrice.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-mono text-xs font-bold text-on-surface-variant">
+                      <span>IVA 16%</span>
+                      <span>+${priceCalc.ivaAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-mono text-base font-bold text-on-surface border-t-2 border-dashed border-on-surface/20 pt-1.5 mt-1">
+                      <span>Total</span>
+                      <span>${priceCalc.finalPrice} MXN</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Placas */}
+              <div>
+                <NeoLabel>Placas del vehículo</NeoLabel>
+                <NeoInput
+                  className="font-mono uppercase tracking-[3px] font-bold text-base"
+                  value={plate}
+                  onChange={e => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9\s-]/g, '').slice(0, 10))}
+                  placeholder="ABC 123 D"
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* Nombre */}
+              <div>
+                <NeoLabel>Nombre del titular</NeoLabel>
+                <NeoInput
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Tu nombre completo"
+                  autoComplete="name"
+                />
+              </div>
+
+            </div>
+          </div>
+
+          {error && <div className="bg-error-container border-2 border-error rounded-lg px-3 py-2 text-error text-xs font-bold">{error}</div>}
+
+          {/* CTA desktop */}
+          <div className="hidden lg:flex items-center justify-between gap-4 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5">
+            {priceCalc !== null ? (
+              <div>
+                <div className="font-mono font-bold text-2xl text-on-surface">
+                  ${priceCalc.finalPrice} <span className="text-xs text-on-surface-variant">MXN</span>
+                </div>
+                <div className="font-mono text-[10px] font-bold text-on-surface-variant mt-0.5">
+                  {categoria ? `${CATEGORY_ICONS[categoria]} · IVA incluido` : ''}
+                </div>
+              </div>
+            ) : (
+              <div className="text-[13px] font-semibold text-on-surface-variant">Completa los datos</div>
+            )}
+            <NeoButton className="min-w-[160px]" disabled={!canReserve} onClick={handleReserve}>
+              {reserving
+                ? <span className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 border-2 border-on-surface/30 border-t-on-surface rounded-full animate-spin inline-block" />
+                    Reservando...
+                  </span>
+                : soldOut ? 'Agotado' : <><Lock className="w-4 h-4" strokeWidth={2.5} /> Reservar y pagar</>}
+            </NeoButton>
+          </div>
+        </div>
+
+      </div>
+
+      {/* CTA fija móvil */}
+      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t-[3px] border-on-surface px-5 py-4 pb-[calc(16px+env(safe-area-inset-bottom))] flex items-center justify-between gap-4 z-50 lg:hidden">
+        {price !== null ? (
+          <div>
+            <div className="font-mono font-bold text-2xl text-on-surface">
+              ${price} <span className="text-xs text-on-surface-variant">MXN</span>
+            </div>
+            <div className="font-mono text-[10px] font-bold text-on-surface-variant mt-0.5">
+              {categoria ? `${CATEGORY_ICONS[categoria]} ${marca} ${modelo}` : ''}
+            </div>
+          </div>
+        ) : (
+          <div className="text-[13px] font-semibold text-on-surface-variant">Completa los datos</div>
+        )}
+        <NeoButton className="min-w-[150px] flex-shrink-0" disabled={!canReserve} onClick={handleReserve}>
+          {reserving
+            ? <span className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-on-surface/30 border-t-on-surface rounded-full animate-spin inline-block" />
+                Reservando...
+              </span>
+            : soldOut ? 'Agotado' : <><Lock className="w-4 h-4" strokeWidth={2.5} /> Reservar y pagar</>}
+        </NeoButton>
+      </div>
+    </div>
   );
 }

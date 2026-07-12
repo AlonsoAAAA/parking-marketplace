@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { SHARED_CSS } from '@/lib/design';
+import { Car } from 'lucide-react';
+import NeoHeader from '@/components/ui/NeoHeader';
+import { NeoButton, NeoInput, NeoLabel } from '@/components/ui/neo';
 
 const YEARS = Array.from(
   { length: new Date().getFullYear() - 1989 },
@@ -114,130 +115,117 @@ export default function VehiclePage() {
     } catch { setError('Error de conexión.'); } finally { setLoading(false); }
   };
 
+  const selectClass =
+    'w-full bg-white border-[3px] border-on-surface rounded-xl px-4 py-3.5 font-sans font-semibold text-sm text-on-surface focus:outline-none focus:neo-brutal-shadow transition-shadow appearance-none cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed';
+
   return (
-    <>
-      <style suppressHydrationWarning>{SHARED_CSS + `
-        .vw  { min-height:100vh; background:#EDEDED; display:flex; flex-direction:column; }
-        .vb  { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
-        .vc  { width:100%; max-width:460px; background:#fff; border-radius:20px; padding:32px 28px; animation:fadeUp 0.4s ease both; }
-        .vh1 { font-size:22px; font-weight:700; letter-spacing:-0.4px; color:#1a1a1a; margin-bottom:6px; }
-        .vsub{ font-size:13px; color:#999; margin-bottom:28px; line-height:1.55; }
-        .vl  { font-size:11px; font-weight:600; color:#888; margin-bottom:6px; letter-spacing:0.5px; text-transform:uppercase; }
-        .vi  { width:100%; padding:13px 16px; background:#fff; border:1.5px solid rgba(0,0,0,0.1); border-radius:10px; font-size:14px; color:#1a1a1a; font-family:Inter,sans-serif; box-sizing:border-box; transition:border-color 0.2s; }
-        .vi:focus  { outline:none; border-color:#1a1a1a; }
-        .vi::placeholder { color:#ccc; }
-        .vi:disabled { opacity:0.5; cursor:not-allowed; }
-        .vg  { display:flex; flex-direction:column; gap:16px; margin-bottom:24px; }
-        .vrow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        .vplate { text-transform:uppercase; letter-spacing:3px; font-weight:700; font-size:16px; }
-        .vprice{ background:#f5f5f5; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
-        @media(min-width:1024px){ .vc { max-width:520px; padding:44px 40px; border-radius:24px; box-shadow:0 4px 40px rgba(0,0,0,.08); } }
-      `}</style>
+    <div className="min-h-screen bg-background font-sans flex flex-col">
+      <NeoHeader showTickets={false} />
 
-      <div className="vw">
-        <header className="pm-header">
-          <Link href="/" className="pm-logo">Estaciona<span>t</span></Link>
-        </header>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30 z-0" />
 
-        <div className="vb">
-          <div className="vc">
-            <span style={{ fontSize: 36, display: 'block', marginBottom: 16 }}>🚗</span>
-            <h1 className="vh1">Datos de tu vehículo</h1>
-            <p className="vsub">Los necesitamos para facilitar tu entrada al estacionamiento.</p>
+        <div className="relative z-10 w-full max-w-lg bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-7 md:p-10 [animation:fadeUp_.4s_ease_both]">
+          <div className="w-12 h-12 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-5">
+            <Car className="w-6 h-6 text-primary fill-current" />
+          </div>
+          <h1 className="font-extrabold text-xl md:text-2xl uppercase tracking-tight text-on-surface mb-1.5">Datos de tu vehículo</h1>
+          <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed mb-7">
+            Los necesitamos para facilitar tu entrada al estacionamiento.
+          </p>
 
-            <div className="vg">
+          <div className="flex flex-col gap-4 mb-6">
 
-              {/* Marca */}
-              <div>
-                <div className="vl">Marca</div>
-                <select
-                  className="vi"
-                  value={marca}
-                  onChange={e => setMarca(e.target.value)}
-                  disabled={loadingMarcas}
-                >
-                  <option value="">
-                    {loadingMarcas ? 'Cargando marcas…' : `Selecciona una marca (${marcas.length})`}
-                  </option>
-                  {marcas.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </div>
-
-              {/* Modelo */}
-              <div>
-                <div className="vl">Modelo</div>
-                <select
-                  className="vi"
-                  value={modelo}
-                  onChange={e => setModelo(e.target.value)}
-                  disabled={!marca || modelos.length === 0}
-                >
-                  <option value="">
-                    {!marca ? 'Primero elige una marca' : modelos.length === 0 ? 'Cargando…' : 'Selecciona un modelo'}
-                  </option>
-                  {modelos.map(m => <option key={m.nombre} value={m.nombre}>{m.nombre}</option>)}
-                </select>
-              </div>
-
-              {/* Versión */}
-              {tieneVersion && (
-                <div>
-                  <div className="vl">Versión / Cabina</div>
-                  <select className="vi" value={version} onChange={e => setVersion(e.target.value)}>
-                    <option value="">Selecciona una versión</option>
-                    {versiones.map(v => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </div>
-              )}
-
-              {/* Año y Color */}
-              <div className="vrow">
-                <div>
-                  <div className="vl">Año</div>
-                  <select className="vi" value={year} onChange={e => setYear(e.target.value)}>
-                    <option value="">Año</option>
-                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <div className="vl">Color</div>
-                  <select className="vi" value={color} onChange={e => setColor(e.target.value)}>
-                    <option value="">Color</option>
-                    {COLORES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Placas */}
-              <div>
-                <div className="vl">Placas</div>
-                <input
-                  className="vi vplate"
-                  value={plate}
-                  onChange={e => setPlate(e.target.value.toUpperCase())}
-                  placeholder="ABC 123 D"
-                  maxLength={10}
-                />
-              </div>
+            {/* Marca */}
+            <div>
+              <NeoLabel>Marca</NeoLabel>
+              <select
+                className={selectClass}
+                value={marca}
+                onChange={e => setMarca(e.target.value)}
+                disabled={loadingMarcas}
+              >
+                <option value="">
+                  {loadingMarcas ? 'Cargando marcas…' : `Selecciona una marca (${marcas.length})`}
+                </option>
+                {marcas.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
             </div>
 
-            {precio !== null && (
-              <div className="vprice">
-                <span style={{ fontSize: 13, color: '#666' }}>Total a pagar</span>
-                <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px' }}>
-                  ${precio.toLocaleString('es-MX')}
-                </span>
+            {/* Modelo */}
+            <div>
+              <NeoLabel>Modelo</NeoLabel>
+              <select
+                className={selectClass}
+                value={modelo}
+                onChange={e => setModelo(e.target.value)}
+                disabled={!marca || modelos.length === 0}
+              >
+                <option value="">
+                  {!marca ? 'Primero elige una marca' : modelos.length === 0 ? 'Cargando…' : 'Selecciona un modelo'}
+                </option>
+                {modelos.map(m => <option key={m.nombre} value={m.nombre}>{m.nombre}</option>)}
+              </select>
+            </div>
+
+            {/* Versión */}
+            {tieneVersion && (
+              <div>
+                <NeoLabel>Versión / Cabina</NeoLabel>
+                <select className={selectClass} value={version} onChange={e => setVersion(e.target.value)}>
+                  <option value="">Selecciona una versión</option>
+                  {versiones.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
               </div>
             )}
 
-            {error && <div className="pm-error" style={{ marginBottom: 16 }}>{error}</div>}
+            {/* Año y Color */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <NeoLabel>Año</NeoLabel>
+                <select className={selectClass} value={year} onChange={e => setYear(e.target.value)}>
+                  <option value="">Año</option>
+                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+              <div>
+                <NeoLabel>Color</NeoLabel>
+                <select className={selectClass} value={color} onChange={e => setColor(e.target.value)}>
+                  <option value="">Color</option>
+                  {COLORES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
 
-            <button className="pm-btn-primary" onClick={handleSubmit} disabled={loading || !valid}>
-              {loading ? 'Guardando...' : 'Continuar al pago →'}
-            </button>
+            {/* Placas */}
+            <div>
+              <NeoLabel>Placas</NeoLabel>
+              <NeoInput
+                className="font-mono uppercase tracking-[3px] font-bold text-base"
+                value={plate}
+                onChange={e => setPlate(e.target.value.toUpperCase())}
+                placeholder="ABC 123 D"
+                maxLength={10}
+              />
+            </div>
           </div>
+
+          {precio !== null && (
+            <div className="flex justify-between items-center bg-primary-container border-[3px] border-on-surface rounded-xl px-4 py-3 mb-4 neo-brutal-shadow-sm">
+              <span className="font-extrabold text-[11px] uppercase tracking-widest text-on-surface">Total a pagar</span>
+              <span className="font-mono font-bold text-xl text-on-surface">
+                ${precio.toLocaleString('es-MX')}
+              </span>
+            </div>
+          )}
+
+          {error && <div className="mb-4 bg-error-container border-2 border-error rounded-lg px-3 py-2 text-error text-xs font-bold">{error}</div>}
+
+          <NeoButton className="w-full" onClick={handleSubmit} disabled={loading || !valid}>
+            {loading ? 'Guardando...' : 'Continuar al pago →'}
+          </NeoButton>
         </div>
       </div>
-    </>
+    </div>
   );
 }
