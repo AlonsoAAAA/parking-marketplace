@@ -1,8 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, X, MapPin, Zap, ShieldCheck, Smartphone, CalendarX } from 'lucide-react';
+import {
+  Search, X, MapPin, Zap, ShieldCheck, Smartphone, Clock,
+  Calendar, CalendarX, Building2, Car,
+} from 'lucide-react';
 import NeoHeader from '@/components/ui/NeoHeader';
+import NeoFooter from '@/components/ui/NeoFooter';
 import { NeoBadge } from '@/components/ui/neo';
 
 interface Venue {
@@ -34,12 +38,8 @@ const CAT_EMOJIS: Record<string, string> = {
   conciertos: '🎵', deportes: '⚽', festival: '🎪', teatro: '🎭',
 };
 
-const BENEFITS = [
-  { icon: Zap,         title: 'Lugar garantizado', text: 'Tu espacio te espera. Sin dar vueltas ni llegar horas antes.' },
-  { icon: ShieldCheck, title: 'Seguro y privado',  text: 'Estacionamientos verificados cerca de tu evento.' },
-  { icon: Smartphone,  title: 'Todo por WhatsApp', text: 'Tu boleto QR llega directo a tu teléfono.' },
-  { icon: CalendarX,   title: 'Sin filas',          text: 'Muestra tu QR al llegar y entra directo.' },
-];
+const scrollTo = (id: string) =>
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
 export default function HomePage() {
   const [venues,   setVenues]   = useState<Venue[]>([]);
@@ -67,8 +67,8 @@ export default function HomePage() {
     <div className="min-h-screen bg-background font-sans">
       <NeoHeader />
 
-      {/* Hero */}
-      <section className="relative px-5 md:px-8 pt-14 pb-12 overflow-hidden">
+      {/* ── Hero ── */}
+      <section className="relative px-5 md:px-8 pt-14 pb-14 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30 z-0" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <NeoBadge color="purple" className="mb-7">Estacionamiento garantizado · CDMX</NeoBadge>
@@ -78,13 +78,13 @@ export default function HomePage() {
               Eventos
             </span>
           </h1>
-          <p className="font-medium text-sm md:text-lg mb-10 text-on-surface-variant max-w-2xl mx-auto leading-relaxed [animation:fadeUp_.5s_.1s_ease_both]">
+          <p className="font-medium text-sm md:text-lg mb-9 text-on-surface-variant max-w-2xl mx-auto leading-relaxed [animation:fadeUp_.5s_.1s_ease_both]">
             Deja de dar vueltas buscando lugar. Reserva tu espacio de estacionamiento
             para conciertos, partidos y festivales antes de llegar.
           </p>
 
           {/* Buscador */}
-          <div className="max-w-lg mx-auto flex items-center gap-3 bg-white border-[3px] border-on-surface rounded-xl px-4 py-3.5 neo-brutal-shadow [animation:fadeUp_.5s_.2s_ease_both]">
+          <div className="max-w-lg mx-auto flex items-center gap-3 bg-white border-[3px] border-on-surface rounded-xl px-4 py-3.5 neo-brutal-shadow mb-8 [animation:fadeUp_.5s_.2s_ease_both]">
             <Search className="w-4 h-4 text-on-surface flex-shrink-0" strokeWidth={3} />
             <input
               value={search}
@@ -99,11 +99,43 @@ export default function HomePage() {
               </button>
             )}
           </div>
+
+          {/* CTAs del demo */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center [animation:fadeUp_.5s_.3s_ease_both]">
+            <button
+              onClick={() => scrollTo('venues')}
+              className="w-full sm:w-auto bg-primary-container px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
+            >
+              Reservar mi lugar
+            </button>
+            <button
+              onClick={() => scrollTo('socios')}
+              className="w-full sm:w-auto bg-white px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
+            >
+              Soy dueño de estacionamiento
+            </button>
+          </div>
+        </div>
+
+        {/* Card flotante decorativa */}
+        <div className="hidden lg:block absolute right-12 bottom-10 w-72 bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-5 rotate-3">
+          <div className="flex justify-between items-start mb-3.5">
+            <span className="bg-secondary-container text-white px-3 py-1 rounded-full font-mono text-[10px] font-bold border-2 border-on-surface">
+              Activo ahora
+            </span>
+            <div className="w-8 h-8 rounded-full bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm">
+              <Zap className="w-4 h-4 text-primary fill-current" />
+            </div>
+          </div>
+          <div className="font-extrabold text-base text-on-surface uppercase tracking-tight mb-1.5">Estadio Azteca</div>
+          <div className="text-on-surface-variant text-[11px] font-bold font-mono">
+            Ubicación premium · desde $180 MXN
+          </div>
         </div>
       </section>
 
-      {/* Filtros de categoría */}
-      <div className="flex gap-3 overflow-x-auto no-scrollbar px-5 md:px-8 pb-2 max-w-6xl mx-auto md:justify-center">
+      {/* ── Filtros ── */}
+      <div id="venues" className="flex gap-3 overflow-x-auto no-scrollbar px-5 md:px-8 pb-2 max-w-6xl mx-auto md:justify-center scroll-mt-20">
         {CATEGORIES.map(c => (
           <button
             key={c.key}
@@ -127,7 +159,7 @@ export default function HomePage() {
         </p>
       )}
 
-      {/* Feed de venues */}
+      {/* ── Feed de venues ── */}
       <div className="px-5 md:px-8 pt-3 pb-16 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {loading ? (
           <div className="col-span-full text-center py-16 font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">
@@ -177,35 +209,153 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Beneficios */}
-      <section className="px-5 md:px-8 py-14 bg-surface-container-low border-t-[3px] border-on-surface">
+      {/* ── Bento grid de beneficios (del demo) ── */}
+      <section className="px-5 md:px-8 py-16 bg-surface-container-low border-y-[3px] border-on-surface">
         <div className="max-w-6xl mx-auto">
-          <NeoBadge color="lime" className="mb-5">Beneficios exclusivos</NeoBadge>
-          <h2 className="font-extrabold text-2xl md:text-4xl text-on-surface mb-10 tracking-tight uppercase">
-            ¿Por qué Estacionat?
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {BENEFITS.map(b => (
-              <div key={b.title} className="bg-white border-[3px] border-on-surface rounded-xl p-5 neo-brutal-shadow">
-                <div className="w-10 h-10 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
-                  <b.icon className="w-5 h-5 text-primary" strokeWidth={2.5} />
-                </div>
-                <div className="font-extrabold text-sm text-on-surface uppercase tracking-tight mb-1.5">{b.title}</div>
-                <div className="text-xs font-medium text-on-surface-variant leading-relaxed">{b.text}</div>
+          <div className="mb-12 text-center md:text-left">
+            <NeoBadge color="lime" className="mb-4">Beneficios exclusivos</NeoBadge>
+            <h2 className="font-extrabold text-3xl md:text-4xl text-on-surface mb-3 tracking-tight uppercase">
+              Estacionamiento inteligente,<br className="hidden md:block" /> sin complicaciones
+            </h2>
+            <p className="font-medium text-sm text-on-surface-variant max-w-xl md:mx-0 mx-auto">
+              Todo lo que necesitas para llegar a tu evento sin estrés.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 1 — Ahorro de tiempo (col-span-2, blanco) */}
+            <div className="md:col-span-2 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
+              <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <Clock className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
               </div>
-            ))}
+              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Ahorro real de tiempo</h3>
+              <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed mb-5">
+                Nada de llegar 2 horas antes ni dar vueltas a la manzana. Tu lugar ya está apartado cuando llegas.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 bg-[#fff0f0] border-2 border-on-surface rounded-xl px-4 py-3">
+                  <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Tiempo promedio de búsqueda</p>
+                  <p className="font-mono font-bold text-lg text-[#991b1b] line-through">25 minutos</p>
+                </div>
+                <div className="flex-1 bg-primary-container border-2 border-on-surface rounded-xl px-4 py-3 neo-brutal-shadow-sm">
+                  <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface/60 mb-1">Con Estacionat</p>
+                  <p className="font-mono font-bold text-lg text-on-surface">¡0 minutos!</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 2 — Reserva anticipada (lime) */}
+            <div className="bg-primary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
+              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <Calendar className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Reserva anticipada</h3>
+              <p className="text-[13px] font-medium text-on-surface/70 leading-relaxed">
+                Asegura tu lugar días o semanas antes del concierto, partido o festival.
+              </p>
+            </div>
+
+            {/* 3 — Boleto digital (blanco) */}
+            <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
+              <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <Smartphone className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Boleto digital QR</h3>
+              <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed">
+                Tu acceso llega por WhatsApp. Muestra el QR al llegar y entra directo.
+              </p>
+            </div>
+
+            {/* 4 — Garantizado (col-span-2, lime) */}
+            <div className="md:col-span-2 bg-primary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
+              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <ShieldCheck className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Lugar 100% garantizado</h3>
+              <p className="text-[13px] font-medium text-on-surface/70 leading-relaxed">
+                Aunque el evento esté agotado y las calles llenas, tu espacio te espera.
+                Estacionamientos privados y verificados cerca de tu venue.
+              </p>
+            </div>
+
+            {/* 5 — Cancelación flexible (col-span-2, blanco) */}
+            <div className="md:col-span-2 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 flex flex-col sm:flex-row gap-5 items-start">
+              <div className="flex-1">
+                <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                  <CalendarX className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
+                </div>
+                <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Cancelación flexible</h3>
+                <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed">
+                  ¿Cambiaron tus planes? Solicita tu reembolso hasta 6 horas antes del evento directamente desde tu boleto.
+                </p>
+              </div>
+              <div className="bg-[#fff0f0] border-2 border-on-surface rounded-xl px-5 py-4 flex-shrink-0 self-center">
+                <p className="font-mono font-bold text-2xl text-[#991b1b]">-6h</p>
+                <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface-variant mt-1">Reembolso 100%</p>
+              </div>
+            </div>
+
+            {/* 6 — Pensión mensual (azul, próximamente) */}
+            <div className="bg-secondary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 text-white">
+              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <Building2 className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg uppercase tracking-tight mb-2">Pensión mensual</h3>
+              <p className="text-[13px] font-medium text-white/75 leading-relaxed mb-4">
+                Un lugar fijo para tu día a día, cerca de tu casa u oficina.
+              </p>
+              <span className="inline-block bg-white text-on-surface border-2 border-on-surface px-3 py-1 rounded-full font-extrabold text-[10px] uppercase tracking-widest neo-brutal-shadow-sm">
+                Próximamente
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-5 md:px-8 py-8 bg-on-surface text-center">
-        <p className="font-extrabold text-xs uppercase tracking-widest text-primary-container mb-3">Estacionat</p>
-        <div className="flex justify-center gap-6">
-          <Link href="/terminos" className="text-white/60 text-[11px] font-semibold no-underline hover:text-white">Términos y condiciones</Link>
-          <Link href="/privacidad" className="text-white/60 text-[11px] font-semibold no-underline hover:text-white">Privacidad</Link>
+      {/* ── CTA conductores ── */}
+      <section className="px-5 md:px-8 py-16">
+        <div className="max-w-3xl mx-auto bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-8 md:p-12 text-center relative overflow-hidden">
+          <Car className="absolute -right-6 -bottom-6 w-40 h-40 text-on-surface/5" strokeWidth={1.5} />
+          <div className="relative z-10">
+            <NeoBadge color="lime" className="mb-5">Comienza hoy</NeoBadge>
+            <h2 className="font-extrabold text-2xl md:text-4xl text-on-surface uppercase tracking-tight mb-3">
+              ¿Listo para estacionar de forma inteligente?
+            </h2>
+            <p className="font-medium text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed mb-8">
+              Encuentra tu venue, elige tu estacionamiento y recibe tu boleto QR en minutos.
+            </p>
+            <button
+              onClick={() => scrollTo('venues')}
+              className="bg-primary-container px-10 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
+            >
+              Buscar estacionamiento
+            </button>
+          </div>
         </div>
-      </footer>
+      </section>
+
+      {/* ── CTA Socios / Host ── */}
+      <section id="socios" className="px-5 md:px-8 pb-20 scroll-mt-20">
+        <div className="max-w-4xl mx-auto bg-midnight border-[3px] border-on-surface rounded-xl shadow-[6px_6px_0px_0px_#ccff00] p-8 md:p-12 relative overflow-hidden">
+          <span className="absolute top-4 right-5 font-mono text-[10px] font-bold text-white/30 tracking-widest">ESTACIONAT SOCIOS</span>
+          <NeoBadge color="lime" className="mb-5">Para propietarios y valet</NeoBadge>
+          <h2 className="font-extrabold text-2xl md:text-4xl text-white uppercase tracking-tight mb-4 max-w-xl">
+            Aumenta las ventas de tu estacionamiento
+          </h2>
+          <p className="font-medium text-sm text-white/60 max-w-xl leading-relaxed mb-8">
+            Publica tus espacios para eventos masivos, controla la ocupación en tiempo real,
+            aprovecha precios dinámicos y valida accesos con nuestro escáner de boletos QR.
+          </p>
+          <a
+            href="mailto:soporte@estacionat.mx?subject=Quiero%20ser%20socio%20de%20Estacionat"
+            className="inline-block bg-primary-container px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface no-underline"
+          >
+            Quiero ser socio
+          </a>
+        </div>
+      </section>
+
+      <NeoFooter />
     </div>
   );
 }

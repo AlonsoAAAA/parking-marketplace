@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin } from 'lucide-react';
 import NeoHeader from '@/components/ui/NeoHeader';
+import NeoFooter from '@/components/ui/NeoFooter';
 
 interface Venue {
   id: string; name: string; address: string;
@@ -106,6 +107,7 @@ export default function VenuesPage() {
           ))}
         </div>
       </div>
+      <NeoFooter />
     </div>
   );
 }
