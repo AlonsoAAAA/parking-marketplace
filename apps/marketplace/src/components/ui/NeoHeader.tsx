@@ -30,7 +30,7 @@ export default function NeoHeader({
           <div className="bg-primary-container p-1.5 rounded-lg border-2 border-on-surface neo-brutal-shadow-sm group-hover:rotate-12 transition-transform">
             <Car className="text-primary w-5 h-5 fill-current" />
           </div>
-          <span className="font-sans font-extrabold text-lg md:text-xl uppercase tracking-tighter text-on-surface select-none drop-shadow-[1px_1px_0px_rgba(204,255,0,1)]">
+          <span className="font-sans font-extrabold text-lg md:text-xl uppercase tracking-tighter text-on-surface select-none drop-shadow-[1px_1px_0px_rgba(255,100,120,1)]">
             Estacionat
           </span>
         </Link>

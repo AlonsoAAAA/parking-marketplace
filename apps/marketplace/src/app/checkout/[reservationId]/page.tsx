@@ -47,7 +47,7 @@ const STRIPE_APPEARANCE = {
       boxShadow: '2px 2px 0px 0px #191c1d',
     },
     '.Tab--selected': {
-      backgroundColor: '#ccff00',
+      backgroundColor: '#FF6478',
       border: '3px solid #191c1d',
     },
     '.Error': { fontSize: '12px', fontWeight: '600' },

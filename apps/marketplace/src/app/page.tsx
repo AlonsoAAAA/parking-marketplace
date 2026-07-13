@@ -336,7 +336,7 @@ export default function HomePage() {
 
       {/* ── CTA Socios / Host ── */}
       <section id="socios" className="px-5 md:px-8 pb-20 scroll-mt-20">
-        <div className="max-w-4xl mx-auto bg-midnight border-[3px] border-on-surface rounded-xl shadow-[6px_6px_0px_0px_#ccff00] p-8 md:p-12 relative overflow-hidden">
+        <div className="max-w-4xl mx-auto bg-midnight border-[3px] border-on-surface rounded-xl shadow-[6px_6px_0px_0px_#FF6478] p-8 md:p-12 relative overflow-hidden">
           <span className="absolute top-4 right-5 font-mono text-[10px] font-bold text-white/30 tracking-widest">ESTACIONAT SOCIOS</span>
           <NeoBadge color="lime" className="mb-5">Para propietarios y valet</NeoBadge>
           <h2 className="font-extrabold text-2xl md:text-4xl text-white uppercase tracking-tight mb-4 max-w-xl">

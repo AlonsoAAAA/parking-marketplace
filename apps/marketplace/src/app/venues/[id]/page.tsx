@@ -40,7 +40,24 @@ export default function VenuePage() {
       <NeoSpinner label="Cargando venue..." />
     </div>
   );
-  if (!venue) return null;
+  if (!venue) return (
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="/" />
+      <div className="flex flex-col items-center justify-center gap-4 py-24 px-6 text-center">
+        <span className="text-5xl">🅿️</span>
+        <p className="font-extrabold text-lg uppercase tracking-tight text-on-surface">Venue no disponible</p>
+        <p className="text-[13px] font-medium text-on-surface-variant max-w-xs leading-relaxed">
+          Este venue aún no tiene información publicada. Explora los venues disponibles.
+        </p>
+        <button
+          onClick={() => router.push('/')}
+          className="mt-2 bg-primary-container px-8 py-3.5 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
+        >
+          Ver venues
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background font-sans">
