@@ -2,7 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { SHARED_CSS } from '@/lib/design';
+import { MapPin, CreditCard, MessageCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import NeoHeader from '@/components/ui/NeoHeader';
+import { NeoButton, NeoLinkButton, NeoTextarea, NeoSpinner } from '@/components/ui/neo';
 
 interface TicketData {
   reservation: { id: string; status: string; createdAt: string };
@@ -18,12 +20,12 @@ interface TicketData {
   userPhone: string | null;
 }
 
-const STATUS: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  pending:   { label: 'Pendiente de pago', color: '#b45309', bg: '#fef3c7', icon: '⏳' },
-  paid:      { label: 'Pagado · Listo para usar', color: '#166534', bg: '#dcfce7', icon: '✅' },
-  used:      { label: 'Utilizado',         color: '#1e40af', bg: '#dbeafe', icon: '✔️' },
-  expired:   { label: 'Expirado',          color: '#6b7280', bg: '#f3f4f6', icon: '⌛' },
-  cancelled: { label: 'Cancelado',         color: '#991b1b', bg: '#fee2e2', icon: '✕' },
+const STATUS: Record<string, { label: string; cls: string; icon: string }> = {
+  pending:   { label: 'Pendiente de pago',       cls: 'bg-[#fef3c7] text-[#b45309]', icon: '⏳' },
+  paid:      { label: 'Pagado · Listo para usar', cls: 'bg-[#dcfce7] text-[#166534]', icon: '✅' },
+  used:      { label: 'Utilizado',                cls: 'bg-[#dbeafe] text-[#1e40af]', icon: '✔️' },
+  expired:   { label: 'Expirado',                 cls: 'bg-surface-container-high text-on-surface-variant', icon: '⌛' },
+  cancelled: { label: 'Cancelado',                cls: 'bg-error-container text-error', icon: '✕' },
 };
 
 function fmtDate(iso: string) {
@@ -81,35 +83,32 @@ export default function BoletoDetailPage() {
       const size   = typeof window !== 'undefined' && window.innerWidth >= 640 ? 260 : 220;
       await QRCode.toCanvas(canvas, JSON.stringify({ t: token }), {
         width: size, margin: 2,
-        color: { dark: '#1a1a1a', light: '#ffffff' },
+        color: { dark: '#191c1d', light: '#ffffff' },
         errorCorrectionLevel: 'H',
       });
       qrRef.current.innerHTML = '';
       qrRef.current.appendChild(canvas);
     } catch {
       if (qrRef.current) qrRef.current.innerHTML =
-        '<p style="color:#bbb;font-size:12px;text-align:center;line-height:1.6">No se pudo<br/>generar el QR</p>';
+        '<p style="color:#747a60;font-size:12px;text-align:center;line-height:1.6">No se pudo<br/>generar el QR</p>';
     }
   };
 
   /* ── loading state ── */
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#EDEDED', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: 'Inter,sans-serif' }}>
-      <div style={{ width: 28, height: 28, border: '2px solid #ddd', borderTop: '2px solid #1a1a1a',
-        borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-      <p style={{ fontSize: 11, letterSpacing: '2px', textTransform: 'uppercase', color: '#bbb' }}>
-        Cargando boleto...
-      </p>
-      <style suppressHydrationWarning>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="/mis-boletos" showTickets={false} />
+      <NeoSpinner label="Cargando boleto..." />
     </div>
   );
 
   if (error) return (
-    <div style={{ minHeight: '100vh', background: '#EDEDED', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: 'Inter,sans-serif', padding: 24 }}>
-      <p style={{ fontSize: 13, color: '#991b1b' }}>{error}</p>
-      <Link href="/mis-boletos" style={{ fontSize: 12, color: '#999', textDecoration: 'none' }}>← Volver</Link>
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="/mis-boletos" showTickets={false} />
+      <div className="flex flex-col items-center justify-center gap-4 py-24 px-6">
+        <p className="text-sm font-bold text-error">{error}</p>
+        <Link href="/mis-boletos" className="text-xs font-semibold text-on-surface-variant no-underline">← Volver</Link>
+      </div>
     </div>
   );
 
@@ -123,331 +122,264 @@ export default function BoletoDetailPage() {
   const hasQR    = isPaid || isUsed;
   const canRefund = isPaid && new Date(ticket.event.startsAt) > new Date(Date.now() + 6 * 3600 * 1000);
 
+  const rowCls = 'flex justify-between gap-4 px-4 py-3 border-b-2 border-dashed border-on-surface/10 last:border-b-0 items-start';
+  const lblCls = 'font-extrabold text-[10px] uppercase tracking-widest text-on-surface-variant pt-0.5 flex-shrink-0';
+  const valCls = 'text-[13px] font-semibold text-on-surface text-right';
+
   return (
-    <>
-      <style suppressHydrationWarning>{SHARED_CSS + `
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .bd-wrap { min-height:100vh; background:#EDEDED; }
-        .bd-body { padding:20px 20px 80px; max-width:480px; margin:0 auto; }
-        @media(min-width:640px){ .bd-body { padding:28px 32px 80px; } }
-        @media(min-width:1024px){ .bd-body { max-width:580px; padding:36px 0 80px; } }
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="/mis-boletos" showTickets={false} />
 
-        /* status pill */
-        .bd-status { display:inline-flex; align-items:center; gap:6px; padding:6px 14px;
-          border-radius:20px; font-size:11px; font-weight:600; letter-spacing:.3px; margin-bottom:20px; }
+      <div className="max-w-lg mx-auto px-5 md:px-0 pt-7 pb-20">
 
-        /* QR card */
-        .bd-qr-card { background:#fff; border-radius:22px; padding:28px 24px;
-          display:flex; flex-direction:column; align-items:center; gap:14px;
-          margin-bottom:12px; text-align:center; }
-        @media(min-width:640px){ .bd-qr-card { padding:40px 36px; } }
-        .bd-qr-box { width:220px; height:220px; display:flex; align-items:center; justify-content:center; }
-        @media(min-width:640px){ .bd-qr-box { width:260px; height:260px; } }
-        .bd-qr-label { font-size:13px; color:#666; line-height:1.6; max-width:260px; }
-        .bd-qr-id    { font-size:10px; color:#bbb; font-family:'Courier New',monospace;
-          letter-spacing:2px; background:#f5f5f5; padding:5px 12px; border-radius:6px; }
-        .bd-scanned  { font-size:11px; color:#166534; background:#dcfce7;
-          padding:6px 14px; border-radius:8px; }
+        {/* Status badge */}
+        <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border-2 border-on-surface neo-brutal-shadow-sm font-extrabold text-[11px] uppercase tracking-wider mb-5 ${st.cls}`}>
+          {st.icon} {st.label}
+        </span>
 
-        /* event header card */
-        .bd-event-card { background:#1a1a1a; border-radius:20px; padding:22px 20px; margin-bottom:12px; }
-        .bd-ev-name { font-size:20px; font-weight:700; color:#fff; letter-spacing:-.3px; margin-bottom:4px; }
-        .bd-ev-venue { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:12px; }
-        .bd-ev-row   { display:flex; gap:20px; flex-wrap:wrap; }
-        .bd-ev-item  { display:flex; flex-direction:column; gap:2px; }
-        .bd-ev-label { font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.35); }
-        .bd-ev-val   { font-size:13px; font-weight:500; color:rgba(255,255,255,.85); }
-
-        /* details table */
-        .bd-table { background:#fff; border-radius:18px; overflow:hidden; margin-bottom:12px; }
-        .bd-table-hd { background:#f5f5f5; padding:10px 18px; font-size:9px;
-          font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:#bbb; }
-        .bd-row { display:flex; justify-content:space-between; padding:12px 18px;
-          border-bottom:1px solid #f5f5f5; align-items:flex-start; gap:16px; }
-        .bd-row:last-child { border-bottom:none; }
-        .bd-lbl { font-size:12px; color:#bbb; flex-shrink:0; }
-        .bd-val { font-size:13px; color:#1a1a1a; font-weight:500; text-align:right; }
-
-        /* pending CTA */
-        .bd-pending { background:#fff; border-radius:20px; padding:24px; margin-bottom:12px; text-align:center; }
-        .bd-pending-icon { font-size:36px; margin-bottom:10px; }
-        .bd-pending-t { font-size:16px; font-weight:700; color:#1a1a1a; margin-bottom:6px; }
-        .bd-pending-s { font-size:13px; color:#bbb; margin-bottom:18px; line-height:1.55; }
-        .bd-exp  { font-size:11px; color:#b45309; background:#fef3c7; padding:6px 14px;
-          border-radius:8px; display:inline-block; margin-bottom:14px; }
-
-        /* instructions */
-        .bd-steps { background:#fff; border-radius:18px; padding:20px; margin-bottom:20px; }
-        .bd-step  { display:flex; align-items:center; gap:12px; padding:8px 0;
-          border-bottom:1px solid #f5f5f5; }
-        .bd-step:last-child { border-bottom:none; }
-        .bd-step-n { width:26px; height:26px; background:#1a1a1a; color:#fff;
-          border-radius:50%; display:flex; align-items:center; justify-content:center;
-          font-size:11px; font-weight:700; flex-shrink:0; }
-        .bd-step-t { font-size:13px; color:#444; }
-      `}</style>
-
-      <div className="bd-wrap">
-        <header className="pm-header">
-          <Link href="/mis-boletos" className="pm-back">← Mis boletos</Link>
-          <span className="pm-logo">Estaciona<span>t</span></span>
-        </header>
-
-        <div className="bd-body">
-
-          {/* Status badge */}
-          <span className="bd-status" style={{ color: st.color, background: st.bg }}>
-            {st.icon} {st.label}
-          </span>
-
-          {/* ── Event header (dark card) ── */}
-          <div className="bd-event-card">
-            <div className="bd-ev-name">{ticket.event.name}</div>
-            <div className="bd-ev-venue">📍 {ticket.event.venueName}</div>
-            <div className="bd-ev-row">
-              <div className="bd-ev-item">
-                <span className="bd-ev-label">Fecha</span>
-                <span className="bd-ev-val">{fmtDate(ticket.event.startsAt)}</span>
-              </div>
-              <div className="bd-ev-item">
-                <span className="bd-ev-label">Hora</span>
-                <span className="bd-ev-val">{fmtTime(ticket.event.startsAt)}</span>
-              </div>
+        {/* ── Event header (dark card) ── */}
+        <div className="bg-on-surface border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5 mb-4">
+          <div className="font-extrabold text-xl text-white uppercase tracking-tight mb-1">{ticket.event.name}</div>
+          <div className="flex items-center gap-1.5 text-white/50 mb-4">
+            <MapPin className="w-3.5 h-3.5" strokeWidth={2.5} />
+            <span className="text-[13px] font-semibold">{ticket.event.venueName}</span>
+          </div>
+          <div className="flex gap-6 flex-wrap">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-extrabold text-[9px] tracking-[2px] uppercase text-primary-container/70">Fecha</span>
+              <span className="font-mono text-[13px] font-bold text-white/90 capitalize">{fmtDate(ticket.event.startsAt)}</span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-extrabold text-[9px] tracking-[2px] uppercase text-primary-container/70">Hora</span>
+              <span className="font-mono text-[13px] font-bold text-white/90">{fmtTime(ticket.event.startsAt)}</span>
             </div>
           </div>
+        </div>
 
-          {/* ── QR code (paid / used) ── */}
-          {hasQR && (
-            <div className="bd-qr-card">
-              <div className="bd-qr-box" ref={qrRef}>
+        {/* ── QR code (paid / used) ── */}
+        {hasQR && (
+          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 md:p-9 flex flex-col items-center gap-4 mb-4 text-center">
+            <div className="qr-border rounded-xl p-3 bg-white">
+              <div className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] flex items-center justify-center" ref={qrRef}>
                 {ticket.qrToken
-                  ? <div style={{ width: 28, height: 28, border: '2px solid #eee',
-                      borderTop: '2px solid #1a1a1a', borderRadius: '50%',
-                      animation: 'spin 0.7s linear infinite' }} />
-                  : <p style={{ color: '#bbb', fontSize: 12, textAlign: 'center', lineHeight: 1.6 }}>
-                      QR enviado<br />por WhatsApp
-                    </p>
+                  ? <div className="w-7 h-7 border-[3px] border-surface-container-high border-t-on-surface rounded-full animate-spin" />
+                  : <p className="text-on-surface-variant text-xs leading-relaxed">QR enviado<br />por WhatsApp</p>
                 }
               </div>
-              <p className="bd-qr-label">
-                Muestra este código al llegar al estacionamiento.<br />
-                <strong>Es de uso único.</strong>
-              </p>
-              <div className="bd-qr-id">{ticketId}</div>
-              {isUsed && ticket.qrToken && (
-                <div className="bd-scanned">✓ Ya fue escaneado</div>
-              )}
             </div>
-          )}
-
-          {/* ── Pending payment CTA ── */}
-          {isPending && (
-            <div className="bd-pending">
-              <div className="bd-pending-icon">💳</div>
-              <div className="bd-pending-t">Completa tu pago</div>
-              <div className="bd-pending-s">
-                Tu lugar está reservado temporalmente.<br />
-                Completa el pago para garantizarlo.
-              </div>
-              <div className="bd-exp">
-                Expira en ~15 minutos desde la reserva
-              </div>
-              <Link
-                href={`/checkout/${id}`}
-                className="pm-btn-primary"
-                style={{ display: 'flex', textDecoration: 'none' }}>
-                Pagar ahora →
-              </Link>
+            <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed max-w-[260px]">
+              Muestra este código al llegar al estacionamiento.<br />
+              <strong className="text-on-surface">Es de uso único.</strong>
+            </p>
+            <div className="font-mono text-[11px] font-bold tracking-[2px] text-on-surface bg-surface-container border-2 border-on-surface rounded-lg px-3 py-1.5">
+              {ticketId}
             </div>
-          )}
-
-          {/* ── Details table ── */}
-          <div className="bd-table">
-            <div className="bd-table-hd">Detalle del boleto</div>
-            {ticket.event.parkingName && (
-              <div className="bd-row">
-                <span className="bd-lbl">Estacionamiento</span>
-                <span className="bd-val">{ticket.event.parkingName}</span>
+            {isUsed && ticket.qrToken && (
+              <div className="inline-flex items-center gap-1.5 font-extrabold text-[11px] uppercase tracking-wider text-[#166534] bg-[#dcfce7] border-2 border-on-surface rounded-lg px-3 py-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2.5} /> Ya fue escaneado
               </div>
             )}
-            {ticket.event.parkingAddress && (
-              <div className="bd-row">
-                <span className="bd-lbl">Dirección</span>
-                <span className="bd-val">{ticket.event.parkingAddress}</span>
-              </div>
-            )}
-            {ticket.event.startsAt && (
-              <>
-                <div className="bd-row">
-                  <span className="bd-lbl">Hora de entrada</span>
-                  <span className="bd-val">{fmtTime(ticket.event.startsAt)}</span>
-                </div>
-                <div className="bd-row">
-                  <span className="bd-lbl">Hora máx. de salida</span>
-                  <span className="bd-val">{fmtTime(new Date(new Date(ticket.event.startsAt).getTime() + 6 * 3600 * 1000).toISOString())} <span style={{ fontSize: 10, color: '#999' }}>(6 hrs)</span></span>
-                </div>
-              </>
-            )}
-            {ticket.payment.amount > 0 && (
-              <>
-                <div className="bd-row">
-                  <span className="bd-lbl">Subtotal</span>
-                  <span className="bd-val">${(ticket.payment.amount / 1.16).toFixed(2)} MXN</span>
-                </div>
-                <div className="bd-row">
-                  <span className="bd-lbl">IVA (16%)</span>
-                  <span className="bd-val">
-                    ${(ticket.payment.amount - ticket.payment.amount / 1.16).toFixed(2)} MXN
-                  </span>
-                </div>
-                <div className="bd-row" style={{ background: '#f9f9f9' }}>
-                  <span className="bd-lbl" style={{ fontWeight: 700, color: '#1a1a1a' }}>Total</span>
-                  <span className="bd-val" style={{ fontSize: 16, fontWeight: 700 }}>
-                    ${ticket.payment.amount.toFixed(2)} MXN
-                  </span>
-                </div>
-              </>
-            )}
-            <div className="bd-row">
-              <span className="bd-lbl">Folio</span>
-              <span className="bd-val" style={{ fontFamily: 'monospace', fontSize: 11 }}>{ticketId}</span>
-            </div>
           </div>
+        )}
 
-          {/* ── How to use (only when paid/used) ── */}
-          {(isPaid || isUsed) && (
-            <div className="bd-steps">
-              {[
-                'Llega al estacionamiento antes o durante el evento',
-                'Abre este boleto',
-                'Muestra el código QR al operador',
-                'El operador escanea y puedes entrar',
-              ].map((text, i) => (
-                <div key={i} className="bd-step">
-                  <div className="bd-step-n">{i + 1}</div>
-                  <span className="bd-step-t">{text}</span>
-                </div>
-              ))}
+        {/* ── Pending payment CTA ── */}
+        {isPending && (
+          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 mb-4 text-center">
+            <CreditCard className="w-10 h-10 mx-auto mb-3 text-on-surface" strokeWidth={2} />
+            <div className="font-extrabold text-base uppercase tracking-tight text-on-surface mb-1.5">Completa tu pago</div>
+            <div className="text-[13px] font-medium text-on-surface-variant mb-4 leading-relaxed">
+              Tu lugar está reservado temporalmente.<br />
+              Completa el pago para garantizarlo.
             </div>
-          )}
-
-          {/* WhatsApp note */}
-          {isPaid && ticket.userPhone && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 14,
-              padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12,
-              marginBottom: 20 }}>
-              <span style={{ fontSize: 22 }}>💬</span>
-              <p style={{ fontSize: 13, color: '#166534', lineHeight: 1.55 }}>
-                También enviamos el QR a tu WhatsApp{ticket.userPhone ? ` (${ticket.userPhone})` : ''}.
-                Guárdalo como respaldo.
-              </p>
+            <div className="inline-block font-extrabold text-[10px] uppercase tracking-wider text-[#b45309] bg-[#fef3c7] border-2 border-on-surface rounded-lg px-3 py-1.5 mb-4">
+              Expira en ~15 minutos desde la reserva
             </div>
-          )}
-
-          {/* Solicitar reembolso */}
-          {canRefund && !refundDone && (
-            <div style={{ marginBottom: 20 }}>
-              {!refundOpen ? (
-                <button onClick={() => setRefundOpen(true)} style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: 12, color: '#999', textDecoration: 'underline', padding: 0,
-                }}>
-                  Solicitar reembolso →
-                </button>
-              ) : (
-                <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 14, padding: 16 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#1a1a1a' }}>Solicitar reembolso</p>
-                  <p style={{ fontSize: 11, color: '#999', marginBottom: 12, lineHeight: 1.5 }}>
-                    Solo disponible más de 6 horas antes del evento. El equipo revisará tu solicitud.
-                  </p>
-                  <textarea
-                    value={refundReason}
-                    onChange={e => setRefundReason(e.target.value)}
-                    maxLength={500}
-                    placeholder="Cuéntanos el motivo de tu solicitud..."
-                    style={{ width: '100%', minHeight: 90, borderRadius: 10, border: '1px solid #ddd',
-                      padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
-                  />
-                  <label style={{ display: 'block', marginTop: 10, marginBottom: 4, fontSize: 12, color: '#666' }}>
-                    Adjuntar fotos (opcional)
-                  </label>
-                  <input type="file" accept="image/*" multiple onChange={async e => {
-                    const files = Array.from(e.target.files ?? []);
-                    const toBase64 = (f: File) => new Promise<string>(res => {
-                      const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f);
-                    });
-                    setRefundPhotos(await Promise.all(files.map(toBase64)));
-                  }} style={{ fontSize: 12 }} />
-                  {refundPhotos.length > 0 && (
-                    <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                      {refundPhotos.map((src, i) => (
-                        <img key={i} src={src} alt="" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid #eee' }} />
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-                    <button onClick={() => setRefundOpen(false)} style={{
-                      flex: 1, padding: '10px 0', borderRadius: 10, border: '1px solid #ddd',
-                      background: '#fff', fontSize: 13, cursor: 'pointer',
-                    }}>
-                      Cancelar
-                    </button>
-                    <button
-                      disabled={!refundReason.trim() || refundSending}
-                      onClick={async () => {
-                        setRefundSending(true);
-                        try {
-                          const token = localStorage.getItem('token');
-                          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/reservations/${id}/refund-request`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                            body: JSON.stringify({ reason: refundReason, evidencePhotos: refundPhotos }),
-                          });
-                          if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Error'); }
-                          setRefundDone(true);
-                          setRefundOpen(false);
-                        } catch (e: any) {
-                          alert(e.message || 'Error al enviar la solicitud');
-                        } finally { setRefundSending(false); }
-                      }}
-                      style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
-                        background: refundReason.trim() ? '#1a1a1a' : '#ccc', color: '#fff', fontSize: 13, cursor: 'pointer' }}
-                    >
-                      {refundSending ? 'Enviando...' : 'Enviar solicitud'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          {refundDone && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12,
-              padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#166534', lineHeight: 1.55 }}>
-              ✅ Tu solicitud de reembolso fue enviada. El equipo la revisará en breve.
-            </div>
-          )}
-
-          {/* Política de cancelación */}
-          <div style={{
-            background: '#fff8f0', border: '1px solid #fde68a',
-            borderLeft: '3px solid #f59e0b', borderRadius: 12,
-            padding: '14px 16px', marginBottom: 20,
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 6, letterSpacing: .3 }}>
-              ⚠️ Política de cancelación
-            </div>
-            <div style={{ fontSize: 12, color: '#b45309', lineHeight: 1.65 }}>
-              Puedes solicitar reembolso hasta <strong>6 horas antes</strong> del inicio del evento.
-              Pasado ese plazo, no se aceptan cancelaciones ni reembolsos.
-              El boleto es de uso único e intransferible.
-            </div>
+            <NeoLinkButton href={`/checkout/${id}`} className="w-full">Pagar ahora →</NeoLinkButton>
           </div>
+        )}
 
-          <Link href="/mis-boletos" className="pm-btn-secondary" style={{ display: 'flex', textDecoration: 'none' }}>
-            ← Ver todos mis boletos
-          </Link>
+        {/* ── Details table ── */}
+        <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden mb-4">
+          <div className="bg-on-surface px-4 py-2.5 font-extrabold text-[10px] tracking-[3px] uppercase text-primary-container">
+            Detalle del boleto
+          </div>
+          {ticket.event.parkingName && (
+            <div className={rowCls}>
+              <span className={lblCls}>Estacionamiento</span>
+              <span className={valCls}>{ticket.event.parkingName}</span>
+            </div>
+          )}
+          {ticket.event.parkingAddress && (
+            <div className={rowCls}>
+              <span className={lblCls}>Dirección</span>
+              <span className={valCls}>{ticket.event.parkingAddress}</span>
+            </div>
+          )}
+          {ticket.event.startsAt && (
+            <>
+              <div className={rowCls}>
+                <span className={lblCls}>Hora de entrada</span>
+                <span className={`${valCls} font-mono`}>{fmtTime(ticket.event.startsAt)}</span>
+              </div>
+              <div className={rowCls}>
+                <span className={lblCls}>Hora máx. de salida</span>
+                <span className={`${valCls} font-mono`}>
+                  {fmtTime(new Date(new Date(ticket.event.startsAt).getTime() + 6 * 3600 * 1000).toISOString())}{' '}
+                  <span className="text-[10px] text-on-surface-variant">(6 hrs)</span>
+                </span>
+              </div>
+            </>
+          )}
+          {ticket.payment.amount > 0 && (
+            <>
+              <div className={rowCls}>
+                <span className={lblCls}>Subtotal</span>
+                <span className={`${valCls} font-mono`}>${(ticket.payment.amount / 1.16).toFixed(2)} MXN</span>
+              </div>
+              <div className={rowCls}>
+                <span className={lblCls}>IVA (16%)</span>
+                <span className={`${valCls} font-mono`}>
+                  ${(ticket.payment.amount - ticket.payment.amount / 1.16).toFixed(2)} MXN
+                </span>
+              </div>
+              <div className={`${rowCls} bg-primary-container/40`}>
+                <span className={`${lblCls} text-on-surface`}>Total</span>
+                <span className="font-mono font-bold text-base text-on-surface">
+                  ${ticket.payment.amount.toFixed(2)} MXN
+                </span>
+              </div>
+            </>
+          )}
+          <div className={rowCls}>
+            <span className={lblCls}>Folio</span>
+            <span className="font-mono text-[11px] font-bold text-on-surface">{ticketId}</span>
+          </div>
         </div>
+
+        {/* ── How to use (only when paid/used) ── */}
+        {(isPaid || isUsed) && (
+          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5 mb-4">
+            {[
+              'Llega al estacionamiento antes o durante el evento',
+              'Abre este boleto',
+              'Muestra el código QR al operador',
+              'El operador escanea y puedes entrar',
+            ].map((text, i, arr) => (
+              <div key={i} className={`flex items-center gap-3 py-2.5 ${i < arr.length - 1 ? 'border-b-2 border-dashed border-on-surface/10' : ''}`}>
+                <div className="w-7 h-7 bg-primary-container border-2 border-on-surface rounded-full flex items-center justify-center font-extrabold text-xs text-on-surface flex-shrink-0 neo-brutal-shadow-sm">
+                  {i + 1}
+                </div>
+                <span className="text-[13px] font-semibold text-on-surface">{text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* WhatsApp note */}
+        {isPaid && ticket.userPhone && (
+          <div className="bg-[#f0fdf4] border-[3px] border-on-surface rounded-xl neo-brutal-shadow-sm p-4 flex items-start gap-3 mb-4">
+            <MessageCircle className="w-5 h-5 text-[#166534] flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+            <p className="text-[13px] font-medium text-[#166534] leading-relaxed">
+              También enviamos el QR a tu WhatsApp{ticket.userPhone ? ` (${ticket.userPhone})` : ''}.
+              Guárdalo como respaldo.
+            </p>
+          </div>
+        )}
+
+        {/* Solicitar reembolso */}
+        {canRefund && !refundDone && (
+          <div className="mb-4">
+            {!refundOpen ? (
+              <button onClick={() => setRefundOpen(true)}
+                className="bg-transparent border-none cursor-pointer text-xs font-bold text-on-surface-variant underline p-0">
+                Solicitar reembolso →
+              </button>
+            ) : (
+              <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4">
+                <p className="font-extrabold text-sm uppercase tracking-tight text-on-surface mb-2">Solicitar reembolso</p>
+                <p className="text-[11px] font-medium text-on-surface-variant mb-3 leading-relaxed">
+                  Solo disponible más de 6 horas antes del evento. El equipo revisará tu solicitud.
+                </p>
+                <NeoTextarea
+                  value={refundReason}
+                  onChange={e => setRefundReason(e.target.value)}
+                  maxLength={500}
+                  placeholder="Cuéntanos el motivo de tu solicitud..."
+                  className="min-h-[90px]"
+                />
+                <label className="block mt-3 mb-1.5 font-extrabold text-[10px] uppercase tracking-widest text-on-surface-variant">
+                  Adjuntar fotos (opcional)
+                </label>
+                <input type="file" accept="image/*" multiple onChange={async e => {
+                  const files = Array.from(e.target.files ?? []);
+                  const toBase64 = (f: File) => new Promise<string>(res => {
+                    const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f);
+                  });
+                  setRefundPhotos(await Promise.all(files.map(toBase64)));
+                }} className="text-xs font-semibold" />
+                {refundPhotos.length > 0 && (
+                  <div className="flex gap-2 mt-2.5 flex-wrap">
+                    {refundPhotos.map((src, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={src} alt="" className="w-14 h-14 object-cover rounded-lg border-2 border-on-surface" />
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-3 mt-4">
+                  <NeoButton variant="secondary" className="flex-1" onClick={() => setRefundOpen(false)}>
+                    Cancelar
+                  </NeoButton>
+                  <NeoButton
+                    variant="dark"
+                    className="flex-1"
+                    disabled={!refundReason.trim() || refundSending}
+                    onClick={async () => {
+                      setRefundSending(true);
+                      try {
+                        const token = localStorage.getItem('token');
+                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/reservations/${id}/refund-request`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                          body: JSON.stringify({ reason: refundReason, evidencePhotos: refundPhotos }),
+                        });
+                        if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Error'); }
+                        setRefundDone(true);
+                        setRefundOpen(false);
+                      } catch (e: any) {
+                        alert(e.message || 'Error al enviar la solicitud');
+                      } finally { setRefundSending(false); }
+                    }}
+                  >
+                    {refundSending ? 'Enviando...' : 'Enviar solicitud'}
+                  </NeoButton>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {refundDone && (
+          <div className="bg-[#f0fdf4] border-[3px] border-on-surface rounded-xl neo-brutal-shadow-sm px-4 py-3 mb-4 text-[13px] font-semibold text-[#166534] leading-relaxed">
+            ✅ Tu solicitud de reembolso fue enviada. El equipo la revisará en breve.
+          </div>
+        )}
+
+        {/* Política de cancelación */}
+        <div className="bg-[#fff8f0] border-[3px] border-on-surface rounded-xl neo-brutal-shadow-sm p-4 mb-5">
+          <div className="flex items-center gap-2 font-extrabold text-[11px] uppercase tracking-wider text-[#92400e] mb-2">
+            <AlertTriangle className="w-4 h-4" strokeWidth={2.5} />
+            Política de cancelación
+          </div>
+          <div className="text-xs font-medium text-[#b45309] leading-relaxed">
+            Puedes solicitar reembolso hasta <strong>6 horas antes</strong> del inicio del evento.
+            Pasado ese plazo, no se aceptan cancelaciones ni reembolsos.
+            El boleto es de uso único e intransferible.
+          </div>
+        </div>
+
+        <NeoLinkButton href="/mis-boletos" variant="secondary" className="w-full">
+          ← Ver todos mis boletos
+        </NeoLinkButton>
       </div>
-    </>
+    </div>
   );
 }

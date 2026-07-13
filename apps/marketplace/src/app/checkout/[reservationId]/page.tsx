@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { SHARED_CSS } from '@/lib/design';
+import { Ticket, Lock, AlertTriangle } from 'lucide-react';
+import NeoHeader from '@/components/ui/NeoHeader';
+import { NeoButton, NeoInput, NeoLabel, NeoSpinner } from '@/components/ui/neo';
 
 const STRIPE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
@@ -11,34 +13,44 @@ const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
 const STRIPE_APPEARANCE = {
   theme: 'stripe' as const,
   variables: {
-    colorPrimary: '#1a1a1a',
+    colorPrimary: '#191c1d',
     colorBackground: '#ffffff',
-    colorText: '#1a1a1a',
-    colorDanger: '#e53e3e',
-    fontFamily: 'Inter, sans-serif',
-    borderRadius: '8px',
+    colorText: '#191c1d',
+    colorDanger: '#ba1a1a',
+    fontFamily: '"Plus Jakarta Sans", sans-serif',
+    borderRadius: '12px',
     spacingUnit: '4px',
   },
   rules: {
     '.Input': {
-      backgroundColor: '#f5f5f5',
-      border: 'none',
+      backgroundColor: '#ffffff',
+      border: '3px solid #191c1d',
       boxShadow: 'none',
       padding: '12px 14px',
       fontSize: '14px',
+      fontWeight: '600',
     },
     '.Input:focus': {
-      boxShadow: '0 0 0 1.5px #1a1a1a',
-      backgroundColor: '#f5f5f5',
+      boxShadow: '3px 3px 0px 0px #191c1d',
+      backgroundColor: '#ffffff',
+      border: '3px solid #191c1d',
     },
     '.Label': {
       fontSize: '11px',
-      fontWeight: '600',
-      color: '#999',
+      fontWeight: '800',
+      color: '#191c1d',
       textTransform: 'uppercase',
-      letterSpacing: '0.5px',
+      letterSpacing: '1px',
     },
-    '.Error': { fontSize: '12px' },
+    '.Tab': {
+      border: '3px solid #191c1d',
+      boxShadow: '2px 2px 0px 0px #191c1d',
+    },
+    '.Tab--selected': {
+      backgroundColor: '#FF6478',
+      border: '3px solid #191c1d',
+    },
+    '.Error': { fontSize: '12px', fontWeight: '600' },
   },
 };
 
@@ -103,26 +115,25 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
 
   return (
     <>
-
-      <div className="fc">
-        <label className="pm-label">Tu número de WhatsApp</label>
-        <div className="pr">
-          <div className="pp">+52</div>
-          <input
-            className="pi"
+      <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4 md:p-5 mb-4">
+        <NeoLabel>Tu número de WhatsApp</NeoLabel>
+        <div className="flex gap-2.5">
+          <div className="px-4 py-3.5 bg-surface-container-high border-[3px] border-on-surface rounded-xl font-mono font-bold text-sm text-on-surface flex-shrink-0 flex items-center">+52</div>
+          <NeoInput
+            className="font-mono"
             value={phone}
             onChange={e => setPhone(e.target.value)}
             placeholder="55 1234 5678"
             type="tel"
           />
         </div>
-        <p style={{ fontSize: 11, color: '#bbb', marginTop: 8 }}>
+        <p className="text-[11px] font-semibold text-on-surface-variant mt-2.5">
           💬 Tu boleto QR llegará aquí cuando pagues
         </p>
       </div>
 
-      <div className="fc">
-        <label className="pm-label" style={{ marginBottom: 14, display: 'block' }}>Tarjeta</label>
+      <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4 md:p-5 mb-4">
+        <NeoLabel className="mb-3.5">Tarjeta</NeoLabel>
         <PaymentElement
           options={{
             layout: 'tabs',
@@ -132,29 +143,26 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
       </div>
 
       {/* Términos y condiciones */}
-      <div className="fc" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer' }}
+      <div
+        className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4 md:p-5 mb-4 flex items-start gap-3.5 cursor-pointer"
         onClick={() => setTermsAccepted(v => !v)}>
         {/* Checkbox custom */}
-        <div style={{
-          width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
-          border: termsAccepted ? '2px solid #1a1a1a' : '2px solid #ddd',
-          background: termsAccepted ? '#1a1a1a' : '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'all .15s',
-        }}>
+        <div className={`w-6 h-6 rounded-lg flex-shrink-0 border-[3px] border-on-surface flex items-center justify-center transition-all duration-150 ${
+          termsAccepted ? 'bg-primary-container neo-brutal-shadow-sm' : 'bg-white'
+        }`}>
           {termsAccepted && (
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4L3.5 6.5L9 1" stroke="#EDEDED" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="11" height="9" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.5 6.5L9 1" stroke="#191c1d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </div>
-        <div style={{ fontSize: 13, color: '#444', lineHeight: 1.5 }}>
+        <div className="text-[13px] font-semibold text-on-surface leading-relaxed">
           He leído y acepto los{' '}
           <a
             href="/terminos"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#1a1a1a', fontWeight: 600, textDecoration: 'underline', textDecorationColor: 'rgba(0,0,0,.25)' }}
+            className="font-extrabold underline"
             onClick={e => e.stopPropagation()}>
             Términos y Condiciones
           </a>
@@ -162,32 +170,33 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
         </div>
       </div>
 
-      {error && <div className="pm-error">{error}</div>}
+      {error && <div className="mb-4 bg-error-container border-2 border-error rounded-lg px-3 py-2 text-error text-xs font-bold">{error}</div>}
 
-      <div className="ctab">
+      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t-[3px] border-on-surface px-5 py-4 pb-[calc(16px+env(safe-area-inset-bottom))] z-50 sm:max-w-[480px] sm:mx-auto sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:rounded-t-xl sm:border-x-[3px] lg:static lg:bg-transparent lg:border-none lg:p-0 lg:max-w-none lg:translate-x-0 lg:mt-1">
         {/* Aviso si no aceptó */}
         {!termsAccepted && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '9px 12px', background: 'rgba(0,0,0,.04)', borderRadius: 8 }}>
-            <span style={{ fontSize: 14 }}>☝️</span>
-            <span style={{ fontSize: 11, color: '#888' }}>Acepta los términos para continuar</span>
+          <div className="flex items-center gap-2 mb-2.5 px-3 py-2 bg-surface-container border-2 border-on-surface rounded-lg">
+            <span className="text-sm">☝️</span>
+            <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Acepta los términos para continuar</span>
           </div>
         )}
-        <button
-          className="pm-btn-primary"
+        <NeoButton
+          className="w-full"
           onClick={handlePay}
           disabled={!stripe || !elements || paying || !termsAccepted}
-          style={{ opacity: !termsAccepted ? 0.4 : 1 }}
         >
           {paying ? (
-            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-3.5 h-3.5 border-2 border-on-surface/30 border-t-on-surface rounded-full animate-spin inline-block" />
               Procesando...
             </span>
           ) : (
-            `🔒 Pagar $${Math.round(data.amount)} MXN`
+            <><Lock className="w-4 h-4" strokeWidth={2.5} /> Pagar ${Math.round(data.amount)} MXN</>
           )}
-        </button>
-        <div className="sn">Pago seguro · Stripe SSL 256-bit</div>
+        </NeoButton>
+        <div className="flex items-center justify-center gap-1.5 font-mono text-[10px] font-bold text-on-surface-variant mt-2.5">
+          Pago seguro · Stripe SSL 256-bit
+        </div>
       </div>
     </>
   );
@@ -222,139 +231,81 @@ export default function CheckoutPage() {
   }, [reservationId]);
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#EDEDED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 24, height: 24, border: '2px solid #ddd', borderTop: '2px solid #1a1a1a', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-      <style suppressHydrationWarning>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="back" showTickets={false} />
+      <NeoSpinner label="Preparando pago..." />
     </div>
   );
 
   if (fetchError) return (
-    <div style={{ minHeight: '100vh', background: '#EDEDED', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'Inter,sans-serif', gap: 16 }}>
-      <div style={{ fontSize: 36 }}>⚠️</div>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', textAlign: 'center' }}>No se pudo iniciar el pago</h2>
-      <p style={{ fontSize: 13, color: '#999', textAlign: 'center', maxWidth: 320, lineHeight: 1.6 }}>{fetchError}</p>
-      <button onClick={() => router.back()} style={{ marginTop: 8, padding: '12px 24px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>
-        ← Volver
-      </button>
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="back" showTickets={false} />
+      <div className="flex flex-col items-center justify-center gap-4 py-24 px-6 text-center">
+        <AlertTriangle className="w-10 h-10 text-on-surface" strokeWidth={2} />
+        <h2 className="font-extrabold text-lg uppercase tracking-tight text-on-surface">No se pudo iniciar el pago</h2>
+        <p className="text-[13px] font-medium text-on-surface-variant max-w-xs leading-relaxed">{fetchError}</p>
+        <NeoButton variant="dark" onClick={() => router.back()}>← Volver</NeoButton>
+      </div>
     </div>
   );
 
   return (
-    <>
-      <style suppressHydrationWarning>{SHARED_CSS + `
-        @keyframes spin    { to { transform: rotate(360deg) } }
-        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .cw  { min-height: 100vh; background: #EDEDED; }
-        /* Mobile: single column */
-        .cb  { padding: 24px 24px 120px; max-width: 480px; margin: 0 auto; }
-        @media(min-width:640px){ .cb { padding: 36px 40px 120px; } }
-        /* Desktop: 2-column layout */
-        @media(min-width:1024px){
-          .cb {
-            max-width: none;
-            padding: 40px 56px 80px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-            align-items: start;
-          }
-          .co-left  { position: sticky; top: 80px; }
-          .co-right { /* form column */ }
-          /* Pay button: static on desktop, not fixed */
-          .ctab {
-            position: static !important;
-            background: transparent !important;
-            border-top: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            padding: 0 !important;
-            margin-top: 16px;
-            left: auto !important; right: auto !important;
-            transform: none !important;
-            border-radius: 0 !important;
-          }
-        }
-        .sc  { background: #fff; border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
-        .sh  { background: #1a1a1a; padding: 14px 18px; display: flex; align-items: center; gap: 10px; }
-        .sb  { padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
-        .sr  { display: flex; justify-content: space-between; font-size: 13px; }
-        .sr span:first-child { color: #999; }
-        .sr span:last-child  { color: #1a1a1a; font-weight: 500; }
-        .sr.tot { padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.07); font-size: 15px; }
-        .fc  { background: #fff; border-radius: 14px; padding: 18px; margin-bottom: 14px; }
-        .ctab { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(237,237,237,0.95); backdrop-filter: blur(16px); border-top: 1px solid rgba(0,0,0,0.07); padding: 16px 24px calc(16px + env(safe-area-inset-bottom)); }
-        @media(min-width:640px){ .ctab { max-width: 480px; margin: 0 auto; left: 50%; right: auto; transform: translateX(-50%); border-radius: 16px 16px 0 0; } }
-        .sn  { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; color: #bbb; margin-top: 10px; }
-        .pr  { display: flex; gap: 8px; }
-        .pp  { padding: 12px 14px; background: #f5f5f5; border-radius: 8px; font-size: 14px; font-weight: 600; color: #1a1a1a; flex-shrink: 0; }
-        .pi  { flex: 1; padding: 12px 14px; background: #f5f5f5; border: none; border-radius: 8px; font-size: 14px; color: #1a1a1a; font-family: 'Inter', sans-serif; }
-        .pi::placeholder { color: #bbb; }
-        .pi:focus { outline: 1.5px solid #1a1a1a; }
-        /* Desktop summary extras */
-        .co-left-extras { display: none; }
-        @media(min-width:1024px){
-          .co-left-extras { display: block; margin-top: 14px; }
-          .co-left-perk { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(0,0,0,.05); font-size:13px; color:#555; }
-          .co-left-perk:last-child { border-bottom:none; }
-          .co-left-dot { width:18px; height:18px; background:#1a1a1a; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        }
-      `}</style>
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="back" showTickets={false} />
 
-      <div className="cw">
-        <header className="pm-header" style={{ paddingBottom: 20 }}>
-          <button className="pm-back" onClick={() => router.back()}>← Atrás</button>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>Pago</span>
-          <span style={{ width: 60 }} />
-        </header>
+      <div className="max-w-md mx-auto px-5 pt-7 pb-36 lg:max-w-6xl lg:px-8 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start lg:pb-16">
 
-        <div className="cb">
-
-          {/* LEFT: resumen del pedido (sticky en desktop) */}
-          <div className="co-left">
-            <div className="sc">
-              <div className="sh">
-                <span style={{ fontSize: 14 }}>🎫</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', letterSpacing: '-0.2px' }}>{data!.eventName}</span>
+        {/* LEFT: resumen del pedido (sticky en desktop) */}
+        <div className="lg:sticky lg:top-24">
+          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden mb-4">
+            <div className="bg-on-surface px-4 py-3 flex items-center gap-2.5">
+              <Ticket className="w-4 h-4 text-primary-container" strokeWidth={2.5} />
+              <span className="font-extrabold text-[13px] text-white uppercase tracking-tight">{data!.eventName}</span>
+            </div>
+            <div className="p-4 flex flex-col gap-2">
+              <div className="flex justify-between text-[13px]">
+                <span className="font-semibold text-on-surface-variant">1 lugar de estacionamiento</span>
+                <span className="font-mono font-bold text-on-surface">${Math.round(data!.amount)} MXN</span>
               </div>
-              <div className="sb">
-                <div className="sr"><span>1 lugar de estacionamiento</span><span>${Math.round(data!.amount)} MXN</span></div>
-                <div className="sr tot"><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 700 }}>${Math.round(data!.amount)} MXN</span></div>
+              <div className="flex justify-between pt-2.5 border-t-2 border-dashed border-on-surface/15">
+                <span className="font-extrabold text-sm uppercase tracking-tight text-on-surface">Total</span>
+                <span className="font-mono font-bold text-base text-on-surface">${Math.round(data!.amount)} MXN</span>
               </div>
             </div>
+          </div>
 
-            {/* Beneficios — solo visibles en desktop */}
-            <div className="co-left-extras">
-              {['Lugar garantizado antes de llegar','Código QR único por WhatsApp','Sin cobros adicionales en puerta','Cancelación hasta 6 hrs antes'].map(item => (
-                <div key={item} className="co-left-perk">
-                  <div className="co-left-dot">
-                    <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                      <path d="M1 3L3 5L7 1" stroke="#EDEDED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  {item}
+          {/* Beneficios — solo visibles en desktop */}
+          <div className="hidden lg:block bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4">
+            {['Lugar garantizado antes de llegar','Código QR único por WhatsApp','Sin cobros adicionales en puerta','Cancelación hasta 6 hrs antes'].map((item, i, arr) => (
+              <div key={item} className={`flex items-center gap-2.5 py-2.5 text-[13px] font-semibold text-on-surface ${i < arr.length - 1 ? 'border-b-2 border-dashed border-on-surface/10' : ''}`}>
+                <div className="w-5 h-5 bg-primary-container border-2 border-on-surface rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                    <path d="M1 3L3 5L7 1" stroke="#191c1d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* RIGHT: formulario de pago */}
-          <div className="co-right">
-            {!STRIPE_KEY ? (
-              <div style={{ background:'#fff', borderRadius:14, padding:20, textAlign:'center', color:'#e53e3e', fontSize:13 }}>
-                ⚠️ Pago no disponible en este momento. Contacta a soporte@estacionat.mx
+                {item}
               </div>
-            ) : (
-              <Elements
-                stripe={stripePromise}
-                options={{ clientSecret: data!.clientSecret, appearance: STRIPE_APPEARANCE }}
-              >
-                <CheckoutForm data={data!} reservationId={reservationId} />
-              </Elements>
-            )}
+            ))}
           </div>
-
         </div>
+
+        {/* RIGHT: formulario de pago */}
+        <div>
+          {!STRIPE_KEY ? (
+            <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5 text-center text-error text-[13px] font-bold">
+              ⚠️ Pago no disponible en este momento. Contacta a soporte@estacionat.mx
+            </div>
+          ) : (
+            <Elements
+              stripe={stripePromise}
+              options={{ clientSecret: data!.clientSecret, appearance: STRIPE_APPEARANCE }}
+            >
+              <CheckoutForm data={data!} reservationId={reservationId} />
+            </Elements>
+          )}
+        </div>
+
       </div>
-    </>
+    </div>
   );
 }

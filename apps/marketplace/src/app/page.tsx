@@ -1,8 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { CARD_COLORS, SHARED_CSS } from '@/lib/design';
+import {
+  Search, X, MapPin, Zap, ShieldCheck, Smartphone, Clock,
+  Calendar, CalendarX, Building2, Car,
+} from 'lucide-react';
+import NeoHeader from '@/components/ui/NeoHeader';
+import NeoFooter from '@/components/ui/NeoFooter';
+import { NeoBadge } from '@/components/ui/neo';
 
 interface Venue {
   id: string;
@@ -33,8 +38,10 @@ const CAT_EMOJIS: Record<string, string> = {
   conciertos: '🎵', deportes: '⚽', festival: '🎪', teatro: '🎭',
 };
 
+const scrollTo = (id: string) =>
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
 export default function HomePage() {
-  const router = useRouter();
   const [venues,   setVenues]   = useState<Venue[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState('');
@@ -57,180 +64,298 @@ export default function HomePage() {
   );
 
   return (
-    <>
-      <style suppressHydrationWarning>{SHARED_CSS + `
-        .hp { min-height:100vh; background:#EDEDED; font-family:Inter,-apple-system,sans-serif; }
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader />
 
-        /* Header */
-        .hp-header { display:flex; align-items:center; justify-content:space-between;
-          padding:20px 24px 16px; position:sticky; top:0;
-          background:rgba(237,237,237,.95); backdrop-filter:blur(16px); z-index:100; }
-        @media(min-width:640px){ .hp-header { padding:20px 40px 16px; } }
-        @media(min-width:1024px){ .hp-header { padding:20px 56px 16px; } }
-
-        /* Hero */
-        .hp-hero { padding:36px 24px 32px; }
-        @media(min-width:640px){ .hp-hero { padding:48px 40px 36px; } }
-        @media(min-width:1024px){ .hp-hero { padding:56px 56px 40px; } }
-        .hp-eyebrow { font-size:10px; font-weight:600; letter-spacing:3px;
-          text-transform:uppercase; color:#bbb; margin-bottom:14px; }
-        .hp-title { font-size:clamp(34px,6vw,58px); font-weight:700; letter-spacing:-.5px;
-          color:#1a1a1a; line-height:1.04; margin-bottom:14px; }
-        .hp-sub { font-size:14px; color:#888; font-weight:300; line-height:1.65;
-          max-width:440px; margin-bottom:28px; }
-        .hp-search { display:flex; align-items:center; gap:10px; background:#fff;
-          border-radius:12px; padding:14px 18px; max-width:480px;
-          box-shadow:0 1px 6px rgba(0,0,0,.07); }
-        .hp-search input { flex:1; border:none; outline:none; font-size:14px;
-          font-family:Inter,sans-serif; color:#1a1a1a; background:transparent; }
-        .hp-search input::placeholder { color:#bbb; }
-
-        /* Filters */
-        .hp-filters { display:flex; overflow-x:auto; padding:0 24px;
-          border-bottom:1px solid rgba(0,0,0,.07); scrollbar-width:none; }
-        .hp-filters::-webkit-scrollbar { display:none; }
-        .hp-filters::after { content:""; min-width:24px; flex-shrink:0; }
-        @media(min-width:640px){ .hp-filters { padding:0 40px; } }
-        @media(min-width:1024px){ .hp-filters { padding:0 56px; } }
-        .hp-filter { padding:12px 16px; font-size:10px; font-weight:500; letter-spacing:2px;
-          text-transform:uppercase; color:rgba(0,0,0,.3); background:transparent;
-          border:none; border-bottom:2px solid transparent; cursor:pointer;
-          white-space:nowrap; font-family:Inter,sans-serif; transition:all .2s; flex-shrink:0; }
-        .hp-filter.on { color:#1a1a1a; border-bottom-color:#1a1a1a; }
-
-        /* Count */
-        .hp-count { padding:16px 24px 4px; font-size:10px; color:#bbb;
-          letter-spacing:1.5px; text-transform:uppercase; }
-        @media(min-width:640px){ .hp-count { padding:16px 40px 4px; } }
-        @media(min-width:1024px){ .hp-count { padding:16px 56px 4px; } }
-
-        /* Feed */
-        .hp-feed { padding:12px 24px 80px; display:flex; flex-direction:column; gap:10px; }
-        @media(min-width:640px){ .hp-feed { padding:16px 40px 80px; } }
-        @media(min-width:1024px){ .hp-feed { padding:12px 56px 80px;
-          display:grid; grid-template-columns:repeat(2,1fr); gap:12px; } }
-        @media(min-width:1400px){ .hp-feed { grid-template-columns:repeat(3,1fr); } }
-
-        /* Card */
-        .hp-card { background:#fff; border-radius:18px; overflow:hidden; cursor:pointer;
-          display:grid; grid-template-columns:96px 1fr; min-height:106px;
-          transition:transform .2s ease, box-shadow .2s ease;
-          animation:fadeIn .4s ease both; text-decoration:none; color:inherit; }
-        @media(min-width:400px){ .hp-card { grid-template-columns:108px 1fr; } }
-        .hp-card:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,.09); }
-        .hp-visual { display:flex; align-items:center; justify-content:center;
-          font-size:34px; position:relative; flex-shrink:0; }
-        .hp-vgrad { position:absolute; inset:0;
-          background:radial-gradient(circle at 35% 35%, rgba(255,255,255,.45) 0%, transparent 65%); }
-        .hp-emoji { position:relative; z-index:1; }
-        .hp-body { padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; }
-        .hp-cat  { font-size:9px; font-weight:600; letter-spacing:2px;
-          text-transform:uppercase; color:#bbb; margin-bottom:4px; }
-        .hp-name { font-size:15px; font-weight:600; color:#1a1a1a; letter-spacing:-.2px; }
-        .hp-addr { font-size:11px; color:#bbb; margin-top:3px;
-          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .hp-foot { display:flex; align-items:center; justify-content:space-between; margin-top:10px; gap:8px; }
-        .hp-evts  { font-size:10px; color:#bbb; }
-        .hp-price { font-size:13px; font-weight:600; color:#1a1a1a; white-space:nowrap; }
-        .hp-empty { text-align:center; padding:64px 0; color:#bbb;
-          font-size:10px; letter-spacing:2px; text-transform:uppercase; }
-      `}</style>
-
-      <div className="hp">
-        <header className="hp-header">
-          <Link href="/" className="pm-logo">Estaciona<span>t</span></Link>
-          <Link href="/mis-boletos" className="pm-nav-link">Mis boletos</Link>
-        </header>
-
-        <div className="hp-hero">
-          <p className="hp-eyebrow">Ciudad de México · 2026</p>
-          <h1 className="hp-title">Estacionamiento<br />para eventos.</h1>
-          <p className="hp-sub">
-            Reserva tu lugar antes de llegar. Sin filas, sin vueltas —
-            tu espacio garantizado para conciertos, partidos y festivales en CDMX.
+      {/* ── Hero ── */}
+      <section className="relative px-5 md:px-8 pt-14 pb-14 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30 z-0" />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <NeoBadge color="purple" className="mb-7">Estacionamiento garantizado · CDMX</NeoBadge>
+          <h1 className="font-extrabold text-4xl md:text-6xl mb-7 leading-tight text-on-surface uppercase tracking-tight [animation:fadeUp_.5s_ease_both]">
+            Tu lugar seguro para{' '}
+            <span className="bg-primary-container px-3 md:px-4 py-0.5 inline-block border-[3px] border-on-surface shadow-[3px_3px_0px_0px_#191c1d] -rotate-1">
+              Eventos
+            </span>
+          </h1>
+          <p className="font-medium text-sm md:text-lg mb-9 text-on-surface-variant max-w-2xl mx-auto leading-relaxed [animation:fadeUp_.5s_.1s_ease_both]">
+            Deja de dar vueltas buscando lugar. Reserva tu espacio de estacionamiento
+            para conciertos, partidos y festivales antes de llegar.
           </p>
-          <div className="hp-search">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"
-              style={{ flexShrink: 0, opacity: .25 }}>
-              <circle cx="5.5" cy="5.5" r="4.5" stroke="#1a1a1a" strokeWidth="1.4"/>
-              <path d="M9 9L12 12" stroke="#1a1a1a" strokeWidth="1.4" strokeLinecap="round"/>
-            </svg>
+
+          {/* Buscador */}
+          <div className="max-w-lg mx-auto flex items-center gap-3 bg-white border-[3px] border-on-surface rounded-xl px-4 py-3.5 neo-brutal-shadow mb-8 [animation:fadeUp_.5s_.2s_ease_both]">
+            <Search className="w-4 h-4 text-on-surface flex-shrink-0" strokeWidth={3} />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Busca un venue o ciudad..."
+              className="flex-1 border-none outline-none bg-transparent font-sans font-semibold text-sm text-on-surface placeholder:text-on-surface/35"
             />
             {search && (
-              <button
-                onClick={() => setSearch('')}
-                style={{ background:'none', border:'none', cursor:'pointer',
-                  color:'#bbb', fontSize:18, lineHeight:1, padding:0 }}>
-                ×
+              <button onClick={() => setSearch('')} aria-label="Limpiar búsqueda"
+                className="cursor-pointer bg-transparent border-none p-0 flex items-center">
+                <X className="w-4 h-4 text-on-surface/50" strokeWidth={3} />
               </button>
             )}
           </div>
-        </div>
 
-        <div className="hp-filters">
-          {CATEGORIES.map(c => (
+          {/* CTAs del demo */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center [animation:fadeUp_.5s_.3s_ease_both]">
             <button
-              key={c.key}
-              className={`hp-filter${category === c.key ? ' on' : ''}`}
-              onClick={() => setCategory(c.key)}>
-              {c.label}
+              onClick={() => scrollTo('venues')}
+              className="w-full sm:w-auto bg-primary-container px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
+            >
+              Reservar mi lugar
             </button>
-          ))}
+            <button
+              onClick={() => scrollTo('socios')}
+              className="w-full sm:w-auto bg-white px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
+            >
+              Soy dueño de estacionamiento
+            </button>
+          </div>
         </div>
 
-        {!loading && (
-          <p className="hp-count">
-            {filtered.length} venue{filtered.length !== 1 ? 's' : ''} disponibles
-          </p>
-        )}
-
-        <div className="hp-feed">
-          {loading ? (
-            <div className="hp-empty">Cargando venues...</div>
-          ) : filtered.length === 0 ? (
-            <div className="hp-empty">Sin resultados</div>
-          ) : (
-            filtered.map((v, i) => {
-              const c = CARD_COLORS[i % CARD_COLORS.length];
-              return (
-                <Link
-                  key={v.id}
-                  href={`/venues/${v.id}`}
-                  className="hp-card"
-                  style={{ animationDelay: `${i * 0.05}s` }}>
-                  <div className="hp-visual" style={{ background: c.bg }}>
-                    <div className="hp-vgrad"/>
-                    <span className="hp-emoji">{CAT_EMOJIS[v.category] ?? '🎫'}</span>
-                  </div>
-                  <div className="hp-body">
-                    <div>
-                      <div className="hp-cat">{(v.category || 'venue').toUpperCase()}</div>
-                      <div className="hp-name">{v.name}</div>
-                      <div className="hp-addr">📍 {v.address}</div>
-                    </div>
-                    <div className="hp-foot">
-                      <span className="hp-evts">
-                        {v.upcomingEvents > 0
-                          ? `${v.upcomingEvents} evento${Number(v.upcomingEvents) !== 1 ? 's' : ''}`
-                          : 'Sin eventos próximos'}
-                      </span>
-                      {v.priceFrom && (
-                        <span className="hp-price">
-                          desde ${Number(v.priceFrom).toFixed(0)} MXN
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })
-          )}
+        {/* Card flotante decorativa */}
+        <div className="hidden lg:block absolute right-12 bottom-10 w-72 bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-5 rotate-3">
+          <div className="flex justify-between items-start mb-3.5">
+            <span className="bg-secondary-container text-white px-3 py-1 rounded-full font-mono text-[10px] font-bold border-2 border-on-surface">
+              Activo ahora
+            </span>
+            <div className="w-8 h-8 rounded-full bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm">
+              <Zap className="w-4 h-4 text-primary fill-current" />
+            </div>
+          </div>
+          <div className="font-extrabold text-base text-on-surface uppercase tracking-tight mb-1.5">Estadio Azteca</div>
+          <div className="text-on-surface-variant text-[11px] font-bold font-mono">
+            Ubicación premium · desde $180 MXN
+          </div>
         </div>
+      </section>
+
+      {/* ── Filtros ── */}
+      <div id="venues" className="flex gap-3 overflow-x-auto no-scrollbar px-5 md:px-8 pb-2 max-w-6xl mx-auto md:justify-center scroll-mt-20">
+        {CATEGORIES.map(c => (
+          <button
+            key={c.key}
+            onClick={() => setCategory(c.key)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-[3px] border-on-surface transition-all duration-150 font-sans font-extrabold text-[11px] uppercase tracking-wider flex-shrink-0 cursor-pointer ${
+              category === c.key
+                ? 'bg-primary-container text-on-surface shadow-[3px_3px_0px_0px_#191c1d] -translate-y-0.5'
+                : 'bg-white text-on-surface-variant hover:bg-surface-container'
+            }`}
+          >
+            {c.key && <span>{CAT_EMOJIS[c.key]}</span>}
+            {c.label}
+          </button>
+        ))}
       </div>
-    </>
+
+      {/* Contador */}
+      {!loading && (
+        <p className="px-5 md:px-8 pt-6 pb-1 max-w-6xl mx-auto font-extrabold text-[10px] tracking-[2px] uppercase text-on-surface-variant">
+          {filtered.length} venue{filtered.length !== 1 ? 's' : ''} disponibles
+        </p>
+      )}
+
+      {/* ── Feed de venues ── */}
+      <div className="px-5 md:px-8 pt-3 pb-16 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {loading ? (
+          <div className="col-span-full text-center py-16 font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">
+            Cargando venues...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full text-center py-16 font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">
+            Sin resultados
+          </div>
+        ) : (
+          filtered.map((v, i) => (
+            <Link
+              key={v.id}
+              href={`/venues/${v.id}`}
+              className="bg-white border-[3px] border-on-surface rounded-xl overflow-hidden neo-brutal-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all duration-200 no-underline flex flex-col [animation:fadeIn_.4s_ease_both]"
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
+              <div className="bg-primary-container border-b-[3px] border-on-surface h-24 flex items-center justify-center relative">
+                <span className="text-4xl">{CAT_EMOJIS[v.category] ?? '🎫'}</span>
+                <span className="absolute top-3 left-3 bg-white text-on-surface border-2 border-on-surface px-2.5 py-0.5 rounded-full font-extrabold text-[9px] uppercase tracking-widest neo-brutal-shadow-sm">
+                  {v.category || 'venue'}
+                </span>
+              </div>
+              <div className="p-4 flex flex-col justify-between flex-1 gap-3">
+                <div>
+                  <div className="font-extrabold text-base text-on-surface uppercase tracking-tight leading-snug">{v.name}</div>
+                  <div className="flex items-start gap-1.5 mt-1.5 text-on-surface-variant">
+                    <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <span className="text-xs font-semibold leading-snug">{v.address}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t-2 border-dashed border-on-surface/15">
+                  <span className="font-mono text-[11px] font-bold text-on-surface-variant">
+                    {v.upcomingEvents > 0
+                      ? `${v.upcomingEvents} evento${Number(v.upcomingEvents) !== 1 ? 's' : ''}`
+                      : 'Sin eventos próximos'}
+                  </span>
+                  {v.priceFrom && (
+                    <span className="bg-on-surface text-primary-container font-mono font-bold text-xs px-2.5 py-1 rounded-lg">
+                      ${Number(v.priceFrom).toFixed(0)} MXN
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
+
+      {/* ── Bento grid de beneficios (del demo) ── */}
+      <section className="px-5 md:px-8 py-16 bg-surface-container-low border-y-[3px] border-on-surface">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-12 text-center md:text-left">
+            <NeoBadge color="lime" className="mb-4">Beneficios exclusivos</NeoBadge>
+            <h2 className="font-extrabold text-3xl md:text-4xl text-on-surface mb-3 tracking-tight uppercase">
+              Estacionamiento inteligente,<br className="hidden md:block" /> sin complicaciones
+            </h2>
+            <p className="font-medium text-sm text-on-surface-variant max-w-xl md:mx-0 mx-auto">
+              Todo lo que necesitas para llegar a tu evento sin estrés.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 1 — Ahorro de tiempo (col-span-2, blanco) */}
+            <div className="md:col-span-2 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
+              <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <Clock className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Ahorro real de tiempo</h3>
+              <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed mb-5">
+                Nada de llegar 2 horas antes ni dar vueltas a la manzana. Tu lugar ya está apartado cuando llegas.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 bg-[#fff0f0] border-2 border-on-surface rounded-xl px-4 py-3">
+                  <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Tiempo promedio de búsqueda</p>
+                  <p className="font-mono font-bold text-lg text-[#991b1b] line-through">25 minutos</p>
+                </div>
+                <div className="flex-1 bg-primary-container border-2 border-on-surface rounded-xl px-4 py-3 neo-brutal-shadow-sm">
+                  <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface/60 mb-1">Con Estacionat</p>
+                  <p className="font-mono font-bold text-lg text-on-surface">¡0 minutos!</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 2 — Reserva anticipada (lime) */}
+            <div className="bg-primary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
+              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <Calendar className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Reserva anticipada</h3>
+              <p className="text-[13px] font-medium text-on-surface/70 leading-relaxed">
+                Asegura tu lugar días o semanas antes del concierto, partido o festival.
+              </p>
+            </div>
+
+            {/* 3 — Boleto digital (blanco) */}
+            <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
+              <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <Smartphone className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Boleto digital QR</h3>
+              <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed">
+                Tu acceso llega por WhatsApp. Muestra el QR al llegar y entra directo.
+              </p>
+            </div>
+
+            {/* 4 — Garantizado (col-span-2, lime) */}
+            <div className="md:col-span-2 bg-primary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
+              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <ShieldCheck className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Lugar 100% garantizado</h3>
+              <p className="text-[13px] font-medium text-on-surface/70 leading-relaxed">
+                Aunque el evento esté agotado y las calles llenas, tu espacio te espera.
+                Estacionamientos privados y verificados cerca de tu venue.
+              </p>
+            </div>
+
+            {/* 5 — Cancelación flexible (col-span-2, blanco) */}
+            <div className="md:col-span-2 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 flex flex-col sm:flex-row gap-5 items-start">
+              <div className="flex-1">
+                <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                  <CalendarX className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
+                </div>
+                <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Cancelación flexible</h3>
+                <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed">
+                  ¿Cambiaron tus planes? Solicita tu reembolso hasta 6 horas antes del evento directamente desde tu boleto.
+                </p>
+              </div>
+              <div className="bg-[#fff0f0] border-2 border-on-surface rounded-xl px-5 py-4 flex-shrink-0 self-center">
+                <p className="font-mono font-bold text-2xl text-[#991b1b]">-6h</p>
+                <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface-variant mt-1">Reembolso 100%</p>
+              </div>
+            </div>
+
+            {/* 6 — Pensión mensual (azul, próximamente) */}
+            <div className="bg-secondary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 text-white">
+              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
+                <Building2 className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-extrabold text-lg uppercase tracking-tight mb-2">Pensión mensual</h3>
+              <p className="text-[13px] font-medium text-white/75 leading-relaxed mb-4">
+                Un lugar fijo para tu día a día, cerca de tu casa u oficina.
+              </p>
+              <span className="inline-block bg-white text-on-surface border-2 border-on-surface px-3 py-1 rounded-full font-extrabold text-[10px] uppercase tracking-widest neo-brutal-shadow-sm">
+                Próximamente
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA conductores ── */}
+      <section className="px-5 md:px-8 py-16">
+        <div className="max-w-3xl mx-auto bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-8 md:p-12 text-center relative overflow-hidden">
+          <Car className="absolute -right-6 -bottom-6 w-40 h-40 text-on-surface/5" strokeWidth={1.5} />
+          <div className="relative z-10">
+            <NeoBadge color="lime" className="mb-5">Comienza hoy</NeoBadge>
+            <h2 className="font-extrabold text-2xl md:text-4xl text-on-surface uppercase tracking-tight mb-3">
+              ¿Listo para estacionar de forma inteligente?
+            </h2>
+            <p className="font-medium text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed mb-8">
+              Encuentra tu venue, elige tu estacionamiento y recibe tu boleto QR en minutos.
+            </p>
+            <button
+              onClick={() => scrollTo('venues')}
+              className="bg-primary-container px-10 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
+            >
+              Buscar estacionamiento
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA Socios / Host ── */}
+      <section id="socios" className="px-5 md:px-8 pb-20 scroll-mt-20">
+        <div className="max-w-4xl mx-auto bg-midnight border-[3px] border-on-surface rounded-xl shadow-[6px_6px_0px_0px_#FF6478] p-8 md:p-12 relative overflow-hidden">
+          <span className="absolute top-4 right-5 font-mono text-[10px] font-bold text-white/30 tracking-widest">ESTACIONAT SOCIOS</span>
+          <NeoBadge color="lime" className="mb-5">Para propietarios y valet</NeoBadge>
+          <h2 className="font-extrabold text-2xl md:text-4xl text-white uppercase tracking-tight mb-4 max-w-xl">
+            Aumenta las ventas de tu estacionamiento
+          </h2>
+          <p className="font-medium text-sm text-white/60 max-w-xl leading-relaxed mb-8">
+            Publica tus espacios para eventos masivos, controla la ocupación en tiempo real,
+            aprovecha precios dinámicos y valida accesos con nuestro escáner de boletos QR.
+          </p>
+          <a
+            href="mailto:soporte@estacionat.mx?subject=Quiero%20ser%20socio%20de%20Estacionat"
+            className="inline-block bg-primary-container px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface no-underline"
+          >
+            Quiero ser socio
+          </a>
+        </div>
+      </section>
+
+      <NeoFooter />
+    </div>
   );
 }
