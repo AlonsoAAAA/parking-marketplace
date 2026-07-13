@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { CARD_COLORS, SHARED_CSS } from '@/lib/design';
+import { MapPin } from 'lucide-react';
+import NeoHeader from '@/components/ui/NeoHeader';
+import NeoFooter from '@/components/ui/NeoFooter';
 
 interface Venue {
   id: string; name: string; address: string;
@@ -39,108 +40,74 @@ export default function VenuesPage() {
   }, [category]);
 
   return (
-    <>
-      <style suppressHydrationWarning>{SHARED_CSS + `
-        .vp-root { min-height:100vh; background:#EDEDED; font-family:Inter,-apple-system,sans-serif; color:#1a1a1a; }
-        .vp-header { display:flex; align-items:center; justify-content:space-between; padding:20px 16px 16px;
-          position:sticky; top:0; background:rgba(237,237,237,0.94); backdrop-filter:blur(16px); z-index:100; }
-        @media(min-width:640px){ .vp-header { padding:20px 32px 16px; } }
-        @media(min-width:1024px){ .vp-header { padding:20px 56px 16px; } }
-        .vp-filters { display:flex; overflow-x:auto; padding:0 16px; border-bottom:1px solid rgba(0,0,0,.07); scrollbar-width:none; }
-        .vp-filters::-webkit-scrollbar { display:none; }
-        .vp-filters::after { content:""; min-width:16px; flex-shrink:0; }
-        @media(min-width:640px){ .vp-filters { padding:0 32px; } }
-        @media(min-width:1024px){ .vp-filters { padding:0 56px; } }
-        .vp-filter { padding:11px 16px; font-size:10px; font-weight:500; letter-spacing:2px; text-transform:uppercase;
-          color:rgba(0,0,0,.3); background:transparent; border:none; border-bottom:1.5px solid transparent;
-          cursor:pointer; white-space:nowrap; font-family:Inter,sans-serif; transition:all .2s; flex-shrink:0; }
-        .vp-filter.active { color:#1a1a1a; border-bottom-color:#1a1a1a; }
-        .vp-count { padding:14px 16px 0; font-size:10px; color:#bbb; letter-spacing:1.5px; text-transform:uppercase; }
-        @media(min-width:640px){ .vp-count { padding:14px 32px 0; } }
-        @media(min-width:1024px){ .vp-count { padding:14px 56px 0; } }
-        .vp-feed { padding:12px 16px 80px; display:flex; flex-direction:column; gap:10px; }
-        @media(min-width:640px){ .vp-feed { padding:16px 32px 80px; } }
-        @media(min-width:1024px){ .vp-feed { padding:12px 56px 80px;
-          display:grid; grid-template-columns:repeat(2,1fr); gap:12px; } }
-        @media(min-width:1400px){ .vp-feed { grid-template-columns:repeat(3,1fr); } }
-        .vp-card { background:#fff; border-radius:16px; overflow:hidden; text-decoration:none; color:inherit;
-          display:grid; grid-template-columns:88px 1fr; width:100%; min-height:100px;
-          transition:transform .2s ease, box-shadow .2s ease; animation:fadeIn .4s ease both; cursor:pointer; }
-        @media(min-width:400px){ .vp-card { grid-template-columns:100px 1fr; } }
-        @media(min-width:640px){ .vp-card { grid-template-columns:120px 1fr; min-height:110px; } }
-        .vp-card:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,.09); }
-        .vp-visual { display:flex; align-items:center; justify-content:center; font-size:32px; position:relative; }
-        @media(min-width:400px){ .vp-visual { font-size:38px; } }
-        @media(min-width:640px){ .vp-visual { font-size:44px; } }
-        .vp-vgrad { position:absolute; inset:0; background:radial-gradient(circle at 35% 35%, rgba(255,255,255,.45) 0%, transparent 65%); }
-        .vp-emoji { position:relative; z-index:1; }
-        .vp-body { padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; }
-        .vp-cat { font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#bbb; margin-bottom:4px; }
-        .vp-name { font-size:15px; font-weight:600; color:#1a1a1a; letter-spacing:-.2px; }
-        .vp-addr { font-size:12px; color:#bbb; margin-top:3px; }
-        .vp-foot { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
-        .vp-evts { font-size:10px; color:#bbb; letter-spacing:.5px; }
-        .vp-price { font-size:13px; font-weight:600; color:#1a1a1a; }
-        .vp-loading { text-align:center; padding:60px 0; color:#bbb; font-size:10px; letter-spacing:2px; text-transform:uppercase; }
-      `}</style>
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader back="/" />
 
-      <div className="vp-root">
-        <header className="vp-header">
-          <span className="pm-logo">Estaciona<span>t</span></span>
-          <Link href="/" className="pm-nav-link">Eventos</Link>
-        </header>
-
-        <div className="vp-filters">
+      <div className="max-w-6xl mx-auto">
+        {/* Filtros */}
+        <div className="flex gap-3 overflow-x-auto no-scrollbar px-5 md:px-8 pt-8 pb-2">
           {CATEGORIES.map(c => (
             <button key={c.key}
-              className={`vp-filter${category === c.key ? ' active' : ''}`}
-              onClick={() => setCategory(c.key)}>
+              onClick={() => setCategory(c.key)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-[3px] border-on-surface transition-all duration-150 font-sans font-extrabold text-[11px] uppercase tracking-wider flex-shrink-0 cursor-pointer ${
+                category === c.key
+                  ? 'bg-primary-container text-on-surface shadow-[3px_3px_0px_0px_#191c1d] -translate-y-0.5'
+                  : 'bg-white text-on-surface-variant hover:bg-surface-container'
+              }`}>
+              {c.key && <span>{EMOJIS[c.key]}</span>}
               {c.label}
             </button>
           ))}
         </div>
 
         {!loading && (
-          <p className="vp-count">{venues.length} venue{venues.length !== 1 ? 's' : ''}</p>
+          <p className="px-5 md:px-8 pt-5 pb-1 font-extrabold text-[10px] tracking-[2px] uppercase text-on-surface-variant">
+            {venues.length} venue{venues.length !== 1 ? 's' : ''}
+          </p>
         )}
 
-        <div className="vp-feed">
+        <div className="px-5 md:px-8 pt-3 pb-16 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {loading ? (
-            <div className="vp-loading">Cargando venues...</div>
+            <div className="col-span-full text-center py-16 font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">Cargando venues...</div>
           ) : venues.length === 0 ? (
-            <div className="vp-loading">Sin venues disponibles</div>
-          ) : venues.map((v, i) => {
-            const c = CARD_COLORS[i % CARD_COLORS.length];
-            return (
-              <div key={v.id} className="vp-card"
-                style={{ animationDelay: `${i * 0.04}s` }}
-                onClick={() => router.push(`/venues/${v.id}`)}>
-                <div className="vp-visual" style={{ background: c.bg }}>
-                  <div className="vp-vgrad" />
-                  <span className="vp-emoji">{EMOJIS[v.category] ?? '🎫'}</span>
+            <div className="col-span-full text-center py-16 font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">Sin venues disponibles</div>
+          ) : venues.map((v, i) => (
+            <div key={v.id}
+              onClick={() => router.push(`/venues/${v.id}`)}
+              className="bg-white border-[3px] border-on-surface rounded-xl overflow-hidden neo-brutal-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all duration-200 cursor-pointer flex flex-col [animation:fadeIn_.4s_ease_both]"
+              style={{ animationDelay: `${i * 0.04}s` }}>
+              <div className="bg-primary-container border-b-[3px] border-on-surface h-24 flex items-center justify-center relative">
+                <span className="text-4xl">{EMOJIS[v.category] ?? '🎫'}</span>
+                <span className="absolute top-3 left-3 bg-white text-on-surface border-2 border-on-surface px-2.5 py-0.5 rounded-full font-extrabold text-[9px] uppercase tracking-widest neo-brutal-shadow-sm">
+                  {v.category || 'venue'}
+                </span>
+              </div>
+              <div className="p-4 flex flex-col justify-between flex-1 gap-3">
+                <div>
+                  <div className="font-extrabold text-base text-on-surface uppercase tracking-tight leading-snug">{v.name}</div>
+                  <div className="flex items-start gap-1.5 mt-1.5 text-on-surface-variant">
+                    <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <span className="text-xs font-semibold leading-snug">{v.address}</span>
+                  </div>
                 </div>
-                <div className="vp-body">
-                  <div>
-                    <div className="vp-cat">{v.category}</div>
-                    <div className="vp-name">{v.name}</div>
-                    <div className="vp-addr">{v.address}</div>
-                  </div>
-                  <div className="vp-foot">
-                    <span className="vp-evts">
-                      {v.upcomingEvents > 0
-                        ? `${v.upcomingEvents} evento${Number(v.upcomingEvents) !== 1 ? 's' : ''}`
-                        : 'Sin eventos próximos'}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t-2 border-dashed border-on-surface/15">
+                  <span className="font-mono text-[11px] font-bold text-on-surface-variant">
+                    {v.upcomingEvents > 0
+                      ? `${v.upcomingEvents} evento${Number(v.upcomingEvents) !== 1 ? 's' : ''}`
+                      : 'Sin eventos próximos'}
+                  </span>
+                  {v.priceFrom && (
+                    <span className="bg-on-surface text-primary-container font-mono font-bold text-xs px-2.5 py-1 rounded-lg">
+                      desde ${Number(v.priceFrom).toFixed(0)}
                     </span>
-                    {v.priceFrom && (
-                      <span className="vp-price">desde ${Number(v.priceFrom).toFixed(0)}</span>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
-    </>
+      <NeoFooter />
+    </div>
   );
 }

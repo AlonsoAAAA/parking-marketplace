@@ -2,7 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { SHARED_CSS } from '@/lib/design';
+import { MessageCircle, AlertTriangle, SquareParking } from 'lucide-react';
+import NeoHeader from '@/components/ui/NeoHeader';
+import { NeoLinkButton } from '@/components/ui/neo';
 
 interface TicketData {
   reservation: { id: string; status: string; createdAt: string; };
@@ -11,14 +13,6 @@ interface TicketData {
   qrToken: string;
   userPhone?: string;
 }
-
-const MOCK: TicketData = {
-  reservation: { id: 'abc123', status: 'paid', createdAt: new Date().toISOString() },
-  event: { name: 'Natanael Cano', venueName: 'Foro Sol', startsAt: '2025-06-21T20:00:00', parkingName: 'Foro Sol Norte', parkingAddress: 'Viaducto Río de la Piedad 187' },
-  payment: { amount: 180 },
-  qrToken: 'eyJhbGciOiJIUzI1NiJ9.mock',
-  userPhone: '+52 55 1234 5678',
-};
 
 export default function ConfirmacionPage() {
   const params = useParams();
@@ -82,157 +76,137 @@ export default function ConfirmacionPage() {
       const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
       await QRCode.toCanvas(canvas, JSON.stringify({ t: token }), {
         width: isDesktop ? 260 : 200, margin: 2,
-        color: { dark: '#1a1a1a', light: '#ffffff' },
+        color: { dark: '#191c1d', light: '#ffffff' },
         errorCorrectionLevel: 'H',
       });
       qrRef.current.innerHTML = '';
       qrRef.current.appendChild(canvas);
     } catch {
-      if (qrRef.current) qrRef.current.innerHTML = '<p style="color:#bbb;font-size:12px;text-align:center">QR enviado<br/>por WhatsApp</p>';
+      if (qrRef.current) qrRef.current.innerHTML = '<p style="color:#747a60;font-size:12px;text-align:center">QR enviado<br/>por WhatsApp</p>';
     }
   };
 
   if (loading) return (
-    <div style={{minHeight:'100vh',background:'#EDEDED',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,fontFamily:'Inter,sans-serif'}}>
-      <div style={{width:28,height:28,border:'2px solid #ddd',borderTop:'2px solid #1a1a1a',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}/>
-      <p style={{fontSize:11,letterSpacing:'2px',textTransform:'uppercase',color:'#bbb'}}>Confirmando pago...</p>
-      <style suppressHydrationWarning>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="min-h-screen bg-background font-sans flex flex-col items-center justify-center gap-4">
+      <div className="w-8 h-8 border-[3px] border-on-surface border-t-primary-container rounded-full animate-spin" />
+      <p className="font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">Confirmando pago...</p>
     </div>
   );
 
   if (!ticket) return (
-    <div style={{minHeight:'100vh',background:'#EDEDED',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,fontFamily:'Inter,sans-serif',padding:24,textAlign:'center'}}>
-      <div style={{fontSize:40}}>🅿️</div>
-      <p style={{fontSize:16,fontWeight:700,color:'#1a1a1a'}}>¡Pago confirmado!</p>
-      <p style={{fontSize:13,color:'#666',maxWidth:280,lineHeight:1.6}}>Tu reserva está lista. Recibirás tu código QR por WhatsApp en los próximos minutos.</p>
-      <Link href="/" style={{marginTop:8,fontSize:12,color:'#1a1a1a',fontWeight:600,textDecoration:'underline'}}>Ir al inicio</Link>
+    <div className="min-h-screen bg-background font-sans flex flex-col items-center justify-center gap-3 px-6 text-center">
+      <SquareParking className="w-12 h-12 text-on-surface" strokeWidth={2} />
+      <p className="font-extrabold text-base uppercase tracking-tight text-on-surface">¡Pago confirmado!</p>
+      <p className="text-[13px] font-medium text-on-surface-variant max-w-[280px] leading-relaxed">
+        Tu reserva está lista. Recibirás tu código QR por WhatsApp en los próximos minutos.
+      </p>
+      <Link href="/" className="mt-2 text-xs font-extrabold text-on-surface underline">Ir al inicio</Link>
     </div>
   );
+
   const ticketId = `TKT-${reservationId.slice(0,8).toUpperCase()}`;
 
+  const rowCls = 'flex justify-between gap-4 px-4 py-3 border-b-2 border-dashed border-on-surface/10 last:border-b-0 items-start';
+  const lblCls = 'font-extrabold text-[10px] uppercase tracking-widest text-on-surface-variant pt-0.5 flex-shrink-0';
+  const valCls = 'text-[13px] font-semibold text-on-surface text-right';
+
   return (
-    <>
-      <style suppressHydrationWarning>{SHARED_CSS + `
-        @keyframes checkPop { 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
-        .cnw { min-height:100vh; background:#EDEDED; }
-        .cnb { padding:24px 24px 48px; max-width:480px; margin:0 auto; }
-        @media(min-width:640px){ .cnb { padding:36px 40px 64px; } }
-        @media(min-width:1024px){ .cnb { max-width:640px; padding:48px 0 80px; } }
-        .cc { width:64px; height:64px; background:#1a1a1a; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 18px; animation:checkPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
-        @media(min-width:1024px){ .cc { width:80px; height:80px; } }
-        .qw { background:#fff; border-radius:20px; padding:28px; display:flex; flex-direction:column; align-items:center; gap:16px; margin-bottom:14px; }
-        @media(min-width:1024px){ .qw { padding:40px; } }
-        .qb { width:200px; height:200px; display:flex; align-items:center; justify-content:center; }
-        @media(min-width:1024px){ .qb { width:260px; height:260px; } }
-        .qh { font-size:12px; color:#999; text-align:center; line-height:1.6; max-width:240px; }
-        .qi { font-size:10px; color:#bbb; font-family:'Courier New',monospace; letter-spacing:2px; background:#f5f5f5; padding:5px 12px; border-radius:6px; }
-        .tc { background:#fff; border-radius:16px; overflow:hidden; margin-bottom:14px; }
-        .th { background:#1a1a1a; padding:10px 16px; }
-        .tht { font-size:9px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.4); }
-        .tr { display:flex; justify-content:space-between; padding:11px 16px; border-bottom:1px solid #f5f5f5; align-items:flex-start; gap:16px; }
-        .tr:last-child { border-bottom:none; }
-        .tl { font-size:11px; color:#bbb; flex-shrink:0; }
-        .tv { font-size:12px; color:#1a1a1a; font-weight:500; text-align:right; }
-        .wn { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
-        .wnt { font-size:13px; color:#166534; line-height:1.5; }
-        .stc { background:#fff; border-radius:16px; padding:20px; margin-bottom:24px; }
-        .stt { font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#bbb; margin-bottom:16px; }
-        .si { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-        .si:last-child { margin-bottom:0; }
-        .sn { width:26px; height:26px; background:#1a1a1a; color:#EDEDED; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
-        .st { font-size:13px; color:#444; line-height:1.4; }
-      `}</style>
-      <div className="cnw">
-        <header className="pm-header" style={{paddingBottom:0}}>
-          <span className="pm-logo">Estaciona<span>t</span></span>
-        </header>
-        <div className="cnb">
-          <div style={{textAlign:'center',padding:'32px 0 28px'}}>
-            <div className="cc">
-              <svg width="26" height="20" viewBox="0 0 26 20" fill="none">
-                <path d="M2 10L9.5 17.5L24 2" stroke="#EDEDED" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h1 style={{fontSize:26,fontWeight:700,letterSpacing:'-0.5px',color:'#1a1a1a',marginBottom:6}}>¡Lugar confirmado!</h1>
-            <p style={{fontSize:13,color:'#999',fontWeight:300}}>Tu boleto está listo para usar</p>
+    <div className="min-h-screen bg-background font-sans">
+      <NeoHeader />
+
+      <div className="max-w-lg mx-auto px-5 md:px-0 pt-6 pb-16">
+        {/* Check de éxito */}
+        <div className="text-center pt-6 pb-7">
+          <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-container border-[3px] border-on-surface rounded-full neo-brutal-shadow flex items-center justify-center mx-auto mb-5 [animation:fadeUp_.5s_cubic-bezier(0.34,1.56,0.64,1)_both]">
+            <svg width="26" height="20" viewBox="0 0 26 20" fill="none">
+              <path d="M2 10L9.5 17.5L24 2" stroke="#191c1d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
-          <div className="qw">
-            <div className="qb" ref={qrRef}>
+          <h1 className="font-extrabold text-2xl md:text-3xl uppercase tracking-tight text-on-surface mb-1.5">¡Lugar confirmado!</h1>
+          <p className="text-[13px] font-medium text-on-surface-variant">Tu boleto está listo para usar</p>
+        </div>
+
+        {/* QR */}
+        <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 md:p-9 flex flex-col items-center gap-4 mb-4 text-center">
+          <div className="qr-border rounded-xl p-3 bg-white">
+            <div className="w-[200px] h-[200px] lg:w-[260px] lg:h-[260px] flex items-center justify-center" ref={qrRef}>
               {qrError
-                ? <p style={{color:'#bbb',fontSize:12,textAlign:'center',lineHeight:1.6}}>QR enviado<br/>por WhatsApp</p>
-                : <div style={{width:28,height:28,border:'2px solid #eee',borderTop:'2px solid #1a1a1a',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}/>
+                ? <p className="text-on-surface-variant text-xs leading-relaxed">QR enviado<br/>por WhatsApp</p>
+                : <div className="w-7 h-7 border-[3px] border-surface-container-high border-t-on-surface rounded-full animate-spin"/>
               }
             </div>
-            <p className="qh">Muestra este QR al llegar al estacionamiento.<br/><strong>Solo es válido una vez.</strong></p>
-            <div className="qi">{ticketId}</div>
           </div>
-          <div className="tc">
-            <div className="th"><span className="tht">Detalle del boleto</span></div>
-            {[
-              ['Evento',          ticket.event.name,          false],
-              ['Venue',           ticket.event.venueName,     false],
-              ['Fecha',           new Date(ticket.event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long'}), false],
-              ['Estacionamiento', ticket.event.parkingName,   false],
-              ['Dirección',       ticket.event.parkingAddress,false],
-              ['Subtotal',        `$${(ticket.payment.amount / 1.16).toFixed(2)} MXN`, false],
-              ['IVA (16%)',       `$${(ticket.payment.amount - ticket.payment.amount / 1.16).toFixed(2)} MXN`, false],
-              ['Total pagado',    `$${ticket.payment.amount.toFixed(2)} MXN`, true],
-            ].map(([label, value, isTotal]) => (
-              <div key={label as string} className="tr" style={isTotal ? { background: '#f9f9f9' } : {}}>
-                <span className="tl" style={isTotal ? { fontWeight: 600, color: '#1a1a1a' } : {}}>{label}</span>
-                <span className="tv" style={isTotal ? { fontSize: 15, fontWeight: 700, color: '#1a1a1a' } : {}}>{value}</span>
-              </div>
-            ))}
-          </div>
-          <div className="wn">
-            <span style={{fontSize:22,flexShrink:0}}>💬</span>
-            <p className="wnt">También te enviamos el QR por WhatsApp{ticket.userPhone ? ` al ${ticket.userPhone}` : ''}. Guárdalo como respaldo.</p>
-          </div>
-          <div className="stc">
-            <p className="stt">Cómo usarlo</p>
-            {['Llega al estacionamiento antes o durante el evento','Abre este boleto o el mensaje de WhatsApp','Muestra el código QR al operador','El operador escanea y puedes entrar'].map((text,i) => (
-              <div key={i} className="si">
-                <div className="sn">{i+1}</div>
-                <span className="st">{text}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{
-            background: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            borderLeft: '3px solid #22c55e',
-            borderRadius: 12,
-            padding: '14px 16px',
-            marginBottom: 14,
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 6, letterSpacing: .3 }}>
-              🅿️ Tiempo de estacionamiento incluido
-            </div>
-            <div style={{ fontSize: 12, color: '#15803d', lineHeight: 1.65 }}>
-              Tu boleto incluye <strong>6 horas de estacionamiento</strong> a partir de tu hora de entrada.
-            </div>
-          </div>
-          <div style={{
-            background: '#fff8f0',
-            border: '1px solid #fde68a',
-            borderLeft: '3px solid #f59e0b',
-            borderRadius: 12,
-            padding: '14px 16px',
-            marginBottom: 14,
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 6, letterSpacing: .3 }}>
-              ⚠️ Política de cancelaciones
-            </div>
-            <div style={{ fontSize: 12, color: '#b45309', lineHeight: 1.65 }}>
-              NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 6 HORAS PREVIAS AL INICIO DEL EVENTO. Transcurrido dicho plazo, el pago es definitivo e irrevocable.
-            </div>
-          </div>
-
-          <Link href="/" className="pm-btn-primary" style={{display:'flex',textDecoration:'none'}}>
-            Ir al inicio
-          </Link>
+          <p className="text-xs font-medium text-on-surface-variant leading-relaxed max-w-[240px]">
+            Muestra este QR al llegar al estacionamiento.<br/><strong className="text-on-surface">Solo es válido una vez.</strong>
+          </p>
+          <div className="font-mono text-[11px] font-bold tracking-[2px] text-on-surface bg-surface-container border-2 border-on-surface rounded-lg px-3 py-1.5">{ticketId}</div>
         </div>
+
+        {/* Detalle */}
+        <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden mb-4">
+          <div className="bg-on-surface px-4 py-2.5 font-extrabold text-[10px] tracking-[3px] uppercase text-primary-container">
+            Detalle del boleto
+          </div>
+          {[
+            ['Evento',          ticket.event.name,          false],
+            ['Venue',           ticket.event.venueName,     false],
+            ['Fecha',           new Date(ticket.event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long'}), false],
+            ['Estacionamiento', ticket.event.parkingName,   false],
+            ['Dirección',       ticket.event.parkingAddress,false],
+            ['Subtotal',        `$${(ticket.payment.amount / 1.16).toFixed(2)} MXN`, false],
+            ['IVA (16%)',       `$${(ticket.payment.amount - ticket.payment.amount / 1.16).toFixed(2)} MXN`, false],
+            ['Total pagado',    `$${ticket.payment.amount.toFixed(2)} MXN`, true],
+          ].map(([label, value, isTotal]) => (
+            <div key={label as string} className={`${rowCls} ${isTotal ? 'bg-primary-container/40' : ''}`}>
+              <span className={`${lblCls} ${isTotal ? 'text-on-surface' : ''}`}>{label}</span>
+              <span className={isTotal ? 'font-mono font-bold text-base text-on-surface' : `${valCls} capitalize`}>{value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* WhatsApp */}
+        <div className="bg-[#f0fdf4] border-[3px] border-on-surface rounded-xl neo-brutal-shadow-sm p-4 flex items-start gap-3 mb-4">
+          <MessageCircle className="w-5 h-5 text-[#166534] flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+          <p className="text-[13px] font-medium text-[#166534] leading-relaxed">
+            También te enviamos el QR por WhatsApp{ticket.userPhone ? ` al ${ticket.userPhone}` : ''}. Guárdalo como respaldo.
+          </p>
+        </div>
+
+        {/* Cómo usarlo */}
+        <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5 mb-4">
+          <p className="font-extrabold text-[10px] tracking-[2px] uppercase text-on-surface-variant mb-4">Cómo usarlo</p>
+          {['Llega al estacionamiento antes o durante el evento','Abre este boleto o el mensaje de WhatsApp','Muestra el código QR al operador','El operador escanea y puedes entrar'].map((text,i,arr) => (
+            <div key={i} className={`flex items-center gap-3 py-2.5 ${i < arr.length - 1 ? 'border-b-2 border-dashed border-on-surface/10' : ''}`}>
+              <div className="w-7 h-7 bg-primary-container border-2 border-on-surface rounded-full flex items-center justify-center font-extrabold text-xs text-on-surface flex-shrink-0 neo-brutal-shadow-sm">{i+1}</div>
+              <span className="text-[13px] font-semibold text-on-surface">{text}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Tiempo incluido */}
+        <div className="bg-[#f0fdf4] border-[3px] border-on-surface rounded-xl neo-brutal-shadow-sm p-4 mb-4">
+          <div className="flex items-center gap-2 font-extrabold text-[11px] uppercase tracking-wider text-[#166534] mb-2">
+            <SquareParking className="w-4 h-4" strokeWidth={2.5} />
+            Tiempo de estacionamiento incluido
+          </div>
+          <div className="text-xs font-medium text-[#15803d] leading-relaxed">
+            Tu boleto incluye <strong>6 horas de estacionamiento</strong> a partir de tu hora de entrada.
+          </div>
+        </div>
+
+        {/* Política */}
+        <div className="bg-[#fff8f0] border-[3px] border-on-surface rounded-xl neo-brutal-shadow-sm p-4 mb-5">
+          <div className="flex items-center gap-2 font-extrabold text-[11px] uppercase tracking-wider text-[#92400e] mb-2">
+            <AlertTriangle className="w-4 h-4" strokeWidth={2.5} />
+            Política de cancelaciones
+          </div>
+          <div className="text-xs font-medium text-[#b45309] leading-relaxed">
+            NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 6 HORAS PREVIAS AL INICIO DEL EVENTO. Transcurrido dicho plazo, el pago es definitivo e irrevocable.
+          </div>
+        </div>
+
+        <NeoLinkButton href="/" className="w-full">Ir al inicio</NeoLinkButton>
       </div>
-    </>
+    </div>
   );
 }
