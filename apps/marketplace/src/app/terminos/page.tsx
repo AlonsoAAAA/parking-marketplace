@@ -1,62 +1,62 @@
 import Link from 'next/link';
-import NeoHeader from '@/components/ui/NeoHeader';
-import NeoFooter from '@/components/ui/NeoFooter';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export const metadata = {
   title: 'Términos y Condiciones · Estacionat',
 };
 
-const CLAUSE = 'text-[13px] font-medium text-on-surface leading-[1.75] mb-4 last:mb-0';
-const NUM = 'font-extrabold mr-0.5';
-const SECTION = 'bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5 md:p-6 mb-4';
+const CLAUSE = 'text-[13px] text-slate-700 leading-[1.75] mb-4 last:mb-0';
+const NUM = 'font-bold text-[#04210f] mr-0.5';
+const SECTION = 'bg-white border border-slate-100 rounded-2xl shadow-sm p-5 md:p-6 mb-4';
 
 export default function TerminosPage() {
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <NeoHeader showTickets={false} />
+    <div className="min-h-screen bg-background font-sans flex flex-col">
+      <Navbar showExplore={false} />
 
-      <div className="max-w-3xl mx-auto px-5 md:px-8 pt-10 pb-20">
-        <p className="font-extrabold text-[10px] tracking-[3px] uppercase text-on-surface-variant mb-3">Contrato de Adhesión · v1.0</p>
-        <h1 className="font-extrabold text-2xl md:text-3xl uppercase tracking-tight text-on-surface leading-tight mb-2">
+      <main className="max-w-3xl mx-auto px-5 md:px-8 pt-28 pb-20 flex-grow w-full">
+        <p className="text-[10px] font-mono font-bold tracking-[3px] uppercase text-slate-400 mb-3">Contrato de Adhesión · v1.0</p>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-[#04210f] tracking-tight leading-tight mb-2">
           Términos y Condiciones del Servicio de Reserva de Estacionamiento
         </h1>
-        <p className="font-mono text-[11px] font-bold text-on-surface-variant mb-9">Versión 1.0 · Ciudad de México, 2026</p>
+        <p className="font-mono text-[11px] font-bold text-slate-400 mb-9">Versión 1.0 · Ciudad de México, 2026</p>
 
         {/* Cláusula 4 - Destacada */}
-        <div className="bg-[#fff8f0] border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4 md:p-5 mb-6">
-          <div className="font-extrabold text-[12px] uppercase tracking-wider text-[#92400e] mb-1.5">⚠️ Política de cancelaciones</div>
-          <div className="text-xs font-semibold text-[#b45309] leading-relaxed">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 md:p-5 mb-6">
+          <div className="text-[12px] font-extrabold uppercase tracking-wider text-amber-950 mb-1.5">⚠️ Política de cancelaciones</div>
+          <div className="text-xs font-semibold text-amber-800 leading-relaxed">
             NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 6 HORAS PREVIAS AL INICIO DEL EVENTO.
             Transcurrido dicho plazo, el pago es definitivo e irrevocable.
           </div>
         </div>
 
         {/* Tabla de reembolsos */}
-        <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden mb-4">
+        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden mb-4">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-xs">
               <thead>
                 <tr>
-                  <th className="bg-on-surface text-primary-container px-4 py-3 text-left font-extrabold text-[10px] uppercase tracking-widest">Anticipación a la cancelación</th>
-                  <th className="bg-on-surface text-primary-container px-4 py-3 text-left font-extrabold text-[10px] uppercase tracking-widest">Reembolso</th>
+                  <th className="bg-[#04210f] text-[#DFF085] px-4 py-3 text-left font-mono font-bold text-[10px] uppercase tracking-widest">Anticipación a la cancelación</th>
+                  <th className="bg-[#04210f] text-[#DFF085] px-4 py-3 text-left font-mono font-bold text-[10px] uppercase tracking-widest">Reembolso</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b-2 border-dashed border-on-surface/10">
-                  <td className="px-4 py-3 font-semibold text-on-surface leading-relaxed">Más de 48 horas antes del evento</td>
-                  <td className="px-4 py-3 font-semibold text-on-surface leading-relaxed">100% menos cargo de procesamiento (máx. 3.5%)</td>
+                <tr className="border-b border-slate-100">
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Más de 48 horas antes del evento</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">100% menos cargo de procesamiento (máx. 3.5%)</td>
                 </tr>
-                <tr className="border-b-2 border-dashed border-on-surface/10 bg-surface-container-low">
-                  <td className="px-4 py-3 font-semibold text-on-surface leading-relaxed">Entre 24 y 48 horas antes del evento</td>
-                  <td className="px-4 py-3 font-semibold text-on-surface leading-relaxed">70% del precio pagado</td>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Entre 24 y 48 horas antes del evento</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">70% del precio pagado</td>
                 </tr>
-                <tr className="border-b-2 border-dashed border-on-surface/10">
-                  <td className="px-4 py-3 font-semibold text-on-surface leading-relaxed">Entre 6 y 24 horas antes del evento</td>
-                  <td className="px-4 py-3 font-semibold text-on-surface leading-relaxed">50% del precio pagado</td>
+                <tr className="border-b border-slate-100">
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Entre 6 y 24 horas antes del evento</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">50% del precio pagado</td>
                 </tr>
-                <tr className="bg-[#fff0f0]">
-                  <td className="px-4 py-3 font-semibold text-on-surface leading-relaxed">Menos de 6 horas antes del evento</td>
-                  <td className="px-4 py-3 font-extrabold text-[#991b1b] leading-relaxed">Sin reembolso — Reserva definitiva</td>
+                <tr className="bg-rose-50">
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Menos de 6 horas antes del evento</td>
+                  <td className="px-4 py-3 font-extrabold text-rose-700 leading-relaxed">Sin reembolso — Reserva definitiva</td>
                 </tr>
               </tbody>
             </table>
@@ -83,7 +83,7 @@ export default function TerminosPage() {
         </div>
 
         <div className={SECTION}>
-          <div className="bg-[#fff0f0] border-[3px] border-on-surface rounded-xl p-4 mb-4 text-xs font-semibold text-[#991b1b] leading-[1.65]">
+          <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 mb-4 text-xs font-semibold text-rose-800 leading-[1.65]">
             7. EL OPERADOR NO SERÁ RESPONSABLE POR: (a) objetos olvidados o dejados al interior del vehículo, tales como electrónicos, ropa, documentos, valores u otros bienes personales; (b) actos de vandalismo, grafiti o daños causados por terceros ajenos al personal del Operador; (c) fenómenos naturales (granizo, sismo, inundación, rayos, viento u otros); (d) casos extraordinarios fuera del control del Operador (disturbios, manifestaciones, actos de autoridad, emergencias sanitarias, cortes eléctricos); (e) incendio motivado por deficiencia eléctrica, falla de carburador u otra causa interna del vehículo; (f) daños mecánicos, eléctricos o de carrocería preexistentes o por desgaste del vehículo; (g) daños causados por falla mecánica del propio vehículo durante maniobras de ingreso o salida.
           </div>
           <p className={CLAUSE}>
@@ -105,23 +105,23 @@ export default function TerminosPage() {
             <span className={NUM}>13.</span> La disponibilidad de cajones está sujeta a la capacidad física real del predio en el momento del Evento. En caso de discrepancia entre el aforo registrado en la Plataforma y la disponibilidad operativa al momento de la operación, el Operador determinará la solución operativa aplicable <strong>a su criterio razonable</strong>, sin que ello genere obligación de indemnización alguna más allá de lo expresamente pactado en el presente instrumento. <strong>Cualquier reclamación por este concepto deberá acreditarse mediante evidencia documental fehaciente</strong> (fotografía o video que constate la negativa de acceso o la ausencia de cajones disponibles al momento del Evento, con fecha y hora visibles). La ausencia de dicha evidencia extingue cualquier derecho de reclamación.
           </p>
           <p className={CLAUSE}>
-            <span className={NUM}>14.</span> Los datos proporcionados por el Usuario serán tratados conforme al <Link href="/privacidad" className="text-on-surface underline font-bold">Aviso de Privacidad</Link> del Operador, en términos de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP).
+            <span className={NUM}>14.</span> Los datos proporcionados por el Usuario serán tratados conforme al <Link href="/privacidad" className="text-[#383497] underline font-bold">Aviso de Privacidad</Link> del Operador, en términos de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP).
           </p>
         </div>
 
-        <div className="bg-primary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5 mb-4">
-          <p className="text-[13px] font-bold text-on-surface leading-[1.7]">
+        <div className="bg-[#F0F5F1] border border-[#E0EAE2] rounded-2xl p-5 mb-4">
+          <p className="text-[13px] font-bold text-emerald-950 leading-[1.7] m-0">
             De no estar de acuerdo con las cláusulas anteriores, el Usuario deberá abstenerse de realizar la Reserva y solicitar la cancelación antes de confirmar el pago. Una vez recibido el vehículo a su entera satisfacción, no se acepta reclamación alguna.
           </p>
         </div>
 
-        <p className="font-mono text-[11px] font-bold text-on-surface-variant text-center mt-8 leading-[1.8]">
+        <p className="font-mono text-[11px] font-bold text-slate-400 text-center mt-8 leading-[1.8]">
           Versión 1.0 · Ciudad de México, 2026<br />
           Sujeto a revisión legal periódica · Para uso en plataforma digital de reservas de estacionamiento
         </p>
-      </div>
+      </main>
 
-      <NeoFooter />
+      <Footer />
     </div>
   );
 }
