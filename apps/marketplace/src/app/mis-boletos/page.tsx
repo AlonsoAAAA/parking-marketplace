@@ -2,9 +2,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MapPin, CalendarDays, Clock, CreditCard, QrCode, ChevronRight, SquareParking, Ticket } from 'lucide-react';
-import NeoHeader from '@/components/ui/NeoHeader';
-import { NeoLinkButton } from '@/components/ui/neo';
+import { Calendar, MapPin, QrCode, ChevronRight, Inbox } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 interface Reservation {
   id: string;
@@ -22,17 +21,15 @@ interface Reservation {
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  pending:   { label: 'Pendiente de pago', cls: 'bg-[#fef3c7] text-[#b45309]' },
-  paid:      { label: 'Pagado',            cls: 'bg-[#dcfce7] text-[#166534]' },
-  used:      { label: 'Utilizado',         cls: 'bg-[#dbeafe] text-[#1e40af]' },
-  expired:   { label: 'Expirado',          cls: 'bg-surface-container-high text-on-surface-variant' },
-  cancelled: { label: 'Cancelado',         cls: 'bg-error-container text-error' },
+  pending:   { label: 'Pendiente', cls: 'bg-[#FFF9E6] text-[#B28200] border-[#f0dbb2]/50' },
+  paid:      { label: 'Pagado',    cls: 'bg-[#EAF4EB] text-[#2F7A3E] border-[#cbd9cd]/50' },
+  used:      { label: 'Utilizado', cls: 'bg-[#E6F5F2] text-[#007E75] border-[#cbebe5]/50' },
+  expired:   { label: 'Expirado',  cls: 'bg-slate-100 text-slate-500 border-slate-200' },
+  cancelled: { label: 'Cancelado', cls: 'bg-[#FEEBEA] text-[#D32F2F] border-[#fbd4d2]/50' },
 };
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-MX', {
-    weekday: 'short', day: 'numeric', month: 'short',
-  });
+  return new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
@@ -42,7 +39,8 @@ export default function MisBoletosPage() {
   const router = useRouter();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<'activos' | 'historial'>('activos');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -67,103 +65,119 @@ export default function MisBoletosPage() {
 
   const active = reservations.filter(r => r.status === 'pending' || r.status === 'paid');
   const past   = reservations.filter(r => r.status === 'used' || r.status === 'expired' || r.status === 'cancelled');
+  const displayed = activeTab === 'activos' ? active : past;
 
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <NeoHeader back="/" showTickets={false} />
+    <div className="bg-background min-h-screen py-10 px-6 font-sans">
+      <Navbar showExplore={false} />
 
-      <div className="max-w-2xl mx-auto px-5 md:px-8 pt-8 pb-20">
-        <h1 className="font-extrabold text-2xl md:text-3xl uppercase tracking-tight text-on-surface mb-1">Mis boletos</h1>
-        <p className="text-[13px] font-medium text-on-surface-variant mb-7">Tus reservas y boletos de estacionamiento</p>
+      <div className="max-w-2xl mx-auto space-y-6 pt-24">
+        <div className="space-y-2">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-[#04210f] tracking-tight">Mis reservas</h1>
+          <p className="text-slate-500 text-sm">Gestiona tus boletos de estacionamiento y códigos QR de acceso.</p>
+        </div>
 
-        {loading && (
-          <div className="text-center py-16 font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">
-            Cargando...
-          </div>
-        )}
-        {error && <div className="bg-error-container border-2 border-error rounded-lg px-3 py-2 text-error text-xs font-bold">{error}</div>}
+        {error && <div className="bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 text-rose-700 text-xs font-bold">{error}</div>}
 
-        {!loading && !error && reservations.length === 0 && (
-          <div className="text-center py-14 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow px-6">
-            <Ticket className="w-12 h-12 mx-auto mb-4 text-on-surface" strokeWidth={2} />
-            <div className="font-extrabold text-base uppercase tracking-tight text-on-surface mb-1.5">Aún no tienes boletos</div>
-            <div className="text-[13px] font-medium text-on-surface-variant mb-6">Reserva tu lugar para el próximo evento</div>
-            <NeoLinkButton href="/" className="inline-flex w-auto">Ver eventos →</NeoLinkButton>
-          </div>
-        )}
-
-        {!loading && active.length > 0 && (
+        {loading ? (
+          <div className="text-center py-16 text-sm font-medium text-slate-400">Cargando...</div>
+        ) : (
           <>
-            <p className="font-extrabold text-[11px] uppercase tracking-[2px] text-on-surface-variant mt-6 mb-3">Activos</p>
-            {active.map((r, i) => <BoletoCard key={r.id} r={r} i={i} />)}
-          </>
-        )}
+            <div className="border-b border-slate-200 flex gap-6">
+              <button
+                onClick={() => setActiveTab('activos')}
+                className={`pb-3 text-sm font-mono font-bold uppercase tracking-wider transition-all relative bg-transparent border-none cursor-pointer ${
+                  activeTab === 'activos' ? 'text-[#383497]' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Activos ({active.length})
+                {activeTab === 'activos' && <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#383497] rounded-full" />}
+              </button>
+              <button
+                onClick={() => setActiveTab('historial')}
+                className={`pb-3 text-sm font-mono font-bold uppercase tracking-wider transition-all relative bg-transparent border-none cursor-pointer ${
+                  activeTab === 'historial' ? 'text-[#383497]' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Historial ({past.length})
+                {activeTab === 'historial' && <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#383497] rounded-full" />}
+              </button>
+            </div>
 
-        {!loading && past.length > 0 && (
-          <>
-            <p className="font-extrabold text-[11px] uppercase tracking-[2px] text-on-surface-variant mt-8 mb-3">Historial</p>
-            {past.map((r, i) => <BoletoCard key={r.id} r={r} i={i} faded />)}
+            {displayed.length > 0 ? (
+              <div className="space-y-4">
+                {displayed.map(r => {
+                  const st = STATUS[r.status] ?? STATUS.expired;
+                  return (
+                    <Link
+                      key={r.id}
+                      href={`/mis-boletos/${r.id}`}
+                      className="block bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all p-5 md:p-6 no-underline relative overflow-hidden group [animation:fadeIn_.3s_ease_both]"
+                    >
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div className="space-y-3 flex-1">
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${st.cls}`}>● {st.label}</span>
+                            <span className="text-slate-400 font-mono text-[11px] font-semibold">Folio: {r.id.slice(0, 8).toUpperCase()}</span>
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="font-black text-slate-800 text-lg leading-tight m-0 group-hover:text-[#383497] transition-colors">{r.event_name}</h3>
+                            <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 m-0">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{r.venue_name}{r.parking_name ? ` • ${r.parking_name}` : ''}</span>
+                            </p>
+                          </div>
+                          <div className="flex gap-4 text-xs font-mono text-slate-600 pt-2 border-t border-slate-50">
+                            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-slate-400" />{fmtDate(r.starts_at)}</span>
+                            <span>•</span>
+                            <span>{fmtTime(r.starts_at)}</span>
+                            {r.vehicle_plate && (<><span>•</span><span>{r.vehicle_plate}</span></>)}
+                          </div>
+                        </div>
+
+                        <div className="sm:text-right flex sm:flex-col justify-between sm:justify-start items-center sm:items-end w-full sm:w-auto gap-4 pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-50">
+                          {r.payment_amount && (
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] text-slate-400 font-mono uppercase m-0">Monto</p>
+                              <p className="font-mono text-base font-black text-[#383497] m-0">${parseFloat(r.payment_amount).toFixed(0)} MXN</p>
+                            </div>
+                          )}
+                          {r.qr_token && (r.status === 'paid' || r.status === 'pending') && (
+                            <span className="bg-[#DFF085] text-[#04210f] text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm flex items-center gap-1 border border-[#aec24f]">
+                              <QrCode className="w-3.5 h-3.5" />
+                              <span>QR listo</span>
+                            </span>
+                          )}
+                          <ChevronRight className="w-5 h-5 text-slate-300 hidden sm:block group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-12 text-center space-y-6 max-w-md mx-auto">
+                <div className="flex justify-center">
+                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 border border-slate-100">
+                    <Inbox className="w-10 h-10 stroke-[1.2]" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-extrabold text-slate-800 text-lg m-0">No tienes boletos {activeTab}</h3>
+                  <p className="text-slate-500 text-xs leading-relaxed max-w-xs mx-auto m-0">
+                    {activeTab === 'activos'
+                      ? 'Aún no realizas ninguna reservación de cajón de estacionamiento para tus próximos eventos.'
+                      : 'No tienes boletos anteriores o cancelados registrados en tu cuenta.'}
+                  </p>
+                </div>
+                <Link href="/" className="inline-flex bg-[#383497] hover:bg-[#2b278c] text-white font-sans text-xs font-black uppercase tracking-widest px-6 py-3.5 rounded-xl shadow-md transition-all no-underline">
+                  Ver eventos
+                </Link>
+              </div>
+            )}
           </>
         )}
       </div>
     </div>
-  );
-}
-
-function BoletoCard({ r, i, faded }: { r: Reservation; i: number; faded?: boolean }) {
-  const st = STATUS[r.status] ?? STATUS.expired;
-
-  return (
-    <Link
-      href={`/mis-boletos/${r.id}`}
-      className="block bg-white border-[3px] border-on-surface rounded-xl p-4 md:p-5 mb-4 no-underline neo-brutal-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all duration-200 [animation:fadeIn_.4s_ease_both]"
-      style={{ opacity: faded ? 0.65 : 1, animationDelay: `${i * 0.06}s` }}>
-
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <span className={`inline-flex items-center font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-full border-2 border-on-surface flex-shrink-0 ${st.cls}`}>{st.label}</span>
-        <ChevronRight className="w-5 h-5 text-on-surface/30 flex-shrink-0 self-center" strokeWidth={3} />
-      </div>
-
-      <div className="font-extrabold text-base uppercase tracking-tight text-on-surface leading-snug mb-1">{r.event_name}</div>
-      <div className="flex items-center gap-1.5 text-on-surface-variant mb-3">
-        <MapPin className="w-3.5 h-3.5" strokeWidth={2.5} />
-        <span className="text-xs font-semibold">{r.venue_name}</span>
-      </div>
-
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-        <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-on-surface-variant">
-          <CalendarDays className="w-3.5 h-3.5" strokeWidth={2.5} />{fmtDate(r.starts_at)}
-        </span>
-        <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-on-surface-variant">
-          <Clock className="w-3.5 h-3.5" strokeWidth={2.5} />{fmtTime(r.starts_at)}
-        </span>
-        {r.parking_name && (
-          <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-on-surface-variant">
-            <SquareParking className="w-3.5 h-3.5" strokeWidth={2.5} />{r.parking_name}
-          </span>
-        )}
-        {r.payment_amount && (
-          <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-on-surface-variant">
-            <CreditCard className="w-3.5 h-3.5" strokeWidth={2.5} />${parseFloat(r.payment_amount).toFixed(0)} MXN
-          </span>
-        )}
-      </div>
-
-      {(r.vehicle_plate || r.qr_token) && (
-        <div className="flex items-center gap-2.5 flex-wrap mt-3 pt-3 border-t-2 border-dashed border-on-surface/15">
-          {r.vehicle_plate && (
-            <span className="font-mono font-bold text-xs text-on-surface bg-surface-container border-2 border-on-surface rounded-lg px-2.5 py-1">
-              {r.vehicle_plate}
-            </span>
-          )}
-          {r.qr_token && (
-            <span className="inline-flex items-center gap-1.5 font-extrabold text-[10px] uppercase tracking-wider text-[#166534] bg-[#dcfce7] border-2 border-on-surface rounded-lg px-2.5 py-1">
-              <QrCode className="w-3.5 h-3.5" strokeWidth={2.5} />
-              QR listo
-            </span>
-          )}
-        </div>
-      )}
-    </Link>
   );
 }

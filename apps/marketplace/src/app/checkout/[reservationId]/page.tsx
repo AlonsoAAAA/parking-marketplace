@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { Ticket, Lock, AlertTriangle } from 'lucide-react';
-import NeoHeader from '@/components/ui/NeoHeader';
-import { NeoButton, NeoInput, NeoLabel, NeoSpinner } from '@/components/ui/neo';
+import { Lock, ShieldCheck, Info, MapPin, CheckSquare, AlertTriangle } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 const STRIPE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
@@ -13,10 +12,10 @@ const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
 const STRIPE_APPEARANCE = {
   theme: 'stripe' as const,
   variables: {
-    colorPrimary: '#191c1d',
+    colorPrimary: '#383497',
     colorBackground: '#ffffff',
-    colorText: '#191c1d',
-    colorDanger: '#ba1a1a',
+    colorText: '#1e293b',
+    colorDanger: '#e11d48',
     fontFamily: '"Plus Jakarta Sans", sans-serif',
     borderRadius: '12px',
     spacingUnit: '4px',
@@ -24,38 +23,29 @@ const STRIPE_APPEARANCE = {
   rules: {
     '.Input': {
       backgroundColor: '#ffffff',
-      border: '3px solid #191c1d',
+      border: '1px solid #e2e8f0',
       boxShadow: 'none',
       padding: '12px 14px',
-      fontSize: '14px',
-      fontWeight: '600',
+      fontSize: '13px',
     },
     '.Input:focus': {
-      boxShadow: '3px 3px 0px 0px #191c1d',
-      backgroundColor: '#ffffff',
-      border: '3px solid #191c1d',
+      border: '1px solid #383497',
+      boxShadow: '0 0 0 2px rgba(56,52,151,0.15)',
     },
     '.Label': {
-      fontSize: '11px',
-      fontWeight: '800',
-      color: '#191c1d',
+      fontSize: '10px',
+      fontWeight: '600',
+      color: '#94a3b8',
       textTransform: 'uppercase',
-      letterSpacing: '1px',
+      letterSpacing: '0.05em',
     },
-    '.Tab': {
-      border: '3px solid #191c1d',
-      boxShadow: '2px 2px 0px 0px #191c1d',
-    },
-    '.Tab--selected': {
-      backgroundColor: '#FF6478',
-      border: '3px solid #191c1d',
-    },
-    '.Error': { fontSize: '12px', fontWeight: '600' },
+    '.Tab': { border: '1px solid #e2e8f0' },
+    '.Tab--selected': { backgroundColor: '#383497', borderColor: '#383497' },
+    '.Error': { fontSize: '12px' },
   },
 };
 
 interface CheckoutData { clientSecret: string; amount: number; eventName: string; }
-
 
 // ─── Formulario interno (requiere contexto de Elements) ───────────────────────
 function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservationId: string }) {
@@ -63,6 +53,7 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
   const elements = useElements();
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
+  // Por seguridad el checkbox de términos SIEMPRE inicia sin marcar (no auto-aceptado).
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [phone, setPhone] = useState(() => {
@@ -71,9 +62,8 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
       if (!token) return '';
       const payload = JSON.parse(atob(token.split('.')[1]));
       const raw = (payload.phone as string) ?? '';
-      // Normalizar a 10 dígitos para mostrar en el campo
-      if (raw.startsWith('521') && raw.length === 13) return raw.slice(3); // legacy Twilio
-      if (raw.startsWith('52')  && raw.length === 12) return raw.slice(2); // estándar
+      if (raw.startsWith('521') && raw.length === 13) return raw.slice(3);
+      if (raw.startsWith('52')  && raw.length === 12) return raw.slice(2);
       return raw;
     } catch { return ''; }
   });
@@ -86,7 +76,6 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
     const digits = phone.replace(/\D/g, '');
     if (digits.length >= 10) {
       const token = localStorage.getItem('token');
-      // Normalizar a 52+10dígitos: quitar prefijo 521 (legacy Twilio) o 52, luego agregar 52
       const bare = digits.startsWith('521') && digits.length === 13
         ? digits.slice(3)
         : digits.startsWith('52') && digits.length === 12
@@ -102,9 +91,7 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
 
     const { error: confirmError } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/confirmacion/${reservationId}`,
-      },
+      confirmParams: { return_url: `${window.location.origin}/confirmacion/${reservationId}` },
     });
 
     if (confirmError) {
@@ -114,91 +101,80 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
   };
 
   return (
-    <>
-      <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4 md:p-5 mb-4">
-        <NeoLabel>Tu número de WhatsApp</NeoLabel>
-        <div className="flex gap-2.5">
-          <div className="px-4 py-3.5 bg-surface-container-high border-[3px] border-on-surface rounded-xl font-mono font-bold text-sm text-on-surface flex-shrink-0 flex items-center">+52</div>
-          <NeoInput
-            className="font-mono"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            placeholder="55 1234 5678"
-            type="tel"
-          />
-        </div>
-        <p className="text-[11px] font-semibold text-on-surface-variant mt-2.5">
-          💬 Tu boleto QR llegará aquí cuando pagues
+    <div className="p-6 md:p-8 space-y-6">
+      {/* WhatsApp */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-mono text-slate-400 uppercase">WhatsApp para recibir boleto QR</label>
+        <input
+          type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3.5 focus:outline-none focus:ring-2 focus:ring-[#383497]/15 focus:border-[#383497] font-mono tracking-wider transition-all"
+          placeholder="+52 55 1234 5678"
+        />
+        <p className="text-[#383497] text-[11px] font-semibold flex items-center gap-1">
+          <Info className="w-3.5 h-3.5" />
+          <span>Tu boleto QR llegará aquí inmediatamente tras el pago.</span>
         </p>
       </div>
 
-      <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4 md:p-5 mb-4">
-        <NeoLabel className="mb-3.5">Tarjeta</NeoLabel>
-        <PaymentElement
-          options={{
-            layout: 'tabs',
-            wallets: { applePay: 'auto', googlePay: 'auto' },
-          }}
-        />
-      </div>
-
-      {/* Términos y condiciones */}
-      <div
-        className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4 md:p-5 mb-4 flex items-start gap-3.5 cursor-pointer"
-        onClick={() => setTermsAccepted(v => !v)}>
-        {/* Checkbox custom */}
-        <div className={`w-6 h-6 rounded-lg flex-shrink-0 border-[3px] border-on-surface flex items-center justify-center transition-all duration-150 ${
-          termsAccepted ? 'bg-primary-container neo-brutal-shadow-sm' : 'bg-white'
-        }`}>
-          {termsAccepted && (
-            <svg width="11" height="9" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4L3.5 6.5L9 1" stroke="#191c1d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </div>
-        <div className="text-[13px] font-semibold text-on-surface leading-relaxed">
-          He leído y acepto los{' '}
-          <a
-            href="/terminos"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-extrabold underline"
-            onClick={e => e.stopPropagation()}>
-            Términos y Condiciones
-          </a>
-          {' '}de Estacionat
+      {/* Pago (Stripe Elements real) */}
+      <div className="space-y-3">
+        <span className="block text-xs font-mono text-slate-400 uppercase tracking-wider">Datos de pago</span>
+        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-5">
+          <PaymentElement options={{ layout: 'tabs', wallets: { applePay: 'auto', googlePay: 'auto' } }} />
         </div>
       </div>
 
-      {error && <div className="mb-4 bg-error-container border-2 border-error rounded-lg px-3 py-2 text-error text-xs font-bold">{error}</div>}
-
-      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t-[3px] border-on-surface px-5 py-4 pb-[calc(16px+env(safe-area-inset-bottom))] z-50 sm:max-w-[480px] sm:mx-auto sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:rounded-t-xl sm:border-x-[3px] lg:static lg:bg-transparent lg:border-none lg:p-0 lg:max-w-none lg:translate-x-0 lg:mt-1">
-        {/* Aviso si no aceptó */}
-        {!termsAccepted && (
-          <div className="flex items-center gap-2 mb-2.5 px-3 py-2 bg-surface-container border-2 border-on-surface rounded-lg">
-            <span className="text-sm">☝️</span>
-            <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Acepta los términos para continuar</span>
-          </div>
-        )}
-        <NeoButton
-          className="w-full"
-          onClick={handlePay}
-          disabled={!stripe || !elements || paying || !termsAccepted}
-        >
-          {paying ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 border-2 border-on-surface/30 border-t-on-surface rounded-full animate-spin inline-block" />
-              Procesando...
-            </span>
+      {/* Términos */}
+      <div onClick={() => setTermsAccepted(v => !v)} className="flex items-start gap-2.5 cursor-pointer select-none">
+        <div className="mt-0.5">
+          {termsAccepted ? (
+            <div className="w-4 h-4 rounded bg-[#383497] text-white flex items-center justify-center">
+              <CheckSquare className="w-4 h-4" />
+            </div>
           ) : (
-            <><Lock className="w-4 h-4" strokeWidth={2.5} /> Pagar ${Math.round(data.amount)} MXN</>
+            <div className="w-4 h-4 rounded border border-slate-300 bg-white" />
           )}
-        </NeoButton>
-        <div className="flex items-center justify-center gap-1.5 font-mono text-[10px] font-bold text-on-surface-variant mt-2.5">
-          Pago seguro · Stripe SSL 256-bit
+        </div>
+        <span className="text-[11px] text-slate-500 leading-normal">
+          Acepto los{' '}
+          <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-[#383497] font-bold hover:underline" onClick={e => e.stopPropagation()}>
+            Términos de servicio
+          </a>{' '}
+          y autorizo el cargo inmediato por la reservación del cajón de estacionamiento.
+        </span>
+      </div>
+
+      {error && <p className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3.5 rounded-xl text-center">{error}</p>}
+
+      <button
+        type="button"
+        onClick={handlePay}
+        disabled={!stripe || !elements || paying || !termsAccepted}
+        className="w-full bg-[#383497] hover:bg-[#2b278c] disabled:bg-slate-200 disabled:cursor-not-allowed text-white py-4 px-6 rounded-2xl font-sans text-sm font-black uppercase tracking-wider shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+      >
+        {paying ? (
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+            Procesando pago seguro...
+          </span>
+        ) : (
+          <><Lock className="w-4 h-4 text-indigo-200" /><span>Pagar ${Math.round(data.amount)} MXN</span></>
+        )}
+      </button>
+
+      <div className="flex justify-center">
+        <div className="bg-[#E6F4F1] text-[#006E66] border border-[#CDEAE5] text-[11px] font-bold uppercase tracking-wider font-sans rounded-full px-4 py-1.5 flex items-center gap-1.5 shadow-sm">
+          <ShieldCheck className="w-4 h-4" />
+          <span>Pago seguro · Stripe SSL</span>
         </div>
       </div>
-    </>
+
+      <div className="bg-slate-50 rounded-2xl p-4 text-center border border-slate-100">
+        <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+          🛡️ <span className="text-slate-800 font-bold">Garantía de cancelación:</span> Reembolso del 100% cancelando hasta 6 horas antes del evento.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -232,79 +208,61 @@ export default function CheckoutPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-background font-sans">
-      <NeoHeader back="back" showTickets={false} />
-      <NeoSpinner label="Preparando pago..." />
+      <Navbar back="back" showExplore={false} />
+      <div className="pt-32 flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-[3px] border-slate-200 border-t-[#04210f] rounded-full animate-spin" />
+        <p className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">Preparando pago...</p>
+      </div>
     </div>
   );
 
   if (fetchError) return (
     <div className="min-h-screen bg-background font-sans">
-      <NeoHeader back="back" showTickets={false} />
-      <div className="flex flex-col items-center justify-center gap-4 py-24 px-6 text-center">
-        <AlertTriangle className="w-10 h-10 text-on-surface" strokeWidth={2} />
-        <h2 className="font-extrabold text-lg uppercase tracking-tight text-on-surface">No se pudo iniciar el pago</h2>
-        <p className="text-[13px] font-medium text-on-surface-variant max-w-xs leading-relaxed">{fetchError}</p>
-        <NeoButton variant="dark" onClick={() => router.back()}>← Volver</NeoButton>
+      <Navbar back="back" showExplore={false} />
+      <div className="pt-32 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <AlertTriangle className="w-10 h-10 text-slate-400" />
+        <h2 className="font-bold text-lg text-[#04210f]">No se pudo iniciar el pago</h2>
+        <p className="text-sm text-slate-500 max-w-xs leading-relaxed">{fetchError}</p>
+        <button onClick={() => router.back()} className="bg-[#04210f] hover:bg-[#12361d] text-white px-6 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer">← Volver</button>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <NeoHeader back="back" showTickets={false} />
+    <div className="bg-background min-h-screen py-10 px-6 font-sans">
+      <Navbar back="back" showExplore={false} />
 
-      <div className="max-w-md mx-auto px-5 pt-7 pb-36 lg:max-w-6xl lg:px-8 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start lg:pb-16">
-
-        {/* LEFT: resumen del pedido (sticky en desktop) */}
-        <div className="lg:sticky lg:top-24">
-          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden mb-4">
-            <div className="bg-on-surface px-4 py-3 flex items-center gap-2.5">
-              <Ticket className="w-4 h-4 text-primary-container" strokeWidth={2.5} />
-              <span className="font-extrabold text-[13px] text-white uppercase tracking-tight">{data!.eventName}</span>
+      <div className="max-w-xl mx-auto space-y-6 pt-24">
+        <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl">
+          {/* Header verde-negro / lima */}
+          <div className="bg-[#04210f] text-[#DFF085] p-6 space-y-3 relative overflow-hidden">
+            <span className="text-[10px] font-mono uppercase tracking-widest bg-emerald-950 px-2.5 py-1 rounded-full text-white font-bold border border-emerald-900">
+              Resumen de reserva
+            </span>
+            <div className="space-y-1">
+              <h2 className="text-white text-lg font-bold tracking-tight m-0">{data!.eventName}</h2>
+              <p className="text-xs text-slate-300 flex items-center gap-1 m-0">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>1 lugar de estacionamiento</span>
+              </p>
             </div>
-            <div className="p-4 flex flex-col gap-2">
-              <div className="flex justify-between text-[13px]">
-                <span className="font-semibold text-on-surface-variant">1 lugar de estacionamiento</span>
-                <span className="font-mono font-bold text-on-surface">${Math.round(data!.amount)} MXN</span>
-              </div>
-              <div className="flex justify-between pt-2.5 border-t-2 border-dashed border-on-surface/15">
-                <span className="font-extrabold text-sm uppercase tracking-tight text-on-surface">Total</span>
-                <span className="font-mono font-bold text-base text-on-surface">${Math.round(data!.amount)} MXN</span>
-              </div>
+            <div className="flex items-end justify-between pt-4 border-t border-emerald-950">
+              <span className="text-emerald-400 uppercase text-[9px] font-mono">Total a pagar</span>
+              <span className="text-[#DFF085] font-black text-2xl font-mono">${Math.round(data!.amount)} MXN</span>
             </div>
+            <div className="absolute right-0 bottom-0 w-24 h-24 bg-[#DFF085]/10 rounded-full blur-2xl" />
           </div>
 
-          {/* Beneficios — solo visibles en desktop */}
-          <div className="hidden lg:block bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-4">
-            {['Lugar garantizado antes de llegar','Código QR único por WhatsApp','Sin cobros adicionales en puerta','Cancelación hasta 6 hrs antes'].map((item, i, arr) => (
-              <div key={item} className={`flex items-center gap-2.5 py-2.5 text-[13px] font-semibold text-on-surface ${i < arr.length - 1 ? 'border-b-2 border-dashed border-on-surface/10' : ''}`}>
-                <div className="w-5 h-5 bg-primary-container border-2 border-on-surface rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                    <path d="M1 3L3 5L7 1" stroke="#191c1d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT: formulario de pago */}
-        <div>
           {!STRIPE_KEY ? (
-            <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5 text-center text-error text-[13px] font-bold">
+            <div className="p-6 text-center text-rose-600 text-sm font-bold">
               ⚠️ Pago no disponible en este momento. Contacta a soporte@estacionat.mx
             </div>
           ) : (
-            <Elements
-              stripe={stripePromise}
-              options={{ clientSecret: data!.clientSecret, appearance: STRIPE_APPEARANCE }}
-            >
+            <Elements stripe={stripePromise} options={{ clientSecret: data!.clientSecret, appearance: STRIPE_APPEARANCE }}>
               <CheckoutForm data={data!} reservationId={reservationId} />
             </Elements>
           )}
         </div>
-
       </div>
     </div>
   );
