@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import { ToastProvider } from '@/components/Toast';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -25,13 +26,15 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#f8f9fa',
+  themeColor: '#04210f',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${jakarta.variable} ${jetbrains.variable}`}>
-      <body>{children}</body>
+      <body>
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

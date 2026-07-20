@@ -219,15 +219,16 @@ export class ReservationsService {
     moto:          'price_moto',
   };
 
-  async getPricing(reservationId: string) {
+  async getPricing(reservationId: string, userId: string) {
     const rows = await this.dataSource.query(
-      `SELECT e.price, e.price_auto, e.price_sub, e.price_pickup, e.price_moto
+      `SELECT e.price, e.price_auto, e.price_sub, e.price_pickup, e.price_moto, r.user_id
        FROM reservations r JOIN events e ON e.id = r.event_id
        WHERE r.id = $1`,
       [reservationId],
     );
     if (!rows.length) throw new NotFoundException('Reserva no encontrada');
     const e = rows[0];
+    if (e.user_id !== userId) throw new ForbiddenException();
     // Exponer con los nuevos nombres de categoría (el frontend usa esto solo como fallback)
     return {
       base:          parseFloat(e.price),
@@ -244,17 +245,19 @@ export class ReservationsService {
    */
   async getPrecioVehiculo(
     reservationId: string,
+    userId: string,
     marca: string,
     modelo: string,
     version?: string,
   ): Promise<{ precio: number | null; error?: string }> {
     const rows = await this.dataSource.query(
-      `SELECT e.price, e.price_auto, e.price_sub, e.price_pickup, e.price_moto
+      `SELECT e.price, e.price_auto, e.price_sub, e.price_pickup, e.price_moto, r.user_id
        FROM reservations r JOIN events e ON e.id = r.event_id
        WHERE r.id = $1`,
       [reservationId],
     );
     if (!rows.length) throw new NotFoundException('Reserva no encontrada');
+    if (rows[0].user_id !== userId) throw new ForbiddenException();
 
     const clasif = this.vehiculos.resolverVehiculo(marca, modelo, version);
     if (!clasif.ok) return { precio: null, error: clasif.error };

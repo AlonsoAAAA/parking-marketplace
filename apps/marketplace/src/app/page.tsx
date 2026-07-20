@@ -1,13 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import {
-  Search, X, MapPin, Zap, ShieldCheck, Smartphone, Clock,
-  Calendar, CalendarX, Building2, Car,
+  Search, Sparkles, ShieldCheck, Car, QrCode, Clock, Zap, MapPin,
+  Calendar, Building2, Star, CheckCircle,
 } from 'lucide-react';
-import NeoHeader from '@/components/ui/NeoHeader';
-import NeoFooter from '@/components/ui/NeoFooter';
-import { NeoBadge } from '@/components/ui/neo';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import BePartnerModal from '@/components/BePartnerModal';
 
 interface Venue {
   id: string;
@@ -16,6 +15,7 @@ interface Venue {
   category: string;
   upcomingEvents: number;
   priceFrom: number | null;
+  photoUrl?: string;
 }
 
 const MOCK_VENUES: Venue[] = [
@@ -38,14 +38,24 @@ const CAT_EMOJIS: Record<string, string> = {
   conciertos: '🎵', deportes: '⚽', festival: '🎪', teatro: '🎭',
 };
 
-const scrollTo = (id: string) =>
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+const BENEFITS = [
+  { icon: ShieldCheck, bg: 'bg-[#DFF085]/20', fg: 'text-[#04210f]', title: '100% garantizado', text: 'Tu cajón está apartado y bloqueado en nuestro sistema antes de que salgas de casa. No compitas por lugar.' },
+  { icon: QrCode,      bg: 'bg-[#383497]/10', fg: 'text-[#383497]', title: 'WhatsApp QR Access', text: 'Recibe de inmediato el pase QR directo en tu WhatsApp. No requieres descargar ninguna app adicional.' },
+  { icon: Clock,       bg: 'bg-indigo-50',    fg: 'text-indigo-700', title: 'Cancelación flexible', text: '¿Hubo cambios de planes? Cancela gratis sin penalizaciones hasta 6 horas antes de que inicie tu evento.' },
+  { icon: Zap,         bg: 'bg-[#aecfb2]/20', fg: 'text-[#04210f]', title: 'Cero filas o demoras', text: 'Acceso automatizado leyendo tus placas. Entra rápido y sal con agilidad sin hacer filas de cobro.' },
+];
+
+const TESTIMONIALS = [
+  { initials: 'AR', bg: 'bg-[#04210f]', name: 'Alejandro Ruiz', event: 'Concierto Luis Miguel', text: 'Increíble servicio. Llegué al Auditorio Nacional y mi lugar ya estaba listo. Me ahorré más de 40 minutos de tráfico intentando buscar en la calle.' },
+  { initials: 'MS', bg: 'bg-[#383497]', name: 'Mariana Soto', event: 'Clásico Nacional MX', text: 'Es la primera vez que no sufro buscando estacionamiento en el Estadio Azteca. El código QR llegó súper rápido por WhatsApp y el lector de placas funcionó perfecto.' },
+];
 
 export default function HomePage() {
   const [venues,   setVenues]   = useState<Venue[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState('');
   const [category, setCategory] = useState('');
+  const [isBePartnerOpen, setIsBePartnerOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -63,299 +73,252 @@ export default function HomePage() {
     (v.address ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
+  const scrollToEvents = () =>
+    document.getElementById('eventos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <NeoHeader />
+    <div className="min-h-screen bg-background font-sans flex flex-col">
+      <Navbar />
 
-      {/* ── Hero ── */}
-      <section className="relative px-5 md:px-8 pt-14 pb-14 overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30 z-0" />
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <NeoBadge color="purple" className="mb-7">Estacionamiento garantizado · CDMX</NeoBadge>
-          <h1 className="font-extrabold text-4xl md:text-6xl mb-7 leading-tight text-on-surface uppercase tracking-tight [animation:fadeUp_.5s_ease_both]">
-            Tu lugar seguro para{' '}
-            <span className="bg-primary-container px-3 md:px-4 py-0.5 inline-block border-[3px] border-on-surface shadow-[3px_3px_0px_0px_#191c1d] -rotate-1">
-              Eventos
-            </span>
-          </h1>
-          <p className="font-medium text-sm md:text-lg mb-9 text-on-surface-variant max-w-2xl mx-auto leading-relaxed [animation:fadeUp_.5s_.1s_ease_both]">
-            Deja de dar vueltas buscando lugar. Reserva tu espacio de estacionamiento
-            para conciertos, partidos y festivales antes de llegar.
-          </p>
+      <main className="pt-20 flex-grow">
+        {/* Hero */}
+        <section className="px-6 py-16 relative bg-gradient-to-b from-[#aecfb2]/10 via-transparent to-transparent">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center gap-1.5 bg-[#aecfb2]/30 text-[#04210f] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full [animation:fadeUp_.5s_ease_both]">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Garantía de acceso CDMX</span>
+            </div>
 
-          {/* Buscador */}
-          <div className="max-w-lg mx-auto flex items-center gap-3 bg-white border-[3px] border-on-surface rounded-xl px-4 py-3.5 neo-brutal-shadow mb-8 [animation:fadeUp_.5s_.2s_ease_both]">
-            <Search className="w-4 h-4 text-on-surface flex-shrink-0" strokeWidth={3} />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Busca un venue o ciudad..."
-              className="flex-1 border-none outline-none bg-transparent font-sans font-semibold text-sm text-on-surface placeholder:text-on-surface/35"
-            />
-            {search && (
-              <button onClick={() => setSearch('')} aria-label="Limpiar búsqueda"
-                className="cursor-pointer bg-transparent border-none p-0 flex items-center">
-                <X className="w-4 h-4 text-on-surface/50" strokeWidth={3} />
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold font-sans text-[#04210f] leading-none tracking-tight max-w-3xl mx-auto [animation:fadeUp_.5s_.1s_ease_both]">
+              Tu lugar seguro <br className="hidden sm:inline" /> para eventos
+            </h1>
+
+            <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto font-sans leading-relaxed [animation:fadeUp_.5s_.2s_ease_both]">
+              Reserva tu estacionamiento cerca de estadios y recintos en CDMX. Sin estrés, sin filas y 100% garantizado.
+            </p>
+
+            <form
+              onSubmit={e => { e.preventDefault(); scrollToEvents(); }}
+              className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 max-w-lg mx-auto flex flex-col sm:flex-row gap-2 [animation:fadeUp_.5s_.3s_ease_both]"
+            >
+              <div className="flex items-center gap-3 px-4 py-3 flex-grow">
+                <Search className="w-5 h-5 text-emerald-800 shrink-0" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="¿A qué evento o recinto vas?"
+                  className="w-full bg-transparent border-none text-sm placeholder:text-slate-400 focus:outline-none focus:ring-0 text-slate-800 font-sans"
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-[#04210f] hover:bg-[#12361d] text-[#DFF085] py-3.5 px-6 rounded-xl font-bold text-sm transition-all active:scale-[0.98] cursor-pointer"
+              >
+                Reservar mi lugar
               </button>
+            </form>
+          </div>
+
+          <div className="absolute -z-10 top-1/4 right-5 w-72 h-72 bg-[#DFF085]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -z-10 bottom-10 left-5 w-60 h-60 bg-[#383497]/5 rounded-full blur-3xl pointer-events-none" />
+        </section>
+
+        {/* Franja de confianza */}
+        <section className="bg-[#04210f] py-5 border-y border-emerald-950 overflow-hidden relative select-none">
+          <div className="animate-marquee whitespace-nowrap flex gap-16 text-xs sm:text-sm text-[#DFF085] font-bold tracking-widest font-mono">
+            {[0, 1].map(dup => (
+              <div key={dup} className="flex gap-16">
+                <div className="flex items-center gap-2.5"><ShieldCheck className="w-4 h-4" /> +120 EVENTOS OPERADOS</div>
+                <div className="flex items-center gap-2.5"><Car className="w-4 h-4" /> +8,000 AUTOS ESTACIONADOS</div>
+                <div className="flex items-center gap-2.5"><Sparkles className="w-4 h-4" /> PAGO SEGURO CON STRIPE</div>
+                <div className="flex items-center gap-2.5"><QrCode className="w-4 h-4" /> ACCESO DIGITAL EXPRESS</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Catálogo de venues */}
+        <section id="eventos" className="max-w-7xl mx-auto px-6 py-16 space-y-10 scroll-mt-24">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-extrabold text-[#04210f] tracking-tight">Próximos eventos</h2>
+              <p className="text-slate-500 text-sm max-w-sm">
+                Encuentra el evento de tu interés y asegura tu acceso directo sin complicaciones.
+              </p>
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-6 px-6 md:mx-0 md:px-0">
+              {CATEGORIES.map(c => (
+                <button
+                  key={c.key}
+                  onClick={() => setCategory(c.key)}
+                  className={`px-5 py-2.5 rounded-full font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border whitespace-nowrap ${
+                    category === c.key
+                      ? 'bg-[#04210f] text-white border-[#04210f] shadow-md'
+                      : 'bg-white text-slate-500 border-slate-200/80 hover:border-slate-300'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {loading ? (
+              <div className="col-span-full py-16 text-center text-slate-400 font-medium">Cargando venues...</div>
+            ) : filtered.length === 0 ? (
+              <div className="col-span-full py-16 text-center space-y-3 bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
+                <p className="text-slate-400 font-medium">No se encontraron eventos o recintos coincidentes.</p>
+                <button
+                  onClick={() => { setSearch(''); setCategory(''); }}
+                  className="text-xs font-mono font-bold text-[#04210f] underline hover:text-emerald-800 cursor-pointer"
+                >
+                  Restablecer filtros
+                </button>
+              </div>
+            ) : (
+              filtered.map(v => (
+                <a
+                  key={v.id}
+                  href={`/venues/${v.id}`}
+                  className="group bg-white rounded-[18px] overflow-hidden border border-slate-200/60 shadow-md hover:shadow-xl transition-all flex flex-col h-full no-underline [animation:fadeIn_.4s_ease_both]"
+                >
+                  <div className="h-52 overflow-hidden relative shrink-0 bg-gradient-to-br from-[#aecfb2]/40 to-[#04210f]/10 flex items-center justify-center">
+                    {v.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        referrerPolicy="no-referrer"
+                        src={v.photoUrl}
+                        alt={v.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                      />
+                    ) : (
+                      <span className="text-6xl">{CAT_EMOJIS[v.category] ?? '🎫'}</span>
+                    )}
+                    <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md text-white px-3 py-1 rounded-lg text-[10px] font-mono flex items-center gap-1.5 border border-white/10">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span>{v.upcomingEvents > 0 ? `${v.upcomingEvents} evento${v.upcomingEvents !== 1 ? 's' : ''}` : 'Sin eventos próximos'}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-6 flex flex-col flex-grow justify-between space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="space-y-1 flex-1">
+                          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#383497] bg-[#383497]/5 px-2 py-0.5 rounded">
+                            {v.category || 'venue'}
+                          </span>
+                          <h3 className="text-lg font-bold font-sans text-slate-900 leading-snug group-hover:text-[#04210f] transition-colors line-clamp-1 m-0">
+                            {v.name}
+                          </h3>
+                        </div>
+                        {v.priceFrom && (
+                          <div className="bg-[#04210f] text-[#DFF085] px-3 py-1 rounded-xl text-center shadow">
+                            <span className="text-[9px] font-mono uppercase tracking-widest block opacity-70 leading-none">desde</span>
+                            <span className="text-base font-mono font-bold leading-none">${Number(v.priceFrom).toFixed(0)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="text-slate-400 text-xs flex items-center gap-1.5 m-0">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-800 shrink-0" />
+                        <span className="truncate">{v.address}</span>
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+                      <span className="bg-[#04210f] group-hover:bg-[#12361d] text-white font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-all shadow-sm">
+                        Ver eventos
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              ))
             )}
           </div>
+        </section>
 
-          {/* CTAs del demo */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center [animation:fadeUp_.5s_.3s_ease_both]">
-            <button
-              onClick={() => scrollTo('venues')}
-              className="w-full sm:w-auto bg-primary-container px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
-            >
-              Reservar mi lugar
-            </button>
-            <button
-              onClick={() => scrollTo('socios')}
-              className="w-full sm:w-auto bg-white px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
-            >
-              Soy dueño de estacionamiento
-            </button>
-          </div>
-        </div>
+        {/* Beneficios */}
+        <section className="bg-gradient-to-b from-white to-slate-50 border-y border-slate-100 px-6 py-20">
+          <div className="max-w-6xl mx-auto space-y-16">
+            <div className="text-center space-y-3 max-w-xl mx-auto">
+              <h2 className="text-3xl font-extrabold text-[#04210f] tracking-tight">La mejor experiencia de parking</h2>
+              <p className="text-slate-500 text-sm">
+                Diseñado exclusivamente para eliminar las fricciones habituales de estacionarse en eventos masivos.
+              </p>
+            </div>
 
-        {/* Card flotante decorativa */}
-        <div className="hidden lg:block absolute right-12 bottom-10 w-72 bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-5 rotate-3">
-          <div className="flex justify-between items-start mb-3.5">
-            <span className="bg-secondary-container text-white px-3 py-1 rounded-full font-mono text-[10px] font-bold border-2 border-on-surface">
-              Activo ahora
-            </span>
-            <div className="w-8 h-8 rounded-full bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm">
-              <Zap className="w-4 h-4 text-primary fill-current" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {BENEFITS.map(b => (
+                <div key={b.title} className="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm space-y-4 hover:shadow-md transition-shadow">
+                  <div className={`w-12 h-12 ${b.bg} rounded-xl flex items-center justify-center ${b.fg}`}>
+                    <b.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-sans font-bold text-slate-900 text-base m-0">{b.title}</h3>
+                  <p className="text-slate-500 text-xs leading-relaxed m-0">{b.text}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="font-extrabold text-base text-on-surface uppercase tracking-tight mb-1.5">Estadio Azteca</div>
-          <div className="text-on-surface-variant text-[11px] font-bold font-mono">
-            Ubicación premium · desde $180 MXN
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Filtros ── */}
-      <div id="venues" className="flex gap-3 overflow-x-auto no-scrollbar px-5 md:px-8 pb-2 max-w-6xl mx-auto md:justify-center scroll-mt-20">
-        {CATEGORIES.map(c => (
-          <button
-            key={c.key}
-            onClick={() => setCategory(c.key)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-[3px] border-on-surface transition-all duration-150 font-sans font-extrabold text-[11px] uppercase tracking-wider flex-shrink-0 cursor-pointer ${
-              category === c.key
-                ? 'bg-primary-container text-on-surface shadow-[3px_3px_0px_0px_#191c1d] -translate-y-0.5'
-                : 'bg-white text-on-surface-variant hover:bg-surface-container'
-            }`}
-          >
-            {c.key && <span>{CAT_EMOJIS[c.key]}</span>}
-            {c.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Contador */}
-      {!loading && (
-        <p className="px-5 md:px-8 pt-6 pb-1 max-w-6xl mx-auto font-extrabold text-[10px] tracking-[2px] uppercase text-on-surface-variant">
-          {filtered.length} venue{filtered.length !== 1 ? 's' : ''} disponibles
-        </p>
-      )}
-
-      {/* ── Feed de venues ── */}
-      <div className="px-5 md:px-8 pt-3 pb-16 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {loading ? (
-          <div className="col-span-full text-center py-16 font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">
-            Cargando venues...
+        {/* Testimonios */}
+        <section className="max-w-6xl mx-auto px-6 py-20 space-y-12">
+          <div className="space-y-3">
+            <h2 className="text-3xl font-extrabold text-[#04210f] tracking-tight">Lo que dicen nuestros usuarios</h2>
+            <p className="text-slate-500 text-sm">Comentarios reales de conductores que ya disfrutan de eventos sin estrés.</p>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="col-span-full text-center py-16 font-extrabold text-[11px] tracking-[2px] uppercase text-on-surface-variant">
-            Sin resultados
-          </div>
-        ) : (
-          filtered.map((v, i) => (
-            <Link
-              key={v.id}
-              href={`/venues/${v.id}`}
-              className="bg-white border-[3px] border-on-surface rounded-xl overflow-hidden neo-brutal-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all duration-200 no-underline flex flex-col [animation:fadeIn_.4s_ease_both]"
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
-              <div className="bg-primary-container border-b-[3px] border-on-surface h-24 flex items-center justify-center relative">
-                <span className="text-4xl">{CAT_EMOJIS[v.category] ?? '🎫'}</span>
-                <span className="absolute top-3 left-3 bg-white text-on-surface border-2 border-on-surface px-2.5 py-0.5 rounded-full font-extrabold text-[9px] uppercase tracking-widest neo-brutal-shadow-sm">
-                  {v.category || 'venue'}
-                </span>
-              </div>
-              <div className="p-4 flex flex-col justify-between flex-1 gap-3">
-                <div>
-                  <div className="font-extrabold text-base text-on-surface uppercase tracking-tight leading-snug">{v.name}</div>
-                  <div className="flex items-start gap-1.5 mt-1.5 text-on-surface-variant">
-                    <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <span className="text-xs font-semibold leading-snug">{v.address}</span>
+
+          <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 snap-x -mx-6 px-6 md:mx-0 md:px-0">
+            {TESTIMONIALS.map(t => (
+              <div key={t.name} className="min-w-[300px] sm:min-w-[340px] bg-white p-6 rounded-2xl shadow-md border border-slate-200/50 snap-center flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="flex">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current text-[#04210f]" />
+                    ))}
+                  </div>
+                  <p className="text-slate-600 text-sm italic font-sans leading-relaxed m-0">"{t.text}"</p>
+                </div>
+                <div className="pt-6 border-t border-slate-50 mt-4 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full ${t.bg} text-white flex items-center justify-center font-bold text-sm`}>
+                    {t.initials}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-[#04210f] text-sm m-0">{t.name}</h4>
+                    <p className="text-xs text-slate-400 font-medium m-0">{t.event}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-2 pt-2 border-t-2 border-dashed border-on-surface/15">
-                  <span className="font-mono text-[11px] font-bold text-on-surface-variant">
-                    {v.upcomingEvents > 0
-                      ? `${v.upcomingEvents} evento${Number(v.upcomingEvents) !== 1 ? 's' : ''}`
-                      : 'Sin eventos próximos'}
-                  </span>
-                  {v.priceFrom && (
-                    <span className="bg-on-surface text-primary-container font-mono font-bold text-xs px-2.5 py-1 rounded-lg">
-                      ${Number(v.priceFrom).toFixed(0)} MXN
-                    </span>
-                  )}
-                </div>
               </div>
-            </Link>
-          ))
-        )}
-      </div>
-
-      {/* ── Bento grid de beneficios (del demo) ── */}
-      <section className="px-5 md:px-8 py-16 bg-surface-container-low border-y-[3px] border-on-surface">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-12 text-center md:text-left">
-            <NeoBadge color="lime" className="mb-4">Beneficios exclusivos</NeoBadge>
-            <h2 className="font-extrabold text-3xl md:text-4xl text-on-surface mb-3 tracking-tight uppercase">
-              Estacionamiento inteligente,<br className="hidden md:block" /> sin complicaciones
-            </h2>
-            <p className="font-medium text-sm text-on-surface-variant max-w-xl md:mx-0 mx-auto">
-              Todo lo que necesitas para llegar a tu evento sin estrés.
-            </p>
+            ))}
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 1 — Ahorro de tiempo (col-span-2, blanco) */}
-            <div className="md:col-span-2 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
-              <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
-                <Clock className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
-              </div>
-              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Ahorro real de tiempo</h3>
-              <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed mb-5">
-                Nada de llegar 2 horas antes ni dar vueltas a la manzana. Tu lugar ya está apartado cuando llegas.
+        {/* Banner Socios */}
+        <section className="max-w-6xl mx-auto px-6 mb-24">
+          <div className="bg-[#04210f] rounded-3xl p-8 sm:p-12 text-center text-white relative overflow-hidden shadow-xl border border-emerald-950">
+            <div className="max-w-xl mx-auto space-y-6 relative z-10">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                ¿Tienes un estacionamiento cerca de un recinto?
+              </h2>
+              <p className="text-[#aecfb2] text-sm sm:text-base leading-relaxed">
+                Aumenta tus ventas, gestiona tus espacios de forma inteligente y digitaliza tus accesos con nuestra plataforma líder.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 bg-[#fff0f0] border-2 border-on-surface rounded-xl px-4 py-3">
-                  <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Tiempo promedio de búsqueda</p>
-                  <p className="font-mono font-bold text-lg text-[#991b1b] line-through">25 minutos</p>
-                </div>
-                <div className="flex-1 bg-primary-container border-2 border-on-surface rounded-xl px-4 py-3 neo-brutal-shadow-sm">
-                  <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface/60 mb-1">Con Estacionat</p>
-                  <p className="font-mono font-bold text-lg text-on-surface">¡0 minutos!</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 2 — Reserva anticipada (lime) */}
-            <div className="bg-primary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
-              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
-                <Calendar className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
-              </div>
-              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Reserva anticipada</h3>
-              <p className="text-[13px] font-medium text-on-surface/70 leading-relaxed">
-                Asegura tu lugar días o semanas antes del concierto, partido o festival.
-              </p>
-            </div>
-
-            {/* 3 — Boleto digital (blanco) */}
-            <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
-              <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
-                <Smartphone className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
-              </div>
-              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Boleto digital QR</h3>
-              <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed">
-                Tu acceso llega por WhatsApp. Muestra el QR al llegar y entra directo.
-              </p>
-            </div>
-
-            {/* 4 — Garantizado (col-span-2, lime) */}
-            <div className="md:col-span-2 bg-primary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6">
-              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
-                <ShieldCheck className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
-              </div>
-              <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Lugar 100% garantizado</h3>
-              <p className="text-[13px] font-medium text-on-surface/70 leading-relaxed">
-                Aunque el evento esté agotado y las calles llenas, tu espacio te espera.
-                Estacionamientos privados y verificados cerca de tu venue.
-              </p>
-            </div>
-
-            {/* 5 — Cancelación flexible (col-span-2, blanco) */}
-            <div className="md:col-span-2 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 flex flex-col sm:flex-row gap-5 items-start">
-              <div className="flex-1">
-                <div className="w-11 h-11 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
-                  <CalendarX className="w-5.5 h-5.5 text-primary" strokeWidth={2.5} />
-                </div>
-                <h3 className="font-extrabold text-lg text-on-surface uppercase tracking-tight mb-2">Cancelación flexible</h3>
-                <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed">
-                  ¿Cambiaron tus planes? Solicita tu reembolso hasta 6 horas antes del evento directamente desde tu boleto.
-                </p>
-              </div>
-              <div className="bg-[#fff0f0] border-2 border-on-surface rounded-xl px-5 py-4 flex-shrink-0 self-center">
-                <p className="font-mono font-bold text-2xl text-[#991b1b]">-6h</p>
-                <p className="font-extrabold text-[9px] uppercase tracking-widest text-on-surface-variant mt-1">Reembolso 100%</p>
-              </div>
-            </div>
-
-            {/* 6 — Pensión mensual (azul, próximamente) */}
-            <div className="bg-secondary-container border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-6 text-white">
-              <div className="w-11 h-11 rounded-lg bg-white border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-4">
-                <Building2 className="w-5.5 h-5.5 text-on-surface" strokeWidth={2.5} />
-              </div>
-              <h3 className="font-extrabold text-lg uppercase tracking-tight mb-2">Pensión mensual</h3>
-              <p className="text-[13px] font-medium text-white/75 leading-relaxed mb-4">
-                Un lugar fijo para tu día a día, cerca de tu casa u oficina.
-              </p>
-              <span className="inline-block bg-white text-on-surface border-2 border-on-surface px-3 py-1 rounded-full font-extrabold text-[10px] uppercase tracking-widest neo-brutal-shadow-sm">
-                Próximamente
-              </span>
+              <button
+                onClick={() => setIsBePartnerOpen(true)}
+                className="bg-[#DFF085] text-[#04210f] font-sans text-sm font-bold uppercase tracking-wider py-4 px-8 rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md"
+              >
+                Quiero ser socio
+              </button>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* ── CTA conductores ── */}
-      <section className="px-5 md:px-8 py-16">
-        <div className="max-w-3xl mx-auto bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-8 md:p-12 text-center relative overflow-hidden">
-          <Car className="absolute -right-6 -bottom-6 w-40 h-40 text-on-surface/5" strokeWidth={1.5} />
-          <div className="relative z-10">
-            <NeoBadge color="lime" className="mb-5">Comienza hoy</NeoBadge>
-            <h2 className="font-extrabold text-2xl md:text-4xl text-on-surface uppercase tracking-tight mb-3">
-              ¿Listo para estacionar de forma inteligente?
-            </h2>
-            <p className="font-medium text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed mb-8">
-              Encuentra tu venue, elige tu estacionamiento y recibe tu boleto QR en minutos.
-            </p>
-            <button
-              onClick={() => scrollTo('venues')}
-              className="bg-primary-container px-10 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface cursor-pointer"
-            >
-              Buscar estacionamiento
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA Socios / Host ── */}
-      <section id="socios" className="px-5 md:px-8 pb-20 scroll-mt-20">
-        <div className="max-w-4xl mx-auto bg-midnight border-[3px] border-on-surface rounded-xl shadow-[6px_6px_0px_0px_#FF6478] p-8 md:p-12 relative overflow-hidden">
-          <span className="absolute top-4 right-5 font-mono text-[10px] font-bold text-white/30 tracking-widest">ESTACIONAT SOCIOS</span>
-          <NeoBadge color="lime" className="mb-5">Para propietarios y valet</NeoBadge>
-          <h2 className="font-extrabold text-2xl md:text-4xl text-white uppercase tracking-tight mb-4 max-w-xl">
-            Aumenta las ventas de tu estacionamiento
-          </h2>
-          <p className="font-medium text-sm text-white/60 max-w-xl leading-relaxed mb-8">
-            Publica tus espacios para eventos masivos, controla la ocupación en tiempo real,
-            aprovecha precios dinámicos y valida accesos con nuestro escáner de boletos QR.
-          </p>
-          <a
-            href="mailto:soporte@estacionat.mx?subject=Quiero%20ser%20socio%20de%20Estacionat"
-            className="inline-block bg-primary-container px-9 py-4 rounded-xl border-[3px] border-on-surface neo-brutal-shadow active-press font-sans font-extrabold text-sm uppercase tracking-wider text-on-surface no-underline"
-          >
-            Quiero ser socio
-          </a>
-        </div>
-      </section>
-
-      <NeoFooter />
+      <Footer />
+      <BePartnerModal isOpen={isBePartnerOpen} onClose={() => setIsBePartnerOpen(false)} />
     </div>
   );
 }

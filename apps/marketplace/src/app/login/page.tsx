@@ -1,136 +1,247 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Smartphone, ShieldCheck, PartyPopper } from 'lucide-react';
-import NeoHeader from '@/components/ui/NeoHeader';
-import { NeoButton, NeoInput } from '@/components/ui/neo';
+import { MessageSquare, ArrowRight, ShieldCheck, Check } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
-type Step = 'phone' | 'otp' | 'name';
+type Step = 1 | 2 | 3;
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get('next') || '/';
-  const [step, setStep] = useState<Step>('phone');
+
+  const [step, setStep] = useState<Step>(1);
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [name, setName] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
+
+  useEffect(() => {
+    if (step === 2) setTimeout(() => inputRefs.current[0]?.focus(), 200);
+  }, [step]);
 
   const cleanPhone = () => `521${phone.replace(/\D/g, '').slice(-10)}`;
 
-  const sendOtp = async () => {
-    if (phone.replace(/\D/g,'').length < 10) { setError('Ingresa 10 dígitos'); return; }
-    setLoading(true); setError('');
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (phone.replace(/\D/g, '').length < 10) {
+      setError('Por favor ingresa un número de teléfono válido de 10 dígitos.');
+      return;
+    }
+    setError(''); setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/auth/send-otp`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: cleanPhone() }),
       });
       if (!res.ok) throw new Error();
-      setStep('otp');
-    } catch { setError('No se pudo enviar el código.'); } finally { setLoading(false); }
+      setOtp(Array(6).fill(''));
+      setStep(2);
+    } catch {
+      setError('No se pudo enviar el código. Intenta de nuevo.');
+    } finally { setLoading(false); }
   };
 
-  const verifyOtp = async () => {
-    if (otp.length !== 6) { setError('El código debe ser de 6 dígitos'); return; }
-    setLoading(true); setError('');
+  const handleOtpChange = (index: number, value: string) => {
+    if (isNaN(Number(value))) return;
+    const next = [...otp];
+    next[index] = value.slice(-1);
+    setOtp(next);
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) inputRefs.current[index - 1]?.focus();
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const fullCode = otp.join('');
+    if (fullCode.length !== 6) {
+      setError('Ingresa el código de 6 dígitos completo enviado a tu WhatsApp.');
+      return;
+    }
+    setError(''); setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/auth/verify-otp`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ phone: cleanPhone(), otp }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanPhone(), otp: fullCode }),
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
       localStorage.setItem('token', data.access_token || data.token);
-      data.isNewUser ? setStep('name') : router.push(nextUrl);
-    } catch { setError('Código incorrecto o expirado.'); } finally { setLoading(false); }
+      if (data.isNewUser) {
+        setIsNewUser(true);
+        setStep(3);
+      } else {
+        router.push(nextUrl);
+      }
+    } catch {
+      setError('Código incorrecto o expirado.');
+    } finally { setLoading(false); }
   };
 
-  const saveName = async () => {
-    if (name.trim()) {
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/users/me`, {
-          method:'PATCH',
-          headers:{'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('token')}`},
-          body: JSON.stringify({ name: name.trim() }),
-        });
-      } catch {}
+  const handleCompleteLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError('Por favor ingresa tu nombre completo.');
+      return;
     }
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/users/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+    } catch {}
     router.push(nextUrl);
   };
 
-  const steps: Record<Step,{Icon:typeof Smartphone;title:string;sub:string}> = {
-    phone: { Icon: Smartphone,  title:'Ingresa tu WhatsApp',      sub:'Te enviamos un código para confirmar tu número.' },
-    otp:   { Icon: ShieldCheck, title:'Código de verificación',   sub:`Enviamos un código de 6 dígitos a +52 ${phone}` },
-    name:  { Icon: PartyPopper, title:'¡Bienvenido!',             sub:'¿Cómo te llamas? Aparecerá en tu boleto.' },
-  };
-  const cur = steps[step];
-
   return (
     <div className="min-h-screen bg-background font-sans flex flex-col">
-      <NeoHeader showTickets={false} />
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30 z-0" />
+      <Navbar showExplore={false} />
+      <div className="flex-1 py-16 px-6 flex flex-col justify-center items-center">
+        <div className="w-full max-w-md space-y-8">
 
-        <div className="relative z-10 w-full max-w-md bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-7 md:p-10 [animation:fadeUp_.4s_ease_both]">
-          {/* Indicador de pasos */}
-          <div className="flex justify-center gap-2 mb-7">
-            {(['phone','otp','name'] as Step[]).map(s => (
-              <div key={s} className={`h-2 rounded-full border-2 border-on-surface transition-all duration-300 ${s===step ? 'w-8 bg-primary-container' : 'w-2 bg-surface-container-high'}`} />
+          {/* Indicador de progreso índigo */}
+          <div className="flex items-center justify-between px-6">
+            {([1, 2, 3] as Step[]).map((s, i) => (
+              <div key={s} className="contents">
+                <div className="flex items-center gap-2">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-bold transition-all ${
+                    step >= s ? 'bg-[#383497] text-white' : 'bg-slate-200 text-slate-500'
+                  }`}>
+                    {step > s ? <Check className="w-3.5 h-3.5" /> : s}
+                  </div>
+                  <span className={`text-[10px] font-mono uppercase tracking-wider font-bold transition-all ${
+                    step >= s ? 'text-[#383497]' : 'text-slate-400'
+                  }`}>
+                    {s === 1 ? 'Teléfono' : s === 2 ? 'Código' : 'Nombre'}
+                  </span>
+                </div>
+                {i < 2 && (
+                  <div className="flex-1 h-[2px] bg-slate-200 mx-3 relative">
+                    <div className="absolute top-0 left-0 h-full bg-[#383497] transition-all duration-300"
+                      style={{ width: step > s ? '100%' : '0%' }} />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
 
-          <div className="w-12 h-12 rounded-lg bg-primary-container border-2 border-on-surface flex items-center justify-center neo-brutal-shadow-sm mb-5">
-            <cur.Icon className="w-6 h-6 text-primary" strokeWidth={2.5} />
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 space-y-6">
+
+            {step === 1 && (
+              <form onSubmit={handleSendOtp} className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl md:text-2xl font-extrabold text-[#04210f] tracking-tight">Inicia sesión con WhatsApp</h2>
+                  <p className="text-slate-500 text-xs">Te enviaremos un código de seguridad de un solo uso por WhatsApp.</p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-mono text-slate-400 uppercase">Número celular</label>
+                  <div className="relative flex items-center">
+                    <div className="absolute left-4 font-mono text-sm text-slate-400 font-bold border-r border-slate-200 pr-3.5 select-none">+52</div>
+                    <input
+                      type="tel" required maxLength={10} placeholder="55 1234 5678"
+                      value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl pl-16 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#383497]/15 focus:border-[#383497] font-mono tracking-widest transition-all"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {error && <p className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3.5 rounded-xl text-center">{error}</p>}
+
+                <button type="submit" disabled={loading}
+                  className="w-full bg-[#383497] hover:bg-[#2b278c] disabled:bg-slate-200 text-white py-4 px-6 rounded-2xl font-sans text-sm font-black uppercase tracking-wider shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                  <MessageSquare className="w-4 h-4 text-indigo-200" />
+                  <span>{loading ? 'Enviando...' : 'Enviar código por WhatsApp'}</span>
+                </button>
+              </form>
+            )}
+
+            {step === 2 && (
+              <form onSubmit={handleVerifyOtp} className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl md:text-2xl font-extrabold text-[#04210f] tracking-tight">Verifica el código</h2>
+                  <p className="text-slate-500 text-xs">
+                    Ingresa el código enviado al <span className="font-bold text-[#383497] font-mono">+52 {phone}</span>
+                  </p>
+                </div>
+
+                <div className="flex justify-between gap-2 max-w-[320px] mx-auto py-2">
+                  {otp.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={el => { inputRefs.current[idx] = el; }}
+                      type="text" required maxLength={1} value={digit}
+                      onChange={e => handleOtpChange(idx, e.target.value)}
+                      onKeyDown={e => handleKeyDown(idx, e)}
+                      className="w-11 h-14 bg-slate-50 border-2 border-slate-200 text-center font-mono text-xl font-bold text-slate-800 rounded-xl focus:outline-none focus:border-[#383497] focus:ring-2 focus:ring-[#383497]/15 transition-all"
+                    />
+                  ))}
+                </div>
+
+                {error && <p className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3.5 rounded-xl text-center">{error}</p>}
+
+                <div className="space-y-3">
+                  <button type="submit" disabled={loading}
+                    className="w-full bg-[#383497] hover:bg-[#2b278c] disabled:bg-slate-200 text-white py-4 px-6 rounded-2xl font-sans text-sm font-black uppercase tracking-wider shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <span>{loading ? 'Verificando...' : 'Verificar código'}</span>
+                    {!loading && <ArrowRight className="w-4 h-4" />}
+                  </button>
+                  <button type="button" onClick={() => { setStep(1); setOtp(Array(6).fill('')); setError(''); }}
+                    className="w-full text-slate-400 hover:text-[#383497] text-xs font-mono uppercase tracking-wider text-center bg-transparent border-none cursor-pointer py-1">
+                    ← Cambiar teléfono
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {step === 3 && (
+              <form onSubmit={handleCompleteLogin} className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl md:text-2xl font-extrabold text-[#04210f] tracking-tight">¡Bienvenido!</h2>
+                  <p className="text-slate-500 text-xs">Completa tu registro ingresando tu nombre para poder emitir tus boletos.</p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-mono text-slate-400 uppercase">Nombre completo</label>
+                  <input
+                    type="text" required value={name} onChange={e => setName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3.5 focus:outline-none focus:ring-2 focus:ring-[#383497]/15 focus:border-[#383497] transition-all"
+                    placeholder="Ej. Sofía Valenzuela Méndez" autoFocus
+                  />
+                </div>
+
+                {error && <p className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3.5 rounded-xl text-center">{error}</p>}
+
+                <button type="submit"
+                  className="w-full bg-[#383497] hover:bg-[#2b278c] text-white py-4 px-6 rounded-2xl font-sans text-sm font-black uppercase tracking-wider shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                  <span>Continuar</span>
+                  <Check className="w-4 h-4" />
+                </button>
+              </form>
+            )}
+
+            <div className="border-t border-slate-100 pt-5 text-center text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
+              <span>Al continuar, aceptas nuestros </span>
+              <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-[#383497] hover:underline font-bold">Términos de Servicio</a>
+              <span> y nuestro </span>
+              <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-[#383497] hover:underline font-bold">Aviso de Privacidad</a>
+              <span>. Tus datos de acceso están protegidos por SSL de 256 bits.</span>
+            </div>
           </div>
-          <h1 className="font-extrabold text-xl md:text-2xl uppercase tracking-tight text-on-surface mb-1.5">{cur.title}</h1>
-          <p className="text-[13px] font-medium text-on-surface-variant leading-relaxed mb-7">{cur.sub}</p>
 
-          {step === 'phone' && (
-            <>
-              <div className="flex gap-2.5">
-                <div className="px-4 py-3.5 bg-surface-container-high border-[3px] border-on-surface rounded-xl font-mono font-bold text-sm text-on-surface flex-shrink-0 flex items-center">+52</div>
-                <NeoInput value={phone} onChange={e=>setPhone(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendOtp()} placeholder="55 1234 5678" type="tel" maxLength={12} autoFocus className="font-mono" />
-              </div>
-              {error && <div className="mt-3 bg-error-container border-2 border-error rounded-lg px-3 py-2 text-error text-xs font-bold">{error}</div>}
-              <div className="flex flex-col gap-2.5 mt-5">
-                <NeoButton onClick={sendOtp} disabled={loading}>{loading?'Enviando...':'Enviar código por WhatsApp 💬'}</NeoButton>
-              </div>
-            </>
-          )}
-
-          {step === 'otp' && (
-            <>
-              <input
-                value={otp}
-                onChange={e=>setOtp(e.target.value.replace(/\D/g,'').slice(0,6))}
-                onKeyDown={e=>e.key==='Enter'&&verifyOtp()}
-                placeholder="——————" type="tel" maxLength={6} autoFocus
-                className="w-full bg-white border-[3px] border-on-surface rounded-xl px-4 py-4 font-mono font-bold text-2xl md:text-3xl text-center tracking-[10px] text-on-surface placeholder:text-on-surface/25 focus:outline-none focus:neo-brutal-shadow transition-shadow"
-              />
-              {error && <div className="mt-3 bg-error-container border-2 border-error rounded-lg px-3 py-2 text-error text-xs font-bold">{error}</div>}
-              <div className="flex flex-col gap-2.5 mt-5">
-                <NeoButton onClick={verifyOtp} disabled={loading||otp.length!==6}>{loading?'Verificando...':'Confirmar código'}</NeoButton>
-                <NeoButton variant="secondary" onClick={()=>{setStep('phone');setOtp('');setError('');}}>Cambiar número</NeoButton>
-              </div>
-            </>
-          )}
-
-          {step === 'name' && (
-            <>
-              <NeoInput value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&saveName()} placeholder="Tu nombre" autoFocus />
-              <div className="flex flex-col gap-2.5 mt-5">
-                <NeoButton onClick={saveName}>{name.trim()?'Continuar →':'Omitir →'}</NeoButton>
-              </div>
-            </>
-          )}
-
-          <p className="text-[11px] text-on-surface-variant/70 text-center mt-6 leading-relaxed font-medium">
-            Al continuar aceptas nuestros <Link href="/terminos" className="underline">Términos</Link> y <Link href="/privacidad" className="underline">Privacidad</Link>.
-          </p>
+          <div className="flex justify-center items-center gap-1.5 text-slate-400 text-xs">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Acceso autenticado y verificado por WhatsApp</span>
+          </div>
         </div>
       </div>
     </div>

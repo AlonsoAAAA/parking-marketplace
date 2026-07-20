@@ -1,83 +1,54 @@
 @import 'tailwindcss';
 
-/* ─── Tokens del rediseño neo-brutalista (propuesta estacionat) ─────────────── */
+/* ─── Tokens EstacionaT (nuevo diseño: verde-oscuro / lima / índigo / salvia) ── */
 @theme {
   /* Fuentes cargadas vía next/font en layout.tsx */
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 
-  --color-primary-container: #FF6478;
-  --color-on-primary: #ffffff;
-  --color-background: #f8f9fa;
-  --color-surface: #f8f9fa;
-  --color-primary-fixed: #FF5A70;
-  --color-surface-dim: #d9dadb;
-  --color-primary: #8E1230;
-  --color-on-surface: #191c1d;
-  --color-inverse-primary: #E62E4D;
-  --color-on-surface-variant: #444933;
-  --color-surface-container-high: #e7e8e9;
-  --color-on-tertiary-fixed-variant: #5300cd;
-  --color-tertiary-fixed-dim: #cfbdff;
-  --color-surface-variant: #e1e3e4;
-  --color-tertiary-fixed: #e8ddff;
-  --color-surface-container-lowest: #ffffff;
-  --color-on-primary-fixed-variant: #3c4d00;
-  --color-on-primary-fixed: #161e00;
-  --color-secondary-container: #0070ea;
-  --color-tertiary-container: #f2e9ff;
-  --color-surface-container-highest: #e1e3e4;
-  --color-on-background: #191c1d;
-  --color-primary-fixed-dim: #E62E4D;
-  --color-on-secondary-fixed-variant: #004493;
-  --color-on-primary-container: #8E1230;
-  --color-secondary: #0059bb;
-  --color-on-tertiary-fixed: #22005d;
-  --color-surface-container: #edeeef;
-  --color-outline: #747a60;
-  --color-tertiary: #6d23f9;
-  --color-on-secondary-fixed: #001a41;
-  --color-surface-container-low: #f3f4f5;
-  --color-secondary-fixed-dim: #adc7ff;
+  --color-brand-green-dark: #04210f;
+  --color-brand-green-medium: #1a3622;
+  --color-brand-green-light: #aecfb2;
+  --color-brand-lime: #DFF085;
+  --color-brand-lime-dark: #c9da70;
+  --color-brand-indigo: #383497;
+  --color-brand-indigo-hover: #2b278c;
+  --color-brand-indigo-light: #c3c0ff;
+
+  --color-background: #FAFAFA;
+
+  /* Estados de boleto/reserva */
+  --color-status-paid-bg: #EAF4EB;
+  --color-status-paid-text: #2F7A3E;
+  --color-status-pending-bg: #FFF9E6;
+  --color-status-pending-text: #B28200;
+  --color-status-used-bg: #E6F5F2;
+  --color-status-used-text: #007E75;
+  --color-status-cancelled-bg: #FEEBEA;
+  --color-status-cancelled-text: #D32F2F;
+
   --color-error: #ba1a1a;
-  --color-surface-tint: #8E1230;
-  --color-on-error: #ffffff;
-  --color-on-tertiary-container: #793cff;
-  --color-secondary-fixed: #d8e2ff;
-  --color-outline-variant: #c4c9ac;
-  --color-surface-bright: #f8f9fa;
-  --color-inverse-surface: #2e3132;
-  --color-on-secondary: #ffffff;
   --color-error-container: #ffdad6;
-  --color-on-secondary-container: #fefcff;
-  --color-inverse-on-surface: #f0f1f2;
-  --color-on-tertiary: #ffffff;
-  --color-midnight: #191c1d;
 
   --border-radius-DEFAULT: 1rem;
-  --border-radius-lg: 2rem;
-  --border-radius-xl: 3rem;
+  --border-radius-lg: 1.5rem;
+  --border-radius-xl: 2rem;
   --border-radius-full: 9999px;
 }
 
-/* ─── Utilidades neo-brutalistas ────────────────────────────────────────────── */
-.neo-brutal-shadow { box-shadow: 4px 4px 0px 0px #191c1d; }
-.neo-brutal-shadow-sm { box-shadow: 2px 2px 0px 0px #191c1d; }
-.neo-shadow-lg { box-shadow: 6px 6px 0px 0px #191c1d; }
-.neo-shadow-xl { box-shadow: 8px 8px 0px 0px #191c1d; }
-
-.active-press { transition: all 0.1s ease; }
-.active-press:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px 0px #191c1d; }
-
-.qr-border { border: 3px dashed #161e00; }
-.stroke-border { border-width: 3px; border-color: #191c1d; }
-
+/* ─── Utilidades ─────────────────────────────────────────────────────────────── */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ─── Estilos globales existentes (páginas aún no migradas) ─────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
-html, body { background: var(--color-background, #f8f9fa); font-family: var(--font-sans); color: #191c1d; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.animate-marquee { display: flex; width: max-content; animation: marquee 30s linear infinite; }
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── Estilos globales base ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--color-background); font-family: var(--font-sans); color: #1e293b; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
 a { color: inherit; }

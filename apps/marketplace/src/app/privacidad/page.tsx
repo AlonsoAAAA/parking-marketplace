@@ -1,25 +1,25 @@
-import NeoHeader from '@/components/ui/NeoHeader';
-import NeoFooter from '@/components/ui/NeoFooter';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export const metadata = {
   title: 'Aviso de Privacidad · Estacionat',
 };
 
-const SECTION = 'bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow p-5 md:p-6 mb-4';
-const H = 'font-extrabold text-[11px] uppercase tracking-[2px] text-on-surface bg-primary-container inline-block px-3 py-1 rounded-full border-2 border-on-surface neo-brutal-shadow-sm mb-4';
-const P = 'text-[13px] font-medium text-on-surface leading-[1.75] mb-3 last:mb-0';
+const SECTION = 'bg-white border border-slate-100 rounded-2xl shadow-sm p-5 md:p-6 mb-4';
+const H = 'text-[11px] font-mono font-bold uppercase tracking-[2px] text-[#04210f] bg-[#DFF085] inline-block px-3 py-1 rounded-full mb-4';
+const P = 'text-[13px] text-slate-700 leading-[1.75] mb-3 last:mb-0';
 
 export default function PrivacidadPage() {
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <NeoHeader showTickets={false} />
+    <div className="min-h-screen bg-background font-sans flex flex-col">
+      <Navbar showExplore={false} />
 
-      <div className="max-w-3xl mx-auto px-5 md:px-8 pt-10 pb-20">
-        <p className="font-extrabold text-[10px] tracking-[3px] uppercase text-on-surface-variant mb-3">Aviso de Privacidad</p>
-        <h1 className="font-extrabold text-2xl md:text-3xl uppercase tracking-tight text-on-surface leading-tight mb-2">
+      <main className="max-w-3xl mx-auto px-5 md:px-8 pt-28 pb-20 flex-grow w-full">
+        <p className="text-[10px] font-mono font-bold tracking-[3px] uppercase text-slate-400 mb-3">Aviso de Privacidad</p>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-[#04210f] tracking-tight leading-tight mb-2">
           Aviso de Privacidad
         </h1>
-        <p className="font-mono text-[11px] font-bold text-on-surface-variant mb-9">Versión 1.0 · Ciudad de México, 2026</p>
+        <p className="font-mono text-[11px] font-bold text-slate-400 mb-9">Versión 1.0 · Ciudad de México, 2026</p>
 
         <div className={SECTION}>
           <p className={H}>Responsable del tratamiento</p>
@@ -98,13 +98,13 @@ export default function PrivacidadPage() {
           </p>
         </div>
 
-        <p className="font-mono text-[11px] font-bold text-on-surface-variant text-center mt-8 leading-[1.8]">
+        <p className="font-mono text-[11px] font-bold text-slate-400 text-center mt-8 leading-[1.8]">
           Versión 1.0 · Ciudad de México, 2026<br />
           En términos de la LFPDPPP y su Reglamento
         </p>
-      </div>
+      </main>
 
-      <NeoFooter />
+      <Footer />
     </div>
   );
 }

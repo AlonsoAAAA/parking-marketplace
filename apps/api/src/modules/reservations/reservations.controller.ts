@@ -12,16 +12,25 @@ import {
 } from '@nestjs/common';
 import {
   IsString, IsNotEmpty, IsOptional, IsArray,
-  IsInt, Min, Max, MaxLength,
+  IsInt, Min, Max, MaxLength, ArrayMaxSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ReservationsService } from './reservations.service';
 import { JwtGuard, RolesGuard } from '../auth/guards/guards';
 import { Roles } from '../auth/decorators/roles.decorator';
 
+// Máximo 5 fotos, ~3.5MB en base64 c/u (imagen comprimida ~2.5MB antes de codificar)
+const MAX_EVIDENCE_PHOTOS = 5;
+const MAX_EVIDENCE_PHOTO_LENGTH = 3_500_000;
+
 class CreateRefundRequestDto {
   @IsString() @IsNotEmpty() @MaxLength(500) reason: string;
-  @IsOptional() @IsArray() evidencePhotos?: string[];
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_EVIDENCE_PHOTOS)
+  @IsString({ each: true })
+  @MaxLength(MAX_EVIDENCE_PHOTO_LENGTH, { each: true })
+  evidencePhotos?: string[];
 }
 
 class CreateReservationDto {
@@ -102,16 +111,18 @@ export class ReservationsController {
    * La categoría NUNCA se incluye en la respuesta al cliente.
    */
   @Get(':id/pricing')
+  @UseGuards(JwtGuard)
   async getPricing(
     @Param('id') id: string,
+    @Req() req: any,
     @Query('marca')   marca?:   string,
     @Query('modelo')  modelo?:  string,
     @Query('version') version?: string,
   ) {
     if (marca && modelo) {
-      return this.reservationsService.getPrecioVehiculo(id, marca, modelo, version);
+      return this.reservationsService.getPrecioVehiculo(id, req.user.id, marca, modelo, version);
     }
-    return this.reservationsService.getPricing(id);
+    return this.reservationsService.getPricing(id, req.user.id);
   }
 
   @Get(':id/ticket')
