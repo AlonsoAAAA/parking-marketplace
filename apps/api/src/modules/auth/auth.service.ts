@@ -105,7 +105,7 @@ export class AuthService {
 
     const token = this.jwtService.sign(
       { sub: user.id, phone: user.phone, role: user.role },
-      { expiresIn: process.env.JWT_EXPIRES_IN ?? '30d' },
+      { expiresIn: process.env.JWT_EXPIRES_IN ?? '7d' },
     );
 
     return { access_token: token, token, isNewUser };
@@ -132,7 +132,10 @@ export class AuthService {
       waPhone = digits;
     }
 
-    console.log(`📱 OTP para +${waPhone}: ${otp}`);
+    // El OTP en texto plano solo se loguea en desarrollo — nunca en producción.
+    if (this.config.get('NODE_ENV') === 'development') {
+      console.log(`📱 OTP para +${waPhone}: ${otp}`);
+    }
 
     if (!accountSid || !authToken || !fromNumber) {
       console.log('⚠️  Twilio no configurado — OTP solo en consola');

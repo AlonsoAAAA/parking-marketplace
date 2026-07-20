@@ -28,9 +28,10 @@ async function bootstrap() {
   );
 
   // ── Body parser con límite y rawBody para Stripe webhooks ───────────────────
+  // 10mb cubre hasta 5 fotos de evidencia de reembolso en base64 (~3.5mb c/u máx).
   app.use(
     express.json({
-      limit: '25mb',
+      limit: '10mb',
       verify: (req: any, _res, buf) => {
         req.rawBody = buf;
       },
