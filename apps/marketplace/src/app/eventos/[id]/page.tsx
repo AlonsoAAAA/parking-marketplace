@@ -2,15 +2,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { MapPin, Footprints, CheckCircle2, CalendarDays, Clock } from 'lucide-react';
-import NeoHeader from '@/components/ui/NeoHeader';
-import { NeoButton, NeoSpinner, NeoBadge } from '@/components/ui/neo';
+import { MapPin, CalendarDays, Clock, CheckCircle2, Footprints } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 const EventMap = dynamic(() => import('@/components/EventMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
-      <div className="w-6 h-6 border-[3px] border-on-surface border-t-primary-container rounded-full animate-spin" />
+    <div className="w-full h-full bg-slate-900 flex items-center justify-center">
+      <div className="w-6 h-6 border-[3px] border-white/20 border-t-[#DFF085] rounded-full animate-spin" />
     </div>
   ),
 });
@@ -92,8 +91,6 @@ function computeParkingPrices(
   return result;
 }
 
-const EMOJIS = ['🎵','⚽','🎧','🎤','🎸'];
-
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -105,9 +102,6 @@ export default function EventDetailPage() {
   const [pricingCfg, setPricingCfg] = useState<PricingConfig>({
     marginMin: 15, marginMax: 60, weightDistance: 0.40, weightAnticipation: 0.35, weightDemand: 0.25,
   });
-
-  const idx = Number(String(params.id).replace(/\D/g,'').slice(-1) || 0) % EMOJIS.length;
-  const emoji = EMOJIS[idx];
 
   useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL || "";
@@ -136,8 +130,11 @@ export default function EventDetailPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-background font-sans">
-      <NeoHeader back="back" />
-      <NeoSpinner label="Cargando evento..." />
+      <Navbar back="back" showExplore={false} />
+      <div className="pt-32 flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-[3px] border-slate-200 border-t-[#04210f] rounded-full animate-spin" />
+        <p className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">Cargando evento...</p>
+      </div>
     </div>
   );
   if (!event) return null;
@@ -150,222 +147,201 @@ export default function EventDetailPage() {
     : Number(event.price);
   const minWalk = parkings.length ? Math.min(...parkings.map(p => p.walkMinutes)) : null;
 
-  const sectionTitle = 'font-extrabold text-[11px] uppercase tracking-[2px] text-on-surface-variant mb-3 mt-8';
+  const selectedParking = parkings.find(p => p.id === selected) || null;
+  const selectedPrices = selectedParking ? computeParkingPrices(selectedParking, event.startsAt, pricingCfg) : {};
+  const selectedMinPrice = Object.values(selectedPrices).length ? Math.min(...Object.values(selectedPrices)) : 0;
 
   return (
-    <div className="min-h-screen bg-background font-sans pb-28 lg:pb-0">
-      <NeoHeader back="back" />
+    <div className="bg-background min-h-screen pb-32 font-sans">
+      <Navbar back="back" showExplore={false} />
 
-      {/* Hero */}
-      <div className="max-w-6xl mx-auto px-5 md:px-8 pt-8">
-        <div className="relative overflow-hidden rounded-xl border-[3px] border-on-surface neo-shadow-lg bg-primary-container h-52 md:h-72 flex items-end">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(25,28,29,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(25,28,29,.06)_1px,transparent_1px)] bg-[size:2.5rem_2.5rem]" />
-          <span className="absolute top-1/2 right-8 -translate-y-1/2 text-7xl md:text-8xl">{emoji}</span>
-          <div className="relative z-10 p-5 md:p-8">
-            <NeoBadge color="dark" className="mb-3">{event.category || 'Evento'}</NeoBadge>
-            <h1 className="font-extrabold text-2xl md:text-4xl text-on-surface uppercase tracking-tight leading-tight max-w-xl">{event.name}</h1>
-            <div className="flex items-center gap-1.5 mt-2 text-on-surface/70">
-              <MapPin className="w-4 h-4" strokeWidth={2.5} />
-              <span className="text-sm font-bold">{event.venueName}</span>
+      {/* Hero oscuro */}
+      <div className="bg-[#04210f] text-white pt-28 pb-16 px-6 relative overflow-hidden">
+        <div className="max-w-5xl mx-auto space-y-6 relative z-10">
+          <div className="space-y-3">
+            <span className="bg-[#DFF085] text-[#04210f] text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1 rounded-full">
+              {event.category || 'Evento'}
+            </span>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+              {event.name}
+            </h1>
+            <p className="text-[#DFF085] text-sm md:text-base font-semibold flex items-center gap-1.5 font-mono">
+              <MapPin className="w-4 h-4" />
+              <span>{event.venueName} • CDMX</span>
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 max-w-2xl pt-6 border-t border-emerald-950 text-center">
+            <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10">
+              <span className="block text-[10px] font-mono uppercase tracking-wider text-slate-400">Lugares libres</span>
+              <span className="text-xl md:text-2xl font-black text-[#DFF085] block mt-1 font-mono">{avail}</span>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10">
+              <span className="block text-[10px] font-mono uppercase tracking-wider text-slate-400">Precio desde</span>
+              <span className="text-xl md:text-2xl font-black text-[#DFF085] block mt-1 font-mono">${minPrice} MXN</span>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10">
+              <span className="block text-[10px] font-mono uppercase tracking-wider text-slate-400">Min. caminando</span>
+              <span className="text-xl md:text-2xl font-black text-[#DFF085] block mt-1 font-mono">{minWalk != null ? `${minWalk} min` : '—'}</span>
             </div>
           </div>
         </div>
-
-        {/* Stats strip */}
-        <div className="grid grid-cols-3 mt-5 bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden">
-          {[
-            [avail.toString(), 'lugares'],
-            [`$${minPrice}`, 'desde MXN'],
-            [minWalk != null ? `${minWalk} min` : '—', 'al venue'],
-          ].map(([v,l],i) => (
-            <div key={i} className={`py-4 text-center ${i < 2 ? 'border-r-[3px] border-on-surface' : ''}`}>
-              <div className="font-mono font-bold text-xl md:text-2xl text-on-surface">{v}</div>
-              <div className="font-extrabold text-[9px] tracking-[1.5px] uppercase text-on-surface-variant mt-1">{l}</div>
-            </div>
-          ))}
-        </div>
+        <div className="absolute -right-20 top-0 w-80 h-80 bg-[#DFF085]/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* Grid desktop 2-col */}
-      <div className="max-w-6xl mx-auto px-5 md:px-8 lg:grid lg:grid-cols-[1fr_360px] lg:gap-8 lg:items-start pb-16">
-        {/* LEFT */}
-        <div>
-          {/* Información */}
-          <p className={sectionTitle}>Información</p>
-          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden">
+      <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Info + lista de parkings */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             {[
               [CalendarDays, 'Fecha', new Date(event.startsAt).toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})],
               [Clock, 'Hora', new Date(event.startsAt).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})+' hrs'],
               [MapPin, 'Venue', event.venueName+', CDMX'],
             ].map(([Icon, k, v]: any, i) => (
-              <div key={k} className={`flex items-center gap-3 px-4 py-3.5 ${i < 2 ? 'border-b-2 border-dashed border-on-surface/15' : ''}`}>
-                <Icon className="w-4 h-4 text-on-surface flex-shrink-0" strokeWidth={2.5} />
-                <span className="font-extrabold text-[10px] uppercase tracking-widest text-on-surface-variant w-14 flex-shrink-0">{k}</span>
-                <span className="text-sm font-semibold text-on-surface capitalize">{v}</span>
+              <div key={k} className={`flex items-center gap-3 px-5 py-3.5 ${i < 2 ? 'border-b border-slate-100' : ''}`}>
+                <Icon className="w-4 h-4 text-[#383497] flex-shrink-0" />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 w-14 flex-shrink-0">{k}</span>
+                <span className="text-sm font-semibold text-slate-800 capitalize">{v}</span>
               </div>
             ))}
           </div>
 
-          {/* Mapa */}
-          {event.lat && parkings.length > 0 && (
-            <>
-              <p className={sectionTitle}>Mapa de estacionamientos</p>
-              <div className="w-full h-64 md:h-80 lg:h-96 rounded-xl border-[3px] border-on-surface neo-brutal-shadow overflow-hidden">
-                <EventMap
-                  venueLat={event.lat} venueLng={event.lng!}
-                  parkings={parkings} selected={selected}
-                  onSelect={handleSelect}
-                />
-              </div>
-            </>
-          )}
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-[#04210f] tracking-tight">Estacionamientos disponibles</h2>
+            <p className="text-slate-500 text-xs">Selecciona un lote para ver ubicación exacta y tarifas.</p>
+          </div>
 
-          {/* Lista de parkings */}
-          {parkings.length > 0 && (
-            <>
-              <p className={sectionTitle}>Elige tu estacionamiento</p>
-              <div className="flex flex-col gap-3">
-                {parkings.map(pk => {
-                  const finalPrices = computeParkingPrices(pk, event.startsAt, pricingCfg);
-                  const minP = Object.values(finalPrices).length
-                    ? Math.min(...Object.values(finalPrices))
-                    : 0;
-                  const isSel = selected === pk.id;
-                  return (
-                    <div key={pk.id} id={`pk-${pk.id}`}
-                      onClick={() => setSelected(pk.id)}
-                      className={`rounded-xl p-4 cursor-pointer transition-all duration-150 border-[3px] border-on-surface ${
-                        isSel
-                          ? 'bg-primary-container neo-brutal-shadow'
-                          : 'bg-white hover:bg-surface-container neo-brutal-shadow-sm'
-                      }`}>
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-extrabold text-sm text-on-surface uppercase tracking-tight flex items-center gap-1.5">
-                            {isSel && <CheckCircle2 className="w-4 h-4 flex-shrink-0" strokeWidth={2.5} />}
-                            {pk.name}
-                          </div>
-                          <div className="text-xs font-semibold text-on-surface-variant mt-1">{pk.address}</div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="font-mono font-bold text-base text-on-surface">desde ${minP}</div>
-                          <div className={`font-mono text-[10px] font-bold mt-0.5 ${pk.available <= 15 ? 'text-[#9a3412]' : 'text-on-surface-variant'}`}>
-                            {pk.available} lugares · IVA inc.
-                          </div>
-                        </div>
+          <div className="space-y-4">
+            {parkings.map(pk => {
+              const finalPrices = computeParkingPrices(pk, event.startsAt, pricingCfg);
+              const minP = Object.values(finalPrices).length ? Math.min(...Object.values(finalPrices)) : 0;
+              const isSelected = selected === pk.id;
+              return (
+                <div
+                  key={pk.id}
+                  id={`pk-${pk.id}`}
+                  onClick={() => setSelected(pk.id)}
+                  className={`bg-white rounded-2xl border-2 p-5 cursor-pointer transition-all shadow-sm ${
+                    isSelected ? 'border-[#383497] ring-2 ring-[#383497]/10' : 'border-slate-100 hover:border-slate-200'
+                  }`}
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-slate-900 text-base m-0 flex items-center gap-1.5">
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-[#383497]" />}
+                          {pk.name}
+                        </h3>
+                        {pk.distanceMeters <= 200 && (
+                          <span className="bg-[#aecfb2]/40 text-[#04210f] text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase">
+                            Más cercano
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between gap-2 mt-3 flex-wrap">
-                        <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-on-surface-variant">
-                          <Footprints className="w-3.5 h-3.5" strokeWidth={2.5} />
-                          {pk.walkMinutes} min · {pk.distanceMeters} m
-                        </div>
-                        <div className="flex gap-1.5 flex-wrap">
-                          {Object.entries(finalPrices).map(([type, price]) => (
-                            <span key={type} className="bg-white border-2 border-on-surface rounded-lg px-2 py-0.5 font-mono text-[10px] font-bold text-on-surface whitespace-nowrap">
-                              {VEHICLE_LABELS[type] ?? type} ${price}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                      <p className="text-xs text-slate-500 flex items-center gap-1 m-0">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-800" />
+                        <span>{pk.address}</span>
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs text-slate-400 font-mono m-0">desde</p>
+                      <p className="text-lg font-mono font-bold text-[#383497] m-0">${minP} MXN</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100 text-xs text-slate-600">
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-mono uppercase m-0">Distancia</p>
+                      <p className="font-bold text-slate-800 mt-0.5 m-0">{pk.distanceMeters} m</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-mono uppercase m-0">Caminando</p>
+                      <p className="font-bold text-slate-800 mt-0.5 m-0">{pk.walkMinutes} min</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-mono uppercase m-0">Disponibilidad</p>
+                      <p className={`font-bold mt-0.5 m-0 ${pk.available <= 15 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                        {pk.available} libres
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3.5 bg-slate-50 rounded-xl p-3 flex gap-2 flex-wrap border border-slate-100">
+                    {Object.entries(finalPrices).map(([type, price]) => (
+                      <div key={type} className="flex-1 min-w-[70px] text-center text-[11px] font-mono">
+                        <span className="text-slate-400 block uppercase">{VEHICLE_LABELS[type] ?? type}</span>
+                        <span className="font-semibold text-slate-700">${price}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           {/* Incluye */}
-          <p className={sectionTitle}>Incluye</p>
-          <div className="bg-white border-[3px] border-on-surface rounded-xl neo-brutal-shadow overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             {['Un lugar garantizado','Código QR de acceso único','Boleto por WhatsApp','Sin cobros al llegar'].map((item, i, arr) => (
-              <div key={item} className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold text-on-surface ${i < arr.length - 1 ? 'border-b-2 border-dashed border-on-surface/15' : ''}`}>
-                <div className="w-5 h-5 bg-primary-container border-2 border-on-surface rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-                    <path d="M1 3.5L3 5.5L8 1" stroke="#191c1d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
+              <div key={item} className={`flex items-center gap-3 px-5 py-3 text-sm font-semibold text-slate-700 ${i < arr.length - 1 ? 'border-b border-slate-100' : ''}`}>
+                <CheckCircle2 className="w-4 h-4 text-[#383497] flex-shrink-0" />
                 {item}
               </div>
             ))}
           </div>
 
-          {error && <div className="mt-4 bg-error-container border-2 border-error rounded-lg px-3 py-2 text-error text-xs font-bold">{error}</div>}
+          {error && <div className="bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 text-rose-700 text-xs font-bold">{error}</div>}
         </div>
 
-        {/* RIGHT: sidebar CTA — desktop only */}
-        <div className="hidden lg:block">
-          {selected && (() => {
-            const pk = parkings.find(p => p.id === selected);
-            if (!pk) return null;
-            const finalPrices = computeParkingPrices(pk, event.startsAt, pricingCfg);
-            const minP = Object.values(finalPrices).length ? Math.min(...Object.values(finalPrices)) : 0;
-            return (
-              <div className="bg-white border-[3px] border-on-surface rounded-xl neo-shadow-lg p-6 sticky top-24 mt-8">
-                <div className="font-extrabold text-sm text-on-surface uppercase tracking-tight mb-1">{event.name}</div>
-                <div className="font-mono text-[11px] font-bold text-on-surface-variant mb-5">
-                  {new Date(event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long'})}
-                  {' · '}{event.venueName}
-                </div>
+        {/* Mapa real (MapLibre) */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-[#04210f] tracking-tight">Mapa del recinto</h2>
+            <p className="text-slate-500 text-xs">Ubicación de los estacionamientos respecto al venue.</p>
+          </div>
 
-                <div className="bg-surface-container border-2 border-on-surface rounded-xl p-3.5 mb-4">
-                  <div className="font-extrabold text-xs text-on-surface uppercase tracking-tight mb-1">{pk.name}</div>
-                  <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-on-surface-variant">
-                    <Footprints className="w-3 h-3" strokeWidth={2.5} />
-                    {pk.walkMinutes} min · {pk.distanceMeters} m del venue
-                  </div>
-                </div>
-
-                <div className="flex items-end justify-between mb-5 pb-4 border-b-2 border-dashed border-on-surface/15">
-                  <div>
-                    <div className="font-extrabold text-[9px] tracking-[1.5px] uppercase text-on-surface-variant mb-1">Precio</div>
-                    <div className="font-mono font-bold text-2xl text-on-surface">desde ${minP} <span className="text-xs text-on-surface-variant">MXN</span></div>
-                  </div>
-                  <div className={`font-mono text-[10px] font-bold ${pk.available <= 15 ? 'text-[#9a3412]' : 'text-on-surface-variant'}`}>
-                    {pk.available} lugares
-                  </div>
-                </div>
-
-                <NeoButton className="w-full" disabled={soldOut} onClick={handleContinue}>
-                  {soldOut ? 'Agotado' : 'Reservar'}
-                </NeoButton>
-
-                <div className="flex flex-col gap-2 mt-4">
-                  {['Lugar garantizado','QR de acceso único','Sin cobros extra'].map(p => (
-                    <div key={p} className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
-                      <div className="w-4 h-4 bg-primary-container border-2 border-on-surface rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg width="7" height="6" viewBox="0 0 7 6" fill="none">
-                          <path d="M1 3L2.5 4.5L6 1" stroke="#191c1d" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                      {p}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+          {event.lat && parkings.length > 0 ? (
+            <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-md border border-slate-800 aspect-square lg:aspect-auto lg:h-[420px]">
+              <EventMap
+                venueLat={event.lat} venueLng={event.lng!}
+                parkings={parkings} selected={selected}
+                onSelect={handleSelect}
+              />
+            </div>
+          ) : (
+            <div className="bg-slate-900 rounded-3xl aspect-square flex items-center justify-center text-slate-500 text-xs font-mono">
+              Mapa no disponible
+            </div>
+          )}
         </div>
       </div>
 
-      {/* CTA fija — solo móvil */}
-      {selected && (() => {
-        const pk = parkings.find(p => p.id === selected);
-        if (!pk) return null;
-        return (
-          <div className="fixed bottom-0 left-0 right-0 bg-surface border-t-[3px] border-on-surface px-5 py-4 flex items-center gap-4 justify-between z-50 lg:hidden">
-            <div className="min-w-0">
-              <div className="font-extrabold text-sm text-on-surface uppercase tracking-tight truncate">{pk.name}</div>
-              <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-on-surface-variant mt-0.5">
-                <Footprints className="w-3 h-3" strokeWidth={2.5} />
-                {pk.walkMinutes} min · {pk.distanceMeters} m
-              </div>
-            </div>
-            <NeoButton className="min-w-[130px] flex-shrink-0" disabled={soldOut} onClick={handleContinue}>
-              {soldOut ? 'Agotado' : 'Reservar'}
-            </NeoButton>
-          </div>
-        );
-      })()}
+      {/* Barra fija inferior */}
+      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 py-4 px-6 z-40 shadow-[0_-8px_30px_rgb(0,0,0,0.06)] flex flex-col sm:flex-row justify-between items-center gap-4 max-w-5xl mx-auto rounded-t-3xl">
+        <div className="text-center sm:text-left">
+          <p className="text-slate-400 text-xs font-mono uppercase tracking-wider m-0">Estacionamiento seleccionado</p>
+          <h4 className="font-bold text-[#04210f] text-base leading-tight m-0 mt-0.5">
+            {selectedParking ? selectedParking.name : 'Selecciona una opción'}
+          </h4>
+          <p className="text-xs text-slate-500 mt-1 font-semibold flex items-center gap-1 justify-center sm:justify-start m-0">
+            {selectedParking && (
+              <>
+                <Footprints className="w-3.5 h-3.5" />
+                <span>{selectedParking.walkMinutes} min caminando</span>
+                <span>•</span>
+                <span className="font-mono text-[#383497] font-bold">${selectedMinPrice} MXN</span>
+              </>
+            )}
+          </p>
+        </div>
+
+        <button
+          onClick={handleContinue}
+          disabled={!selected || soldOut}
+          className="w-full sm:w-auto bg-[#383497] hover:bg-[#2b278c] disabled:bg-slate-200 disabled:cursor-not-allowed text-white font-sans text-sm font-bold uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-[0.98] cursor-pointer"
+        >
+          {soldOut ? 'Agotado' : 'Reservar'}
+        </button>
+      </div>
     </div>
   );
 }
