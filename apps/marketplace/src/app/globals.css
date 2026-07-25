@@ -55,6 +55,13 @@
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ─── Estilos globales base ──────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
-html, body { background: var(--color-background); font-family: var(--font-sans); color: #1e293b; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
-a { color: inherit; }
+/* Dentro de @layer base para que las utilidades de color de texto de Tailwind
+   (text-white, text-brand-dark, etc.) puedan sobreescribir `a { color: inherit }`.
+   CSS fuera de cualquier @layer tiene prioridad absoluta sobre CSS en capas,
+   sin importar especificidad — por eso esta regla vivía "sin capa" rompía
+   el color de CUALQUIER <a> con una clase de color de texto en todo el sitio. */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { background: var(--color-background); font-family: var(--font-sans); color: #1e293b; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
+  a { color: inherit; }
+}
