@@ -173,7 +173,7 @@ export default function AdminPricing({ token }: { token: string }) {
   );
 
   return (
-    <div style={{ padding: '0 0 60px' }}>
+    <div className="adm-page" style={{ maxWidth: 1100 }}>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Precios dinámicos</h2>
         <p style={{ fontSize: 13, color: '#999', marginTop: 4 }}>
