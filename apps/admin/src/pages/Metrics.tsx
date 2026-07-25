@@ -121,7 +121,8 @@ export default function Metrics({ token, scope }: Props) {
   const CARDS: Array<{ key: MetricKey; label: string; value: string; sub?: string; color: string }> = [
     { key: 'ventas',    label: 'Ventas totales',          value: fmtMoney(kpis.totalVentas), color: '#DFF085' },
     { key: 'ganancia',  label: 'Ganancia (plataforma)',   value: kpis.gananciaEstimada != null ? fmtMoney(kpis.gananciaEstimada) : '—',
-      sub: kpis.gananciaPctDeVenta != null ? `≈${kpis.gananciaPctDeVenta.toFixed(1)}% de la venta` : 'Configura Precios dinámicos', color: '#c9da70' },
+      sub: kpis.gananciaPctDeVenta != null ? `≈${kpis.gananciaPctDeVenta.toFixed(1)}% de la venta`
+        : kpis.gananciaEstimada != null ? 'Sin ventas registradas' : 'Configura Precios dinámicos', color: '#c9da70' },
     { key: 'reservas',  label: 'Reservas de Cajones',     value: String(kpis.totalReservas), color: '#c3c0ff' },
     { key: 'ocupacion', label: '% Ocupación',             value: `${kpis.ocupacion}%`,       color: '#86B49F' },
     { key: 'reclamos',  label: 'Reportes y Reclamos',     value: String(kpis.reclamosAbiertos), color: '#72B8BC' },
