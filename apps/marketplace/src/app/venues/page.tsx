@@ -88,7 +88,7 @@ export default function VenuesPage() {
               </div>
               <div className="p-4 flex flex-col justify-between flex-1 gap-3">
                 <div>
-                  <div className="font-bold text-base text-slate-900 leading-snug group-hover:text-[#04210f] transition-colors">{v.name}</div>
+                  <div className="font-bold text-base text-slate-900 leading-snug group-hover:text-brand-dark transition-colors">{v.name}</div>
                   <div className="flex items-start gap-1.5 mt-1.5 text-slate-500">
                     <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                     <span className="text-xs font-medium leading-snug">{v.address}</span>

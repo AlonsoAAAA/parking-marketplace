@@ -99,7 +99,7 @@ export default function ConfirmacionPage() {
   if (!ticket) return (
     <div className="min-h-screen bg-background font-sans flex flex-col items-center justify-center gap-3 px-6 text-center">
       <SquareParking className="w-12 h-12 text-slate-400" />
-      <p className="font-bold text-lg text-[#04210f]">¡Pago confirmado!</p>
+      <p className="font-bold text-lg text-brand-dark">¡Pago confirmado!</p>
       <p className="text-sm text-slate-500 max-w-[280px] leading-relaxed">
         Tu reserva está lista. Recibirás tu código QR por WhatsApp en los próximos minutos.
       </p>

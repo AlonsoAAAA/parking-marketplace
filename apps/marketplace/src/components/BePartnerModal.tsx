@@ -73,7 +73,7 @@ export default function BePartnerModal({ isOpen, onClose }: BePartnerModalProps)
             </button>
             <div className="flex items-center gap-2">
               <Store className="w-5 h-5 text-[#DFF085]" />
-              <span className="bg-[#DFF085] text-[#04210f] text-[10px] font-mono font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+              <span className="bg-[#DFF085] text-brand-dark text-[10px] font-mono font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
                 Socio EstacionaT
               </span>
             </div>

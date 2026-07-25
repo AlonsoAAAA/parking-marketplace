@@ -159,7 +159,7 @@ export default function EventDetailPage() {
       <div className="bg-[#04210f] text-white pt-28 pb-16 px-6 relative overflow-hidden">
         <div className="max-w-5xl mx-auto space-y-6 relative z-10">
           <div className="space-y-3">
-            <span className="bg-[#DFF085] text-[#04210f] text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1 rounded-full">
+            <span className="bg-[#DFF085] text-brand-dark text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1 rounded-full">
               {event.category || 'Evento'}
             </span>
             <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
@@ -207,7 +207,7 @@ export default function EventDetailPage() {
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-[#04210f] tracking-tight">Estacionamientos disponibles</h2>
+            <h2 className="text-xl font-bold text-brand-dark tracking-tight">Estacionamientos disponibles</h2>
             <p className="text-slate-500 text-xs">Selecciona un lote para ver ubicación exacta y tarifas.</p>
           </div>
 
@@ -233,7 +233,7 @@ export default function EventDetailPage() {
                           {pk.name}
                         </h3>
                         {pk.distanceMeters <= 200 && (
-                          <span className="bg-[#aecfb2]/40 text-[#04210f] text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase">
+                          <span className="bg-[#aecfb2]/40 text-brand-dark text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase">
                             Más cercano
                           </span>
                         )}
@@ -295,7 +295,7 @@ export default function EventDetailPage() {
         {/* Mapa real (MapLibre) */}
         <div className="lg:col-span-5 space-y-6">
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-[#04210f] tracking-tight">Mapa del recinto</h2>
+            <h2 className="text-xl font-bold text-brand-dark tracking-tight">Mapa del recinto</h2>
             <p className="text-slate-500 text-xs">Ubicación de los estacionamientos respecto al venue.</p>
           </div>
 
@@ -319,7 +319,7 @@ export default function EventDetailPage() {
       <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 py-4 px-6 z-40 shadow-[0_-8px_30px_rgb(0,0,0,0.06)] flex flex-col sm:flex-row justify-between items-center gap-4 max-w-5xl mx-auto rounded-t-3xl">
         <div className="text-center sm:text-left">
           <p className="text-slate-400 text-xs font-mono uppercase tracking-wider m-0">Estacionamiento seleccionado</p>
-          <h4 className="font-bold text-[#04210f] text-base leading-tight m-0 mt-0.5">
+          <h4 className="font-bold text-brand-dark text-base leading-tight m-0 mt-0.5">
             {selectedParking ? selectedParking.name : 'Selecciona una opción'}
           </h4>
           <p className="text-xs text-slate-500 mt-1 font-semibold flex items-center gap-1 justify-center sm:justify-start m-0">

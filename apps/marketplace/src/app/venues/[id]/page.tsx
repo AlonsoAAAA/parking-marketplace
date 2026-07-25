@@ -51,7 +51,7 @@ export default function VenuePage() {
       <Navbar back="/" />
       <div className="pt-32 flex flex-col items-center justify-center gap-4 px-6 text-center">
         <Building2 className="w-12 h-12 text-slate-300" strokeWidth={1.5} />
-        <p className="font-bold text-lg text-[#04210f]">Venue no disponible</p>
+        <p className="font-bold text-lg text-brand-dark">Venue no disponible</p>
         <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
           Este venue aún no tiene información publicada. Explora los venues disponibles.
         </p>
@@ -77,7 +77,7 @@ export default function VenuePage() {
             <img className="absolute inset-0 w-full h-full object-cover opacity-70" src={venue.photoUrl} alt={venue.name} />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80" />
             <div className="relative z-10 p-5 md:p-8">
-              <span className="inline-flex items-center gap-1 bg-[#DFF085] text-[#04210f] text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-3">
+              <span className="inline-flex items-center gap-1 bg-[#DFF085] text-brand-dark text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-3">
                 {venue.category}
               </span>
               <h1 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight leading-tight">{venue.name}</h1>
@@ -91,7 +91,7 @@ export default function VenuePage() {
 
         {/* Eventos */}
         <div className="max-w-5xl mx-auto px-5 md:px-8 pt-10 pb-16">
-          <h2 className="font-extrabold text-lg md:text-xl text-[#04210f] mb-5 flex items-center gap-2.5">
+          <h2 className="font-extrabold text-lg md:text-xl text-brand-dark mb-5 flex items-center gap-2.5">
             <CalendarDays className="w-5 h-5" />
             Próximos eventos
           </h2>
@@ -120,7 +120,7 @@ export default function VenuePage() {
                         <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#383497] bg-[#383497]/5 px-2 py-0.5 rounded">
                           {ev.category}
                         </span>
-                        <div className="font-bold text-sm md:text-base text-slate-900 leading-snug mt-1 group-hover:text-[#04210f] transition-colors">{ev.name}</div>
+                        <div className="font-bold text-sm md:text-base text-slate-900 leading-snug mt-1 group-hover:text-brand-dark transition-colors">{ev.name}</div>
                         <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono mt-1">
                           <Calendar className="w-3.5 h-3.5 text-[#383497]" />
                           {d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'})} · {d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} hrs

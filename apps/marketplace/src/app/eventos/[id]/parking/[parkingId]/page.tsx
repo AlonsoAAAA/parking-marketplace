@@ -278,7 +278,7 @@ export default function ParkingDetailPage() {
 
       <div className="max-w-xl mx-auto space-y-6 pt-24 pb-32">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-[#04210f] tracking-tight">Datos del vehículo</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight">Datos del vehículo</h1>
           <p className="text-slate-500 text-sm">
             Reservando en <strong>{parking.name}</strong> para <strong>{event.name}</strong>
           </p>

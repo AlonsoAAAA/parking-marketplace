@@ -221,7 +221,7 @@ export default function CheckoutPage() {
       <Navbar back="back" showExplore={false} />
       <div className="pt-32 flex flex-col items-center justify-center gap-4 px-6 text-center">
         <AlertTriangle className="w-10 h-10 text-slate-400" />
-        <h2 className="font-bold text-lg text-[#04210f]">No se pudo iniciar el pago</h2>
+        <h2 className="font-bold text-lg text-brand-dark">No se pudo iniciar el pago</h2>
         <p className="text-sm text-slate-500 max-w-xs leading-relaxed">{fetchError}</p>
         <button onClick={() => router.back()} className="bg-[#04210f] hover:bg-[#12361d] text-white px-6 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer">← Volver</button>
       </div>

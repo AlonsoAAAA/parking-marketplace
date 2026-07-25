@@ -39,10 +39,10 @@ const CAT_EMOJIS: Record<string, string> = {
 };
 
 const BENEFITS = [
-  { icon: ShieldCheck, bg: 'bg-[#DFF085]/20', fg: 'text-[#04210f]', title: '100% garantizado', text: 'Tu cajón está apartado y bloqueado en nuestro sistema antes de que salgas de casa. No compitas por lugar.' },
+  { icon: ShieldCheck, bg: 'bg-[#DFF085]/20', fg: 'text-brand-dark', title: '100% garantizado', text: 'Tu cajón está apartado y bloqueado en nuestro sistema antes de que salgas de casa. No compitas por lugar.' },
   { icon: QrCode,      bg: 'bg-[#383497]/10', fg: 'text-[#383497]', title: 'WhatsApp QR Access', text: 'Recibe de inmediato el pase QR directo en tu WhatsApp. No requieres descargar ninguna app adicional.' },
   { icon: Clock,       bg: 'bg-indigo-50',    fg: 'text-indigo-700', title: 'Cancelación flexible', text: '¿Hubo cambios de planes? Cancela gratis sin penalizaciones hasta 6 horas antes de que inicie tu evento.' },
-  { icon: Zap,         bg: 'bg-[#aecfb2]/20', fg: 'text-[#04210f]', title: 'Cero filas o demoras', text: 'Acceso automatizado leyendo tus placas. Entra rápido y sal con agilidad sin hacer filas de cobro.' },
+  { icon: Zap,         bg: 'bg-[#aecfb2]/20', fg: 'text-brand-dark', title: 'Cero filas o demoras', text: 'Acceso automatizado leyendo tus placas. Entra rápido y sal con agilidad sin hacer filas de cobro.' },
 ];
 
 const TESTIMONIALS = [
@@ -84,12 +84,12 @@ export default function HomePage() {
         {/* Hero */}
         <section className="px-6 py-16 relative bg-gradient-to-b from-[#aecfb2]/10 via-transparent to-transparent">
           <div className="max-w-4xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-1.5 bg-[#aecfb2]/30 text-[#04210f] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full [animation:fadeUp_.5s_ease_both]">
+            <div className="inline-flex items-center gap-1.5 bg-[#aecfb2]/30 text-brand-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full [animation:fadeUp_.5s_ease_both]">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Garantía de acceso CDMX</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold font-sans text-[#04210f] leading-none tracking-tight max-w-3xl mx-auto [animation:fadeUp_.5s_.1s_ease_both]">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold font-sans text-brand-dark leading-none tracking-tight max-w-3xl mx-auto [animation:fadeUp_.5s_.1s_ease_both]">
               Tu lugar seguro <br className="hidden sm:inline" /> para eventos
             </h1>
 
@@ -142,7 +142,7 @@ export default function HomePage() {
         <section id="eventos" className="max-w-7xl mx-auto px-6 py-16 space-y-10 scroll-mt-24">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">
-              <h2 className="text-3xl font-extrabold text-[#04210f] tracking-tight">Próximos eventos</h2>
+              <h2 className="text-3xl font-extrabold text-brand-dark tracking-tight">Próximos eventos</h2>
               <p className="text-slate-500 text-sm max-w-sm">
                 Encuentra el evento de tu interés y asegura tu acceso directo sin complicaciones.
               </p>
@@ -173,7 +173,7 @@ export default function HomePage() {
                 <p className="text-slate-400 font-medium">No se encontraron eventos o recintos coincidentes.</p>
                 <button
                   onClick={() => { setSearch(''); setCategory(''); }}
-                  className="text-xs font-mono font-bold text-[#04210f] underline hover:text-emerald-800 cursor-pointer"
+                  className="text-xs font-mono font-bold text-brand-dark underline hover:text-emerald-800 cursor-pointer"
                 >
                   Restablecer filtros
                 </button>
@@ -210,7 +210,7 @@ export default function HomePage() {
                           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#383497] bg-[#383497]/5 px-2 py-0.5 rounded">
                             {v.category || 'venue'}
                           </span>
-                          <h3 className="text-lg font-bold font-sans text-slate-900 leading-snug group-hover:text-[#04210f] transition-colors line-clamp-1 m-0">
+                          <h3 className="text-lg font-bold font-sans text-slate-900 leading-snug group-hover:text-brand-dark transition-colors line-clamp-1 m-0">
                             {v.name}
                           </h3>
                         </div>
@@ -244,7 +244,7 @@ export default function HomePage() {
         <section className="bg-gradient-to-b from-white to-slate-50 border-y border-slate-100 px-6 py-20">
           <div className="max-w-6xl mx-auto space-y-16">
             <div className="text-center space-y-3 max-w-xl mx-auto">
-              <h2 className="text-3xl font-extrabold text-[#04210f] tracking-tight">La mejor experiencia de parking</h2>
+              <h2 className="text-3xl font-extrabold text-brand-dark tracking-tight">La mejor experiencia de parking</h2>
               <p className="text-slate-500 text-sm">
                 Diseñado exclusivamente para eliminar las fricciones habituales de estacionarse en eventos masivos.
               </p>
@@ -267,7 +267,7 @@ export default function HomePage() {
         {/* Testimonios */}
         <section className="max-w-6xl mx-auto px-6 py-20 space-y-12">
           <div className="space-y-3">
-            <h2 className="text-3xl font-extrabold text-[#04210f] tracking-tight">Lo que dicen nuestros usuarios</h2>
+            <h2 className="text-3xl font-extrabold text-brand-dark tracking-tight">Lo que dicen nuestros usuarios</h2>
             <p className="text-slate-500 text-sm">Comentarios reales de conductores que ya disfrutan de eventos sin estrés.</p>
           </div>
 
@@ -277,7 +277,7 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <div className="flex">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-current text-[#04210f]" />
+                      <Star key={i} className="w-4 h-4 fill-current text-brand-dark" />
                     ))}
                   </div>
                   <p className="text-slate-600 text-sm italic font-sans leading-relaxed m-0">"{t.text}"</p>
@@ -287,7 +287,7 @@ export default function HomePage() {
                     {t.initials}
                   </div>
                   <div>
-                    <h4 className="font-bold text-[#04210f] text-sm m-0">{t.name}</h4>
+                    <h4 className="font-bold text-brand-dark text-sm m-0">{t.name}</h4>
                     <p className="text-xs text-slate-400 font-medium m-0">{t.event}</p>
                   </div>
                 </div>
@@ -308,7 +308,7 @@ export default function HomePage() {
               </p>
               <button
                 onClick={() => setIsBePartnerOpen(true)}
-                className="bg-[#DFF085] text-[#04210f] font-sans text-sm font-bold uppercase tracking-wider py-4 px-8 rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md"
+                className="bg-[#DFF085] text-brand-dark font-sans text-sm font-bold uppercase tracking-wider py-4 px-8 rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md"
               >
                 Quiero ser socio
               </button>

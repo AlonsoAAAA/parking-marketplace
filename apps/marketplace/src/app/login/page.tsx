@@ -138,7 +138,7 @@ function LoginContent() {
             {step === 1 && (
               <form onSubmit={handleSendOtp} className="space-y-6">
                 <div className="text-center space-y-2">
-                  <h2 className="text-xl md:text-2xl font-extrabold text-[#04210f] tracking-tight">Inicia sesión con WhatsApp</h2>
+                  <h2 className="text-xl md:text-2xl font-extrabold text-brand-dark tracking-tight">Inicia sesión con WhatsApp</h2>
                   <p className="text-slate-500 text-xs">Te enviaremos un código de seguridad de un solo uso por WhatsApp.</p>
                 </div>
 
@@ -168,7 +168,7 @@ function LoginContent() {
             {step === 2 && (
               <form onSubmit={handleVerifyOtp} className="space-y-6">
                 <div className="text-center space-y-2">
-                  <h2 className="text-xl md:text-2xl font-extrabold text-[#04210f] tracking-tight">Verifica el código</h2>
+                  <h2 className="text-xl md:text-2xl font-extrabold text-brand-dark tracking-tight">Verifica el código</h2>
                   <p className="text-slate-500 text-xs">
                     Ingresa el código enviado al <span className="font-bold text-[#383497] font-mono">+52 {phone}</span>
                   </p>
@@ -206,7 +206,7 @@ function LoginContent() {
             {step === 3 && (
               <form onSubmit={handleCompleteLogin} className="space-y-6">
                 <div className="text-center space-y-2">
-                  <h2 className="text-xl md:text-2xl font-extrabold text-[#04210f] tracking-tight">¡Bienvenido!</h2>
+                  <h2 className="text-xl md:text-2xl font-extrabold text-brand-dark tracking-tight">¡Bienvenido!</h2>
                   <p className="text-slate-500 text-xs">Completa tu registro ingresando tu nombre para poder emitir tus boletos.</p>
                 </div>
 

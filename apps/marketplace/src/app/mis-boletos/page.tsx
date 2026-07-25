@@ -73,7 +73,7 @@ export default function MisBoletosPage() {
 
       <div className="max-w-2xl mx-auto space-y-6 pt-24">
         <div className="space-y-2">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-[#04210f] tracking-tight">Mis reservas</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight">Mis reservas</h1>
           <p className="text-slate-500 text-sm">Gestiona tus boletos de estacionamiento y códigos QR de acceso.</p>
         </div>
 
@@ -143,7 +143,7 @@ export default function MisBoletosPage() {
                             </div>
                           )}
                           {r.qr_token && (r.status === 'paid' || r.status === 'pending') && (
-                            <span className="bg-[#DFF085] text-[#04210f] text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm flex items-center gap-1 border border-[#aec24f]">
+                            <span className="bg-[#DFF085] text-brand-dark text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm flex items-center gap-1 border border-[#aec24f]">
                               <QrCode className="w-3.5 h-3.5" />
                               <span>QR listo</span>
                             </span>

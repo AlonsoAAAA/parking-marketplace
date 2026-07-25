@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 const CLAUSE = 'text-[13px] text-slate-700 leading-[1.75] mb-4 last:mb-0';
-const NUM = 'font-bold text-[#04210f] mr-0.5';
+const NUM = 'font-bold text-brand-dark mr-0.5';
 const SECTION = 'bg-white border border-slate-100 rounded-2xl shadow-sm p-5 md:p-6 mb-4';
 
 export default function TerminosPage() {
@@ -17,7 +17,7 @@ export default function TerminosPage() {
 
       <main className="max-w-3xl mx-auto px-5 md:px-8 pt-28 pb-20 flex-grow w-full">
         <p className="text-[10px] font-mono font-bold tracking-[3px] uppercase text-slate-400 mb-3">Contrato de Adhesión · v1.0</p>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-[#04210f] tracking-tight leading-tight mb-2">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight leading-tight mb-2">
           Términos y Condiciones del Servicio de Reserva de Estacionamiento
         </h1>
         <p className="font-mono text-[11px] font-bold text-slate-400 mb-9">Versión 1.0 · Ciudad de México, 2026</p>

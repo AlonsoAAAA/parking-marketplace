@@ -6,7 +6,7 @@ export const metadata = {
 };
 
 const SECTION = 'bg-white border border-slate-100 rounded-2xl shadow-sm p-5 md:p-6 mb-4';
-const H = 'text-[11px] font-mono font-bold uppercase tracking-[2px] text-[#04210f] bg-[#DFF085] inline-block px-3 py-1 rounded-full mb-4';
+const H = 'text-[11px] font-mono font-bold uppercase tracking-[2px] text-brand-dark bg-[#DFF085] inline-block px-3 py-1 rounded-full mb-4';
 const P = 'text-[13px] text-slate-700 leading-[1.75] mb-3 last:mb-0';
 
 export default function PrivacidadPage() {
@@ -16,7 +16,7 @@ export default function PrivacidadPage() {
 
       <main className="max-w-3xl mx-auto px-5 md:px-8 pt-28 pb-20 flex-grow w-full">
         <p className="text-[10px] font-mono font-bold tracking-[3px] uppercase text-slate-400 mb-3">Aviso de Privacidad</p>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-[#04210f] tracking-tight leading-tight mb-2">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight leading-tight mb-2">
           Aviso de Privacidad
         </h1>
         <p className="font-mono text-[11px] font-bold text-slate-400 mb-9">Versión 1.0 · Ciudad de México, 2026</p>

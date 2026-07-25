@@ -24,7 +24,7 @@ export default function Footer() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[#DFF085] flex items-center justify-center shadow">
-              <span className="font-mono text-[#04210f] font-black text-base">P</span>
+              <span className="font-mono text-brand-dark font-black text-base">P</span>
             </div>
             <span className="font-sans text-xl font-bold tracking-tight text-white">
               Estaciona<span className="text-[#DFF085]">T</span>
@@ -77,7 +77,7 @@ export default function Footer() {
             />
             <button
               type="submit"
-              className="bg-[#DFF085] text-[#04210f] p-3 rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center shrink-0"
+              className="bg-[#DFF085] text-brand-dark p-3 rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center shrink-0"
             >
               {subscribed ? <Check className="w-5 h-5" /> : <Send className="w-5 h-5" />}
             </button>

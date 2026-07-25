@@ -164,7 +164,7 @@ export default function BoletoDetailPage() {
 
       <div className="max-w-xl mx-auto space-y-6 pt-24 pb-16">
         <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold text-[#04210f] tracking-tight m-0">Detalle de boleto</h1>
+          <h1 className="text-xl font-bold text-brand-dark tracking-tight m-0">Detalle de boleto</h1>
           <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${st.cls}`}>● {st.label}</span>
         </div>
 
