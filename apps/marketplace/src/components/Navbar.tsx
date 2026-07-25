@@ -13,7 +13,7 @@ export default function Navbar({ back, showExplore = true }: NavbarProps) {
   const router = useRouter();
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-[#04210f] text-[#e2e3df] shadow-lg flex justify-between items-center px-4 md:px-6 py-4 border-b border-emerald-950">
+    <header className="fixed inset-x-0 top-0 w-full z-50 bg-[#04210f] text-[#e2e3df] shadow-lg flex justify-between items-center px-4 md:px-6 py-4 border-b border-emerald-950">
       <div className="flex items-center gap-3">
         {back && (
           <button
@@ -28,13 +28,13 @@ export default function Navbar({ back, showExplore = true }: NavbarProps) {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#DFF085] to-[#bfcf68] flex items-center justify-center shadow-md transition-transform group-hover:scale-105">
             <span className="font-mono text-[#04210f] font-black text-xl">P</span>
           </div>
-          <span className="font-sans text-2xl font-bold tracking-tight text-white flex items-center gap-1">
+          <span className="font-sans text-lg md:text-2xl font-bold tracking-tight text-white flex items-center gap-1 whitespace-nowrap">
             Estaciona<span className="text-[#DFF085]">T</span>
           </span>
         </Link>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
         {showExplore && (
           <Link
             href="/#eventos"
@@ -47,10 +47,11 @@ export default function Navbar({ back, showExplore = true }: NavbarProps) {
 
         <Link
           href="/mis-boletos"
-          className="relative font-sans text-xs font-bold uppercase tracking-wider text-[#04210f] bg-[#DFF085] hover:bg-[#c9da70] px-5 py-3 rounded-full hover:shadow-lg transition-all active:scale-[0.98] flex items-center gap-2 no-underline"
+          aria-label="Mis boletos"
+          className="relative font-sans text-xs font-bold uppercase tracking-wider text-[#04210f] bg-[#DFF085] hover:bg-[#c9da70] w-10 h-10 sm:w-auto sm:h-auto sm:px-5 sm:py-3 rounded-full hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center sm:justify-start gap-2 no-underline flex-shrink-0"
         >
-          <TicketIcon className="w-4 h-4" />
-          <span>Mis boletos</span>
+          <TicketIcon className="w-4 h-4 flex-shrink-0" />
+          <span className="hidden sm:inline whitespace-nowrap">Mis boletos</span>
         </Link>
       </div>
     </header>
