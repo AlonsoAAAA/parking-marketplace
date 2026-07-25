@@ -27,6 +27,8 @@ const EMPTY_EVENT = {
 export default function AdminEvents({ token }: Props) {
   const [events, setEvents]   = useState<Event[]>([]);
   const [venues, setVenues]   = useState<any[]>([]);
+  const [venuesLoading, setVenuesLoading] = useState(true);
+  const [venuesError, setVenuesError]     = useState(false);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter]   = useState('all');
   const [search, setSearch]   = useState('');
@@ -45,9 +47,11 @@ export default function AdminEvents({ token }: Props) {
   };
   useEffect(load, [token]);
   useEffect(() => {
+    setVenuesLoading(true);
     api.admin.venues(token)
       .then(d => setVenues((d as any)?.data || d || []))
-      .catch(() => {});
+      .catch(() => setVenuesError(true))
+      .finally(() => setVenuesLoading(false));
   }, [token]);
 
   const filtered = useMemo(() => {
@@ -63,6 +67,7 @@ export default function AdminEvents({ token }: Props) {
 
   const save = async () => {
     if (!modal?.name?.trim()) { setError('El nombre es requerido'); return; }
+    if (!modal?.venueName?.trim()) { setError('Selecciona un venue'); return; }
     setSaving(true); setError('');
     try {
       const num = (v: string) => v !== '' ? parseFloat(v) : undefined;
@@ -199,22 +204,26 @@ export default function AdminEvents({ token }: Props) {
             <div className="adm-field"><label className="adm-label">Nombre</label><input className="adm-input" value={modal.name} onChange={e => setModal((m: any) => ({...m, name: e.target.value}))} placeholder="Natanael Cano" autoFocus /></div>
             <div className="adm-field">
               <label className="adm-label">Venue</label>
-              {venues.length > 0 ? (
-                <select
-                  className="adm-input"
-                  value={modal.venueId}
-                  onChange={e => {
-                    const v = venues.find((v: any) => v.id === e.target.value);
-                    setModal((m: any) => ({ ...m, venueId: e.target.value, venueName: v?.name || '' }));
-                  }}
-                >
-                  <option value="">— Selecciona un venue —</option>
-                  {venues.map((v: any) => (
-                    <option key={v.id} value={v.id}>{v.name}{v.city ? ` · ${v.city}` : ''}</option>
-                  ))}
-                </select>
-              ) : (
-                <input className="adm-input" value={modal.venueName} onChange={e => setModal((m: any) => ({...m, venueName: e.target.value}))} placeholder="Foro Sol" />
+              <select
+                className="adm-input"
+                value={modal.venueId}
+                disabled={venuesLoading || venuesError || venues.length === 0}
+                onChange={e => {
+                  const v = venues.find((v: any) => v.id === e.target.value);
+                  setModal((m: any) => ({ ...m, venueId: e.target.value, venueName: v?.name || '' }));
+                }}
+              >
+                <option value="">
+                  {venuesLoading ? 'Cargando venues…' : venuesError ? 'Error al cargar venues' : venues.length === 0 ? 'No hay venues registrados' : '— Selecciona un venue —'}
+                </option>
+                {venues.map((v: any) => (
+                  <option key={v.id} value={v.id}>{v.name}{v.city ? ` · ${v.city}` : ''}</option>
+                ))}
+              </select>
+              {venuesError && (
+                <p style={{ fontSize: 11, color: '#9f1239', marginTop: 5 }}>
+                  No se pudo cargar la lista de venues. Recarga la página o crea el venue primero en la sección Venues.
+                </p>
               )}
               {modal.venueId && (() => { const v = venues.find((x:any) => x.id === modal.venueId); return v ? <p style={{ fontSize: 11, color: '#bbb', marginTop: 5 }}>{v.address}{v.capacity ? ` · ${v.capacity.toLocaleString()} cap.` : ''}</p> : null; })()}
             </div>
