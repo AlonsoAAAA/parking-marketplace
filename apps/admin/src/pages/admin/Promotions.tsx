@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Tag, RefreshCw } from 'lucide-react';
 import { Promotion } from '../../types';
 import { api } from '../../lib/api';
 
@@ -63,7 +64,7 @@ export default function AdminPromotions({ token }: Props) {
         ) : promos.length === 0 ? (
           <div className="adm-tw">
             <div className="adm-empty">
-              <div className="adm-empty-icon">🏷️</div>
+              <div className="adm-empty-icon"><Tag /></div>
               <div className="adm-empty-text">Sin promociones activas</div>
               <div className="adm-empty-sub">Crea códigos de descuento para eventos específicos o para toda la plataforma</div>
               <button className="adm-btn" style={{ marginTop: 16 }} onClick={() => { setModal({...EMPTY, code: genCode()}); setError(''); }}>Crear primera promoción</button>
@@ -104,7 +105,7 @@ export default function AdminPromotions({ token }: Props) {
               <div style={{ display: 'flex', gap: 8 }}>
                 <input className="adm-input" value={modal.code} style={{ fontFamily: 'monospace', fontWeight: 700, letterSpacing: 2 }}
                   onChange={e => setModal((m: any) => ({...m, code: e.target.value.toUpperCase()}))} placeholder="VERANO25" />
-                <button className="adm-btn adm-btn-ghost" style={{ flexShrink: 0 }} onClick={() => setModal((m: any) => ({...m, code: genCode()}))}>↻</button>
+                <button className="adm-btn adm-btn-ghost" style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }} onClick={() => setModal((m: any) => ({...m, code: genCode()}))}><RefreshCw size={14} /></button>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

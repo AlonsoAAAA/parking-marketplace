@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { AlertTriangle, HandCoins } from 'lucide-react';
 import { Claim } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
@@ -70,7 +71,7 @@ export default function AdminClaims({ token }: Props) {
         ) : claims.length === 0 ? (
           <div className="adm-tw">
             <div className="adm-empty">
-              <div className="adm-empty-icon">⚠️</div>
+              <div className="adm-empty-icon"><AlertTriangle /></div>
               <div className="adm-empty-text">Sin reclamos</div>
             </div>
           </div>
@@ -117,7 +118,7 @@ export default function AdminClaims({ token }: Props) {
         <div className="adm-overlay">
           <div className="adm-modal" onClick={e => e.stopPropagation()}>
             <div className="adm-modal-title">
-              {selected.type === 'refund_request' ? '💸 Solicitud de reembolso' : 'Reclamo'}
+              {selected.type === 'refund_request' ? (<span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><HandCoins size={16} /> Solicitud de reembolso</span>) : 'Reclamo'}
             </div>
 
             <div style={{ marginBottom: 12 }}>

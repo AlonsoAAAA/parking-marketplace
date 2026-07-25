@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { CreditCard } from 'lucide-react';
 import { Payment } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
@@ -62,7 +63,7 @@ export default function AdminPayments({ token }: Props) {
         ) : payments.length === 0 ? (
           <div className="adm-tw">
             <div className="adm-empty">
-              <div className="adm-empty-icon">💳</div>
+              <div className="adm-empty-icon"><CreditCard /></div>
               <div className="adm-empty-text">Sin pagos registrados</div>
               <div className="adm-empty-sub">Disponible cuando el endpoint /admin/payments esté activo en el API</div>
             </div>

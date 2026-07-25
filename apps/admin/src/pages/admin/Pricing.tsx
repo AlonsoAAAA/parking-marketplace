@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { BarChart3, MapPin, Clock, Flame, Scale, DollarSign, Calculator, Receipt, Check, TriangleAlert, HandCoins } from 'lucide-react';
 
 interface PricingConfig {
   marginMin:          number;
@@ -74,8 +75,8 @@ function computePrice(
   };
 }
 
-const label = (txt: string) => (
-  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: '#999', display: 'block', marginBottom: 6 }}>
+const label = (txt: React.ReactNode) => (
+  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: '#999', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
     {txt}
   </span>
 );
@@ -157,9 +158,9 @@ export default function AdminPricing({ token }: { token: string }) {
     finally { setSaving(false); }
   };
 
-  const card = (children: React.ReactNode, title: string) => (
+  const card = (children: React.ReactNode, title: React.ReactNode) => (
     <div style={{ background: '#fff', borderRadius: 16, padding: '24px 24px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', marginBottom: 16 }}>
-      <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#04210f', margin: '0 0 20px' }}>{title}</h3>
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#04210f', margin: '0 0 20px' }}>{title}</h3>
       {children}
     </div>
   );
@@ -197,7 +198,7 @@ export default function AdminPricing({ token }: { token: string }) {
                 <p style={{ fontSize: 11, color: '#bbb', margin: '5px 0 0' }}>Aplica en condiciones de máxima demanda</p>
               </div>
             </div>,
-            '📊 Márgenes globales'
+            <><BarChart3 size={14} /> Márgenes globales</>
           )}
 
           {card(
@@ -205,7 +206,7 @@ export default function AdminPricing({ token }: { token: string }) {
               {/* Distancia */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label('📍 Distancia al venue')}
+                  {label(<><MapPin size={12} /> Distancia al venue</>)}
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightDistance * 100).toFixed(0)}%</span>
                 </div>
                 {slider(config.weightDistance, v => setWeight('weightDistance', v), 0, 1)}
@@ -215,7 +216,7 @@ export default function AdminPricing({ token }: { token: string }) {
               {/* Anticipación */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label('⏱ Anticipación')}
+                  {label(<><Clock size={12} /> Anticipación</>)}
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightAnticipation * 100).toFixed(0)}%</span>
                 </div>
                 {slider(config.weightAnticipation, v => setWeight('weightAnticipation', v), 0, 1)}
@@ -225,7 +226,7 @@ export default function AdminPricing({ token }: { token: string }) {
               {/* Demanda */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label('🔥 Demanda (ocupación)')}
+                  {label(<><Flame size={12} /> Demanda (ocupación)</>)}
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightDemand * 100).toFixed(0)}%</span>
                 </div>
                 {slider(config.weightDemand, v => setWeight('weightDemand', v), 0, 1)}
@@ -239,15 +240,15 @@ export default function AdminPricing({ token }: { token: string }) {
                 border: `1px solid ${weightsOk ? '#bbf7d0' : '#fecdd3'}`,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
-                <span style={{ fontSize: 12, color: weightsOk ? '#166534' : '#9f1239' }}>
-                  {weightsOk ? '✓ Los pesos suman 100%' : '⚠ Los pesos deben sumar 100%'}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: weightsOk ? '#166534' : '#9f1239' }}>
+                  {weightsOk ? (<><Check size={13} /> Los pesos suman 100%</>) : (<><TriangleAlert size={13} /> Los pesos deben sumar 100%</>)}
                 </span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: weightsOk ? '#166534' : '#9f1239' }}>
                   {(weightsSum * 100).toFixed(1)}%
                 </span>
               </div>
             </div>,
-            '⚖️ Pesos de multiplicadores'
+            <><Scale size={14} /> Pesos de multiplicadores</>
           )}
 
           {error && (
@@ -269,7 +270,7 @@ export default function AdminPricing({ token }: { token: string }) {
             }}>
             {saving ? (
               <><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }}/> Guardando...</>
-            ) : saved ? '✓ Configuración guardada' : 'Guardar configuración'}
+            ) : saved ? (<><Check size={14} style={{ display: 'inline', verticalAlign: -2, marginRight: 4 }} /> Configuración guardada</>) : 'Guardar configuración'}
           </button>
         </div>
 
@@ -278,12 +279,12 @@ export default function AdminPricing({ token }: { token: string }) {
           {card(
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
-                {label('💰 Precio contrato (sin IVA)')}
+                {label(<><DollarSign size={12} /> Precio contrato (sin IVA)</>)}
                 {numInput(contractPrice, setContractP, 1, 9999, 1, 'MXN')}
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label('📍 Distancia al venue')}
+                  {label(<><MapPin size={12} /> Distancia al venue</>)}
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>{distKm.toFixed(1)} km</span>
                 </div>
                 {slider(distKm, setDistKm, 0, 5, 0.1)}
@@ -293,7 +294,7 @@ export default function AdminPricing({ token }: { token: string }) {
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label('⏱ Anticipación')}
+                  {label(<><Clock size={12} /> Anticipación</>)}
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>
                     {antHours < 24 ? `${antHours}h` : `${(antHours/24).toFixed(1)}d`}
                   </span>
@@ -305,7 +306,7 @@ export default function AdminPricing({ token }: { token: string }) {
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label('🔥 Ocupación del estacionamiento')}
+                  {label(<><Flame size={12} /> Ocupación del estacionamiento</>)}
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>{occupancy}%</span>
                 </div>
                 {slider(occupancy, setOccupancy, 0, 100, 1)}
@@ -314,7 +315,7 @@ export default function AdminPricing({ token }: { token: string }) {
                 </div>
               </div>
             </div>,
-            '🧮 Calculadora de precio'
+            <><Calculator size={14} /> Calculadora de precio</>
           )}
 
           {/* Resultado */}
@@ -323,11 +324,11 @@ export default function AdminPricing({ token }: { token: string }) {
               {/* Multiplicadores */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 20 }}>
                 {[
-                  { label: '📍 Distancia', value: preview.multipliers.distance },
-                  { label: '⏱ Anticipación', value: preview.multipliers.anticipation },
-                  { label: '🔥 Demanda', value: preview.multipliers.demand },
-                ].map(m => (
-                  <div key={m.label} style={{ background: '#f5f5f5', borderRadius: 10, padding: '10px 12px', textAlign: 'center' as const }}>
+                  { label: <><MapPin size={11} /> Distancia</>, value: preview.multipliers.distance },
+                  { label: <><Clock size={11} /> Anticipación</>, value: preview.multipliers.anticipation },
+                  { label: <><Flame size={11} /> Demanda</>, value: preview.multipliers.demand },
+                ].map((m, i) => (
+                  <div key={i} style={{ background: '#f5f5f5', borderRadius: 10, padding: '10px 12px', textAlign: 'center' as const }}>
                     <div style={{ fontSize: 10, color: '#999', marginBottom: 3 }}>{m.label}</div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#04210f' }}>{m.value.toFixed(2)}×</div>
                   </div>
@@ -368,11 +369,11 @@ export default function AdminPricing({ token }: { token: string }) {
               {/* Ganancia */}
               <div style={{ marginTop: 10, padding: '10px 16px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: '#166534' }}>💰 Tu ganancia por reserva</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#166534' }}><HandCoins size={13} /> Tu ganancia por reserva</span>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#166534' }}>${preview.profit.toFixed(2)} MXN</span>
               </div>
             </div>,
-            '📋 Desglose de precio'
+            <><Receipt size={14} /> Desglose de precio</>
           )}
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, ReactNode } from 'react';
+import { Lock } from 'lucide-react';
 import { AdminPage, OperatorPage, SubOperatorPage, SubAdminPage, UserRole } from './types';
 import Layout, { NavItem } from './components/Layout';
 import Login from './pages/Login';
@@ -202,7 +203,7 @@ export default function App() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-green-dark p-6">
         <div className="w-full max-w-[360px] rounded-2xl bg-white p-9 text-center shadow-2xl">
-          <div className="mb-4 text-4xl">🔒</div>
+          <div className="mb-4 flex justify-center"><Lock className="h-9 w-9 text-brand-green-dark" /></div>
           <div className="mb-2 text-lg font-bold text-brand-green-dark">Sin acceso</div>
           <div className="mb-6 text-[13px] leading-relaxed text-[#999]">
             Tu cuenta no tiene permisos de operador o administrador.<br />

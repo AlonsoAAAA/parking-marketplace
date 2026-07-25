@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MapPin } from 'lucide-react';
 import { Venue } from '../../types';
 import { api } from '../../lib/api';
 
@@ -57,7 +58,7 @@ export default function AdminVenues({ token }: Props) {
         ) : venues.length === 0 ? (
           <div className="adm-tw">
             <div className="adm-empty">
-              <div className="adm-empty-icon">🏟️</div>
+              <div className="adm-empty-icon"><MapPin /></div>
               <div className="adm-empty-text">Sin venues registrados</div>
               <div className="adm-empty-sub">Agrega el primer venue para poder crear eventos</div>
               <button className="adm-btn" style={{ marginTop: 16 }} onClick={() => { setModal({...EMPTY}); setError(''); }}>Agregar venue</button>

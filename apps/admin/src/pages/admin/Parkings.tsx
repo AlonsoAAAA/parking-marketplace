@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
+import { Car, Truck, Bike, MapPin, ParkingCircle } from 'lucide-react';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
 
 const VEHICLE_TYPES = [
-  { key: 'auto',          label: 'Auto',           icon: '🚗' },
-  { key: 'suv_camioneta', label: 'SUV / Camioneta', icon: '🚙' },
-  { key: 'pickup',        label: 'Pick Up',         icon: '🛻' },
-  { key: 'moto',          label: 'Moto',            icon: '🏍️' },
+  { key: 'auto',          label: 'Auto',           icon: Car },
+  { key: 'suv_camioneta', label: 'SUV / Camioneta', icon: Car },
+  { key: 'pickup',        label: 'Pick Up',         icon: Truck },
+  { key: 'moto',          label: 'Moto',            icon: Bike },
 ] as const;
 
 type VehicleKey = typeof VEHICLE_TYPES[number]['key'];
@@ -158,7 +159,7 @@ export default function AdminParkings({ token }: Props) {
         {loading ? (
           <div className="adm-empty"><div className="adm-empty-text">Cargando...</div></div>
         ) : parkings.length === 0 ? (
-          <div className="adm-tw"><div className="adm-empty"><div className="adm-empty-icon">🅿️</div><div className="adm-empty-text">Sin estacionamientos</div></div></div>
+          <div className="adm-tw"><div className="adm-empty"><div className="adm-empty-icon"><ParkingCircle /></div><div className="adm-empty-text">Sin estacionamientos</div></div></div>
         ) : (
           <div className="adm-tw">
             <table className="adm-t">
@@ -194,8 +195,8 @@ export default function AdminParkings({ token }: Props) {
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                           {vLinks.length > 0
                             ? vLinks.map((vl: any) => (
-                                <span key={vl.venueId || vl.id} style={{ fontSize: 10, background: '#f0f9f0', borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap', color: '#166534' }}>
-                                  🏟️ {vl.venueName || vl.name}
+                                <span key={vl.venueId || vl.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, background: '#f0f9f0', borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap', color: '#166534' }}>
+                                  <MapPin size={11} /> {vl.venueName || vl.name}
                                 </span>
                               ))
                             : <span style={{ fontSize: 11, color: '#bbb' }}>—</span>
@@ -208,8 +209,8 @@ export default function AdminParkings({ token }: Props) {
                             ? prList.map((pr: any) => {
                                 const vt = VEHICLE_TYPES.find(v => v.key === pr.vehicleType);
                                 return (
-                                  <span key={pr.vehicleType} style={{ fontSize: 10, background: '#f5f5f5', borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' }}>
-                                    {vt?.icon} {pr.slots} · ${parseFloat(pr.price).toLocaleString('es-MX')}
+                                  <span key={pr.vehicleType} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, background: '#f5f5f5', borderRadius: 6, padding: '2px 7px', whiteSpace: 'nowrap' }}>
+                                    {vt && <vt.icon size={11} />} {pr.slots} · ${parseFloat(pr.price).toLocaleString('es-MX')}
                                   </span>
                                 );
                               })
@@ -317,7 +318,7 @@ export default function AdminParkings({ token }: Props) {
                     >
                       {/* Label */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 18, lineHeight: 1 }}>{vt.icon}</span>
+                        <vt.icon size={18} color="#555" />
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{vt.label}</span>
                       </div>
 

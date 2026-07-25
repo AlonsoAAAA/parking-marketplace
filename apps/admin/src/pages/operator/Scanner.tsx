@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect, CSSProperties } from 'react';
+import { CameraOff, Camera, Loader2, CheckCircle2 } from 'lucide-react';
 import jsQR from 'jsqr';
 import { api } from '../../lib/api';
 
@@ -303,8 +304,8 @@ export default function Scanner({ token }: { token: string }) {
             {/* Viewfinder — always shown, error variant if camera fails */}
             {cameraError ? (
               <div style={{ ...s.card, background: '#fff8f0', border: '1px solid rgba(220,100,0,0.2)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#c2410c', marginBottom: 8 }}>
-                  📷 Sin acceso a la cámara
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#c2410c', marginBottom: 8 }}>
+                  <CameraOff size={15} /> Sin acceso a la cámara
                 </div>
                 <div style={{ fontSize: 12, color: '#9a3412', lineHeight: 1.6, marginBottom: 12 }}>{cameraError}</div>
                 <button
@@ -342,7 +343,7 @@ export default function Scanner({ token }: { token: string }) {
                 {validating && (
                   <div style={{ position: 'absolute', bottom: 16, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
                     <span style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: 12, padding: '7px 16px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ display: 'inline-block', animation: 'spin 0.8s linear infinite', fontSize: 14 }}>⏳</span>
+                      <Loader2 size={14} className="animate-spin" />
                       Validando…
                     </span>
                   </div>
@@ -395,7 +396,7 @@ export default function Scanner({ token }: { token: string }) {
         {step === 'plate' && scanData && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ background: T.successBg, borderRadius: T.radius, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.successText }}>✅ Acceso permitido</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700, color: T.successText }}><CheckCircle2 size={16} /> Acceso permitido</div>
               <div style={{ fontSize: 13, color: T.text }}>
                 <span style={{ color: T.secondary }}>Usuario: </span>{scanData.userName}
               </div>
@@ -464,7 +465,7 @@ export default function Scanner({ token }: { token: string }) {
                       </>
                     ) : (
                       <>
-                        <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6, color: T.secondary }}><Camera size={26} /></div>
                         <div style={{ fontSize: 12, fontWeight: 600, color: T.secondary, textAlign: 'center', padding: '0 8px' }}>{PHOTO_LABELS[i]}</div>
                       </>
                     )}
@@ -493,7 +494,7 @@ export default function Scanner({ token }: { token: string }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {success ? (
               <div style={{ ...s.card, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, padding: '48px 20px', textAlign: 'center' }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.successBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>✅</div>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.successBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.successText }}><CheckCircle2 size={36} /></div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 700, color: T.successText }}>Entrada registrada</div>
                   <div style={{ fontSize: 13, color: T.secondary, marginTop: 6 }}>El vehículo fue registrado correctamente.</div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { CalendarDays, Car } from 'lucide-react';
 import { Event } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
@@ -9,10 +10,10 @@ const STATUS_OPTS = ['all', 'active', 'draft', 'sold_out', 'finished'];
 const STATUS_TAB_LABELS: Record<string, string> = { all: 'Todos', active: 'Activos', draft: 'Borrador', sold_out: 'Agotado', finished: 'Finalizado' };
 
 const CATEGORIES = [
-  { value: 'conciertos', label: 'Conciertos 🎵' },
-  { value: 'deportes',   label: 'Deportes ⚽'   },
-  { value: 'teatro',     label: 'Teatro 🎭'     },
-  { value: 'festival',   label: 'Festival 🎪'   },
+  { value: 'conciertos', label: 'Conciertos' },
+  { value: 'deportes',   label: 'Deportes'   },
+  { value: 'teatro',     label: 'Teatro'     },
+  { value: 'festival',   label: 'Festival'   },
 ];
 
 const EMPTY_EVENT = {
@@ -127,7 +128,7 @@ export default function AdminEvents({ token }: Props) {
         ) : (
           <div className="adm-tw">
             {filtered.length === 0 ? (
-              <div className="adm-empty"><div className="adm-empty-icon">📅</div><div className="adm-empty-text">Sin eventos</div></div>
+              <div className="adm-empty"><div className="adm-empty-icon"><CalendarDays /></div><div className="adm-empty-text">Sin eventos</div></div>
             ) : (
               <table className="adm-t">
                 <thead>
@@ -246,19 +247,20 @@ export default function AdminEvents({ token }: Props) {
               <label className="adm-label" style={{ marginBottom: 10, display: 'block' }}>Precios por tipo de vehículo (MXN)</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {([
-                  { key: 'price',       label: 'Base',    placeholder: '180', icon: '🚗' },
-                  { key: 'priceAuto',   label: 'Auto',           placeholder: 'ej. 180', icon: '🚘' },
-                  { key: 'priceSub',    label: 'SUV / Camioneta', placeholder: 'ej. 220', icon: '🚙' },
-                  { key: 'pricePickup', label: 'Pick Up',         placeholder: 'ej. 250', icon: '🛻' },
-                  { key: 'priceMoto',   label: 'Moto',            placeholder: 'ej. 80',  icon: '🏍️' },
-                ] as const).map(({ key, label, placeholder, icon }) => {
+                  { key: 'price',       label: 'Base' },
+                  { key: 'priceAuto',   label: 'Auto' },
+                  { key: 'priceSub',    label: 'SUV / Camioneta' },
+                  { key: 'pricePickup', label: 'Pick Up' },
+                  { key: 'priceMoto',   label: 'Moto' },
+                ] as const).map(({ key, label }, i) => {
+                  const placeholder = ['180', 'ej. 180', 'ej. 220', 'ej. 250', 'ej. 80'][i];
                   const rawVal = (modal as any)[key];
                   const pv = calcIva(rawVal);
                   const hasVal = rawVal !== '' && parseFloat(rawVal) > 0;
                   return (
                     <div key={key} style={{ background: '#f9f9f9', borderRadius: 10, padding: '10px 12px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: '#999', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 6 }}>
-                        {icon} {label}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#999', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 6 }}>
+                        <Car size={12} /> {label}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>$</span>

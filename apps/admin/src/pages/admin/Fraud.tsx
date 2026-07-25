@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { FraudAlert, FraudRule, FraudStats } from '../../types';
 import { api } from '../../lib/api';
 
@@ -224,7 +225,7 @@ function AlertsTab({ token }: { token: string }) {
       ) : filtered.length === 0 ? (
         <div className="adm-tw">
           <div className="adm-empty">
-            <div className="adm-empty-icon">🛡️</div>
+            <div className="adm-empty-icon"><ShieldCheck /></div>
             <div className="adm-empty-text">Sin alertas de fraude</div>
             <div className="adm-empty-sub">Las alertas aparecen automáticamente cuando se detectan patrones sospechosos</div>
           </div>

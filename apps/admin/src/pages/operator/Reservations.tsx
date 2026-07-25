@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { ClipboardList } from 'lucide-react';
 import { Event, Reservation } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
@@ -180,7 +181,7 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
         {!loading && filtered.length === 0 && (
           <div className="adm-tw">
             <div className="adm-empty">
-              <div className="adm-empty-icon">📋</div>
+              <div className="adm-empty-icon"><ClipboardList /></div>
               <div className="adm-empty-text">Sin resultados</div>
             </div>
           </div>

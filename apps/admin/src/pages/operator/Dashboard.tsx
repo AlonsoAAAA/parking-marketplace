@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { DollarSign, Calendar, Percent, CalendarDays } from 'lucide-react';
 import { Event } from '../../types';
 import { api } from '../../lib/api';
 
@@ -71,9 +72,9 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
   const occupancyPct  = totalSlots > 0 ? Math.round((totalReserved / totalSlots) * 100) : 0;
 
   const CARDS = [
-    { label: 'Ventas hoy',       value: dailyRevenue === null ? '…' : `$${fmtMXN(dailyRevenue)}`, sub: 'MXN',               accent: '#D1FAE5' },
-    { label: 'Reservas activas', value: loading ? '—' : totalReserved,                            sub: 'status: pagado',     accent: '#DBEAFE' },
-    { label: 'Ocupación global', value: loading || totalSlots === 0 ? '—' : `${occupancyPct}%`,   sub: `${totalReserved}/${totalSlots} lugares`, accent: '#FEF3C7' },
+    { label: 'Ventas hoy',       value: dailyRevenue === null ? '…' : `$${fmtMXN(dailyRevenue)}`, sub: 'MXN',               icon: DollarSign, color: 'text-emerald-700',  bg: 'bg-emerald-50' },
+    { label: 'Reservas activas', value: loading ? '—' : totalReserved,                            sub: 'status: pagado',     icon: Calendar,   color: 'text-brand-indigo', bg: 'bg-brand-indigo/10' },
+    { label: 'Ocupación global', value: loading || totalSlots === 0 ? '—' : `${occupancyPct}%`,   sub: `${totalReserved}/${totalSlots} lugares`, icon: Percent, color: 'text-[#72B8BC]', bg: 'bg-[#72B8BC]/10' },
   ];
 
   return (
@@ -86,15 +87,24 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
         </div>
 
         {/* Metric cards */}
-        <div className="dash-metrics">
-          {CARDS.map(c => (
-            <div key={c.label} className="dash-m">
-              <div className="dash-m-dot" style={{ background: c.accent }} />
-              <div className="dash-m-lbl">{c.label}</div>
-              <div className="dash-m-val">{c.value}</div>
-              <div className="dash-m-sub">{c.sub}</div>
-            </div>
-          ))}
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {CARDS.map(c => {
+            const Icon = c.icon;
+            return (
+              <div key={c.label} className="flex flex-col justify-between rounded-[14px] border border-slate-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-start justify-between">
+                  <span className="text-xs font-bold uppercase leading-tight tracking-tight text-slate-500">{c.label}</span>
+                  <div className={`rounded-lg p-2 ${c.bg}`}>
+                    <Icon className={`h-5 w-5 ${c.color}`} />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="block text-2xl font-extrabold text-slate-900">{c.value}</span>
+                  <span className="mt-1 block text-[11px] font-medium text-slate-400">{c.sub}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Events list */}
@@ -106,7 +116,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
         {events.length === 0 && !loading ? (
           <div className="adm-tw">
             <div className="adm-empty">
-              <div className="adm-empty-icon">📅</div>
+              <div className="adm-empty-icon"><CalendarDays /></div>
               <div className="adm-empty-text">Sin eventos activos</div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Users, TriangleAlert } from 'lucide-react';
 import { Customer } from '../../types';
 import { api } from '../../lib/api';
 
@@ -120,7 +121,7 @@ export default function AdminCustomers({ token }: Props) {
         ) : customers.length === 0 ? (
           <div className="adm-tw">
             <div className="adm-empty">
-              <div className="adm-empty-icon">👥</div>
+              <div className="adm-empty-icon"><Users /></div>
               <div className="adm-empty-text">Sin usuarios</div>
               <div className="adm-empty-sub">Crea el primer operador con el botón de arriba</div>
             </div>
@@ -178,7 +179,7 @@ export default function AdminCustomers({ token }: Props) {
 
             {editRole !== editUser.role && (
               <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e', marginBottom: 14 }}>
-                ⚠️ Cambiarás el rol de <strong>{ROLE_LABELS[editUser.role]}</strong> a <strong>{ROLE_LABELS[editRole]}</strong>.
+                <TriangleAlert size={13} style={{ display: 'inline', verticalAlign: -2, marginRight: 4 }} /> Cambiarás el rol de <strong>{ROLE_LABELS[editUser.role]}</strong> a <strong>{ROLE_LABELS[editRole]}</strong>.
                 {editRole === 'operator' && ' Este usuario podrá acceder al panel de operador.'}
                 {editRole === 'admin' && ' Este usuario tendrá acceso completo al panel de administración.'}
                 {editRole === 'user' && ' Este usuario perderá acceso al panel.'}

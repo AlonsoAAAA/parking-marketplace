@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Calendar, DollarSign, Percent, AlertCircle, MapPin, ParkingCircle, Users, CreditCard, CalendarDays } from 'lucide-react';
 import { Event } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
@@ -9,12 +10,12 @@ const fmtMoney = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigit
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 
 const SHORTCUTS = [
-  { id: 'venues',     label: 'Venues',            icon: '🏟️' },
-  { id: 'events',     label: 'Eventos',            icon: '📅' },
-  { id: 'parkings',   label: 'Estacionamientos',   icon: '🅿️' },
-  { id: 'customers',  label: 'Clientes',           icon: '👥' },
-  { id: 'claims',     label: 'Reclamos',           icon: '⚠️' },
-  { id: 'payments',   label: 'Pagos',              icon: '💳' },
+  { id: 'venues',     label: 'Venues',            icon: MapPin },
+  { id: 'events',     label: 'Eventos',            icon: CalendarDays },
+  { id: 'parkings',   label: 'Estacionamientos',   icon: ParkingCircle },
+  { id: 'customers',  label: 'Clientes',           icon: Users },
+  { id: 'claims',     label: 'Reclamos',           icon: AlertCircle },
+  { id: 'payments',   label: 'Pagos',              icon: CreditCard },
 ];
 
 export default function AdminDashboard({ token, onNavigate }: Props) {
@@ -36,14 +37,16 @@ export default function AdminDashboard({ token, onNavigate }: Props) {
     }).finally(() => setLoading(false));
   }, [token]);
 
-  const totalReserved = events.reduce((s, e) => s + (Number(e.slotsReserved) || 0), 0);
-  const activeCount   = events.length;
+  const totalReserved = events.reduce((s, e) => s + (Number(e.slotsReserved ?? e.slots_reserved) || 0), 0);
+  const totalSlots     = events.reduce((s, e) => s + (Number(e.totalSlots ?? e.total_slots) || 0), 0);
+  const occupancyPct   = totalSlots > 0 ? Math.round((totalReserved / totalSlots) * 100) : 0;
+  const openClaims     = metrics?.openClaims ?? 0;
 
   const CARDS = [
-    { label: 'Reservas hoy',     value: metrics?.reservationsToday ?? '—', accent: '#D1FAE5' },
-    { label: 'Ingresos hoy',     value: metrics?.revenueToday != null ? `$${fmtMoney(metrics.revenueToday)}` : '—', accent: '#DBEAFE' },
-    { label: 'Eventos activos',  value: activeCount || '—', accent: '#FEF3C7' },
-    { label: 'Slots reservados', value: totalReserved || '—', accent: '#E2D6E8' },
+    { label: 'Reservas de hoy',    value: metrics?.reservationsToday ?? '—', icon: Calendar,    color: 'text-brand-indigo',  bg: 'bg-brand-indigo/10' },
+    { label: 'Ingresos del día',   value: metrics?.revenueToday != null ? `$${fmtMoney(metrics.revenueToday)}` : '—', icon: DollarSign, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+    { label: 'Ocupación total',    value: `${occupancyPct}%`, icon: Percent,     color: 'text-[#72B8BC]',     bg: 'bg-[#72B8BC]/10' },
+    { label: 'Reclamos abiertos',  value: openClaims, icon: AlertCircle, color: openClaims > 0 ? 'text-red-600' : 'text-slate-500', bg: openClaims > 0 ? 'bg-red-50' : 'bg-slate-100' },
   ];
 
   return (
@@ -54,14 +57,22 @@ export default function AdminDashboard({ token, onNavigate }: Props) {
           <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.5px' }}>{loading ? 'Cargando...' : 'Panel Admin'}</h1>
         </div>
 
-        <div className="adm-metrics">
-          {CARDS.map(c => (
-            <div key={c.label} className="adm-metric">
-              <div className="adm-metric-dot" style={{ background: c.accent }} />
-              <div className="adm-metric-lbl">{c.label}</div>
-              <div className="adm-metric-val">{c.value}</div>
-            </div>
-          ))}
+        <p className="adm-section-lbl">Métricas de operación del día</p>
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {CARDS.map(c => {
+            const Icon = c.icon;
+            return (
+              <div key={c.label} className="flex flex-col justify-between rounded-[14px] border border-slate-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-start justify-between">
+                  <span className="text-xs font-bold uppercase leading-tight tracking-tight text-slate-500">{c.label}</span>
+                  <div className={`rounded-lg p-2 ${c.bg}`}>
+                    <Icon className={`h-5 w-5 ${c.color}`} />
+                  </div>
+                </div>
+                <span className="mt-4 block text-2xl font-extrabold text-slate-900">{c.value}</span>
+              </div>
+            );
+          })}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
@@ -70,7 +81,7 @@ export default function AdminDashboard({ token, onNavigate }: Props) {
             <p className="adm-section-lbl">Eventos activos — ocupación</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {events.length === 0 && !loading && (
-                <div className="adm-tw"><div className="adm-empty"><div className="adm-empty-icon">📅</div><div className="adm-empty-text">Sin eventos activos</div></div></div>
+                <div className="adm-tw"><div className="adm-empty"><div className="adm-empty-icon"><CalendarDays /></div><div className="adm-empty-text">Sin eventos activos</div></div></div>
               )}
               {events.map(e => {
                 const total    = Number(e.totalSlots    || e.total_slots)    || 1;
@@ -100,7 +111,7 @@ export default function AdminDashboard({ token, onNavigate }: Props) {
             <p className="adm-section-lbl">Pagos recientes</p>
             <div className="adm-tw">
               {payments.length === 0 ? (
-                <div className="adm-empty"><div className="adm-empty-icon">💳</div><div className="adm-empty-text">Sin pagos</div><div className="adm-empty-sub">Disponible cuando el endpoint /admin/payments esté activo</div></div>
+                <div className="adm-empty"><div className="adm-empty-icon"><CreditCard /></div><div className="adm-empty-text">Sin pagos</div><div className="adm-empty-sub">Disponible cuando el endpoint /admin/payments esté activo</div></div>
               ) : payments.map((p: any, i: number) => {
                 const s = STATUS_COLORS[p.status] || STATUS_COLORS.pending;
                 return (
@@ -120,12 +131,15 @@ export default function AdminDashboard({ token, onNavigate }: Props) {
 
         <p className="adm-section-lbl">Acceso rápido</p>
         <div className="shortcuts">
-          {SHORTCUTS.map(s => (
-            <button key={s.id} className="sc-btn" onClick={() => onNavigate(s.id)}>
-              <div className="sc-icon">{s.icon}</div>
-              <div className="sc-label">{s.label}</div>
-            </button>
-          ))}
+          {SHORTCUTS.map(s => {
+            const Icon = s.icon;
+            return (
+              <button key={s.id} className="sc-btn" onClick={() => onNavigate(s.id)}>
+                <div className="sc-icon"><Icon /></div>
+                <div className="sc-label">{s.label}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </>

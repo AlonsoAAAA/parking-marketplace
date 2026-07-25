@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Users, Loader2 } from 'lucide-react';
 import { SubOperator } from '../../types';
 import { api } from '../../lib/api';
 
@@ -373,11 +374,11 @@ export default function OperatorSettings({ token }: Props) {
         <p className="adm-section-lbl">Equipo de operadores</p>
 
         {loading ? (
-          <div className="adm-tw"><div className="adm-empty"><div className="adm-empty-icon">⏳</div><div className="adm-empty-text">Cargando…</div></div></div>
+          <div className="adm-tw"><div className="adm-empty"><div className="adm-empty-icon"><Loader2 className="animate-spin" /></div><div className="adm-empty-text">Cargando…</div></div></div>
         ) : team.length === 0 ? (
           <div className="adm-tw">
             <div className="adm-empty">
-              <div className="adm-empty-icon">👥</div>
+              <div className="adm-empty-icon"><Users /></div>
               <div className="adm-empty-text">Sin operadores aún</div>
               <div style={{ fontSize: 12, color: '#bbb', marginTop: 6 }}>
                 Agrega operadores para delegar el escáner y reservas
