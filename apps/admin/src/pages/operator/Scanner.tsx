@@ -10,27 +10,32 @@ const PHOTO_KEYS   = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'] as c
 interface ScanData { reservationId: string; userName: string; eventName: string; }
 type PhotoMap = Record<typeof PHOTO_KEYS[number], string>;
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
+// ── Design tokens (EstacionaT brand) ─────────────────────────────────────────
 const T = {
-  bg:         '#EDEDED',
+  bg:         '#FAFAFA',
   white:      '#fff',
-  text:       '#1a1a1a',
-  secondary:  '#999',
-  muted:      '#bbb',
-  inputBg:    '#f5f5f5',
-  border:     'rgba(0,0,0,0.18)',
-  borderSoft: 'rgba(0,0,0,0.07)',
+  text:       '#04210f',
+  secondary:  '#5b6b62',
+  muted:      '#9aa8a0',
+  inputBg:    '#F5F6F4',
+  border:     'rgba(4,33,15,0.18)',
+  borderSoft: 'rgba(4,33,15,0.07)',
   radius:     16,
   radiusBtn:  10,
-  shadow:     '0 1px 4px rgba(0,0,0,0.07)',
-  font:       "'Inter', -apple-system, sans-serif",
+  shadow:     '0 1px 4px rgba(4,33,15,0.07)',
+  font:       "'Plus Jakarta Sans', -apple-system, sans-serif",
+  primary:    '#383497',
+  primaryHover: '#2b278c',
+  success:    '#86B49F',
+  successBg:  '#EEF5F1',
+  successText:'#1f5138',
 };
 
 const stepDotStyle = (active: boolean, done: boolean): CSSProperties => ({
   width: 32, height: 32, borderRadius: '50%',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   fontSize: 13, fontWeight: 700,
-  background: (done || active) ? T.text : 'rgba(0,0,0,0.1)',
+  background: (done || active) ? T.primary : 'rgba(4,33,15,0.1)',
   color: (done || active) ? '#fff' : T.secondary,
 });
 
@@ -50,13 +55,13 @@ const s: Record<string, CSSProperties> = {
   label:  { fontSize: 10, fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase' as const, color: T.secondary, display: 'block', marginBottom: 8 },
   input:  { width: '100%', minHeight: 52, background: T.inputBg, border: 'none', borderRadius: T.radiusBtn, padding: '0 16px', fontSize: 15, fontFamily: T.font, color: T.text, boxSizing: 'border-box' } as CSSProperties,
   inputPlate: { width: '100%', minHeight: 64, background: T.inputBg, border: 'none', borderRadius: T.radiusBtn, padding: '0 16px', fontSize: 28, fontFamily: 'monospace', fontWeight: 700, letterSpacing: 6, color: T.text, textAlign: 'center', boxSizing: 'border-box' } as CSSProperties,
-  btnPrimary:  { width: '100%', minHeight: 52, background: T.text, color: '#fff', border: 'none', borderRadius: T.radiusBtn, fontSize: 16, fontWeight: 700, fontFamily: T.font, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnPrimary:  { width: '100%', minHeight: 52, background: T.primary, color: '#fff', border: 'none', borderRadius: T.radiusBtn, fontSize: 16, fontWeight: 700, fontFamily: T.font, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 },
   btnDisabled: { opacity: 0.35, cursor: 'not-allowed' },
-  btnSecondary:{ width: '100%', minHeight: 52, background: 'transparent', color: T.text, border: `1.5px solid rgba(0,0,0,0.18)`, borderRadius: T.radiusBtn, fontSize: 15, fontWeight: 600, fontFamily: T.font, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnSecondary:{ width: '100%', minHeight: 52, background: 'transparent', color: T.text, border: `1.5px solid ${T.border}`, borderRadius: T.radiusBtn, fontSize: 15, fontWeight: 600, fontFamily: T.font, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 },
   btnText:     { width: '100%', minHeight: 44, background: 'none', border: 'none', color: T.secondary, fontSize: 14, fontFamily: T.font, cursor: 'pointer' },
   divider:     { height: 1, background: T.borderSoft },
   rowBetween:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  videoWrap:   { position: 'relative', borderRadius: T.radius, overflow: 'hidden', background: '#111', width: '100%', height: 300 } as CSSProperties,
+  videoWrap:   { position: 'relative', borderRadius: T.radius, overflow: 'hidden', background: '#04210f', width: '100%', height: 300 } as CSSProperties,
   videoEl:     { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } as CSSProperties,
 };
 
@@ -389,8 +394,8 @@ export default function Scanner({ token }: { token: string }) {
         {/* ── PASO 2: Placas ─────────────────────────────────────────────── */}
         {step === 'plate' && scanData && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: '#f0fdf4', borderRadius: T.radius, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>✅ Acceso permitido</div>
+            <div style={{ background: T.successBg, borderRadius: T.radius, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.successText }}>✅ Acceso permitido</div>
               <div style={{ fontSize: 13, color: T.text }}>
                 <span style={{ color: T.secondary }}>Usuario: </span>{scanData.userName}
               </div>
@@ -488,9 +493,9 @@ export default function Scanner({ token }: { token: string }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {success ? (
               <div style={{ ...s.card, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, padding: '48px 20px', textAlign: 'center' }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>✅</div>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: T.successBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>✅</div>
                 <div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#15803d' }}>Entrada registrada</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: T.successText }}>Entrada registrada</div>
                   <div style={{ fontSize: 13, color: T.secondary, marginTop: 6 }}>El vehículo fue registrado correctamente.</div>
                 </div>
                 <div style={{ fontSize: 13, color: T.muted }}>

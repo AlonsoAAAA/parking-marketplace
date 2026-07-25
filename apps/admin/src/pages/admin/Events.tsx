@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Event } from '../../types';
-import { ADMIN_CSS, STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
+import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -104,7 +104,6 @@ export default function AdminEvents({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS}</style>
       <div className="adm-page" style={{ maxWidth: 960 }}>
         <div className="adm-ph">
           <div><h1 className="adm-pt">Eventos</h1><p className="adm-ps">{events.length} eventos en total</p></div>

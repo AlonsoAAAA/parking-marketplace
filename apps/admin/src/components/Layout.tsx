@@ -17,6 +17,13 @@ interface Props {
   children: ReactNode;
 }
 
+const ROLE_LABELS: Record<UserRole, string> = {
+  admin: 'Admin General',
+  operator: 'Operador',
+  sub_admin: 'Sub-admin',
+  sub_operator: 'Sub-operador',
+};
+
 export default function Layout({ navItems, page, setPage, onLogout, role, children }: Props) {
   const [showMenu, setShowMenu] = useState(false);
   const isAdmin = role === 'admin';
@@ -24,80 +31,36 @@ export default function Layout({ navItems, page, setPage, onLogout, role, childr
   const handleNav = (id: string) => { setPage(id); setShowMenu(false); };
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .adm-shell { display: flex; min-height: 100vh; background: #EDEDED; font-family: 'Inter', -apple-system, sans-serif; }
-
-        /* ── SIDEBAR ── */
-        .adm-sidebar {
-          display: none; width: 220px; flex-shrink: 0;
-          position: fixed; top: 0; left: 0; bottom: 0;
-          background: #fff; border-right: 1px solid rgba(0,0,0,0.07);
-          flex-direction: column; padding: 28px 0 20px; z-index: 50;
-        }
-        @media(min-width:768px){ .adm-sidebar { display: flex; } }
-
-        .adm-logo { font-size: 11px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: #1a1a1a; padding: 0 24px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 6px; }
-        .adm-logo span { color: #bbb; }
-        .adm-role-badge { margin: 8px 24px 12px; font-size: 9px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #999; padding: 4px 8px; background: #f5f5f5; border-radius: 5px; display: inline-block; }
-
-        .adm-nav { flex: 1; padding: 4px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
-        .adm-nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #999; cursor: pointer; border: none; background: none; font-family: 'Inter', sans-serif; text-align: left; transition: all 0.15s; width: 100%; }
-        .adm-nav-item:hover { background: rgba(0,0,0,0.04); color: #1a1a1a; }
-        .adm-nav-item.on { background: #1a1a1a; color: #fff; }
-        .adm-nav-item.on:hover { background: #333; }
-
-        .adm-logout { margin: 8px 12px 0; padding: 10px 12px; border-radius: 10px; font-size: 12px; font-weight: 500; color: #bbb; cursor: pointer; border: none; background: none; font-family: 'Inter', sans-serif; text-align: left; transition: all 0.15s; display: flex; align-items: center; gap: 10px; width: calc(100% - 24px); }
-        .adm-logout:hover { color: #1a1a1a; background: rgba(0,0,0,0.04); }
-
-        /* ── MAIN ── */
-        .adm-main { flex: 1; min-width: 0; }
-        @media(min-width:768px){ .adm-main { margin-left: 220px; } }
-        .adm-main-pad { padding-bottom: ${isAdmin ? '0' : '72'}px; }
-        @media(min-width:768px){ .adm-main-pad { padding-bottom: 0; } }
-
-        /* ── TOP BAR (mobile) ── */
-        .adm-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 14px; position: sticky; top: 0; background: rgba(237,237,237,0.96); backdrop-filter: blur(16px); z-index: 40; border-bottom: 1px solid rgba(0,0,0,0.06); }
-        @media(min-width:768px){ .adm-topbar { display: none; } }
-        .adm-topbar-logo { font-size: 11px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; }
-        .adm-topbar-logo span { color: #bbb; }
-        .adm-hamburger { background: none; border: none; cursor: pointer; padding: 4px; display: flex; flex-direction: column; gap: 4px; }
-        .adm-hamburger span { display: block; width: 18px; height: 1.5px; background: #1a1a1a; border-radius: 2px; }
-
-        /* ── BOTTOM TABS (operator mobile) ── */
-        .adm-tabs { display: ${isAdmin ? 'none' : 'flex'}; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.08); padding: 8px 0 max(8px, env(safe-area-inset-bottom)); z-index: 50; }
-        @media(min-width:768px){ .adm-tabs { display: none !important; } }
-        .adm-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0; cursor: pointer; border: none; background: none; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 500; letter-spacing: 0.5px; color: #bbb; text-transform: uppercase; transition: color 0.15s; }
-        .adm-tab.on { color: #1a1a1a; }
-
-        /* ── MOBILE MENU SHEET (admin) ── */
-        .adm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: flex-end; }
-        .adm-sheet { background: #fff; border-radius: 20px 20px 0 0; padding: 20px 16px max(32px, env(safe-area-inset-bottom)); width: 100%; animation: slideUp 0.25s ease; }
-        .adm-sheet-handle { width: 36px; height: 3px; background: #e0e0e0; border-radius: 3px; margin: 0 auto 20px; }
-        .adm-sheet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .adm-sheet-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; border: none; background: #f5f5f5; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: #1a1a1a; transition: all 0.15s; text-align: left; }
-        .adm-sheet-item.on { background: #1a1a1a; color: #fff; }
-        .adm-sheet-item:hover { opacity: 0.8; }
-        .adm-sheet-logout { margin-top: 12px; padding: 12px 14px; border-radius: 12px; border: none; background: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: #bbb; width: 100%; display: flex; align-items: center; gap: 10px; }
-      `}</style>
-
+    <div className="flex min-h-screen bg-background">
+      {/* ── Mobile menu sheet (admin roles with many nav items) ── */}
       {isAdmin && showMenu && (
-        <div className="adm-overlay" onClick={() => setShowMenu(false)}>
-          <div className="adm-sheet" onClick={e => e.stopPropagation()}>
-            <div className="adm-sheet-handle" />
-            <div className="adm-sheet-grid">
+        <div
+          className="fixed inset-0 z-[100] flex items-end bg-brand-green-dark/50 backdrop-blur-sm"
+          onClick={() => setShowMenu(false)}
+        >
+          <div
+            className="w-full rounded-t-2xl bg-white p-4 pb-10 animate-[slideUp_0.25s_ease]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-5 h-1 w-9 rounded-full bg-black/10" />
+            <div className="grid grid-cols-2 gap-2">
               {navItems.map(n => (
-                <button key={n.id} onClick={() => handleNav(n.id)} className={`adm-sheet-item${page === n.id ? ' on' : ''}`}>
+                <button
+                  key={n.id}
+                  onClick={() => handleNav(n.id)}
+                  className={`flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[13px] font-medium transition-colors ${
+                    page === n.id ? 'bg-brand-green-dark text-brand-lime' : 'bg-[#f5f5f5] text-brand-dark hover:opacity-80'
+                  }`}
+                >
                   {n.icon(page === n.id)}
                   {n.label}
                 </button>
               ))}
             </div>
-            <button className="adm-sheet-logout" onClick={() => { setShowMenu(false); onLogout(); }}>
+            <button
+              className="mt-3 flex w-full items-center gap-2.5 rounded-xl border-none bg-none px-3.5 py-3 text-[13px] font-medium text-[#bbb]"
+              onClick={() => { setShowMenu(false); onLogout(); }}
+            >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M10 11l4-3-4-3M14 8H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Cerrar sesión
             </button>
@@ -105,46 +68,90 @@ export default function Layout({ navItems, page, setPage, onLogout, role, childr
         </div>
       )}
 
-      <div className="adm-shell">
-        <aside className="adm-sidebar">
-          <div className="adm-logo">Park<span>MX</span></div>
-          <div className="adm-role-badge">{isAdmin ? 'Admin General' : 'Operador'}</div>
-          <nav className="adm-nav">
-            {navItems.map(n => (
-              <button key={n.id} onClick={() => setPage(n.id)} className={`adm-nav-item${page === n.id ? ' on' : ''}`}>
-                {n.icon(page === n.id)}
-                {n.label}
-              </button>
-            ))}
-          </nav>
-          <button className="adm-logout" onClick={onLogout}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M10 11l4-3-4-3M14 8H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            Cerrar sesión
-          </button>
-        </aside>
-
-        <div className="adm-main">
-          <div className="adm-topbar">
-            <span className="adm-topbar-logo">Park<span>MX</span></span>
-            {isAdmin
-              ? <button className="adm-hamburger" onClick={() => setShowMenu(true)}><span/><span/><span/></button>
-              : <button onClick={onLogout} style={{background:'none',border:'none',cursor:'pointer',color:'#bbb',fontSize:11,letterSpacing:'1.5px',textTransform:'uppercase',fontFamily:'Inter,sans-serif'}}>Salir</button>
-            }
+      {/* ── Desktop sidebar: dark green shell ── */}
+      <aside className="fixed inset-y-0 left-0 z-50 hidden w-56 flex-col justify-between bg-brand-green-dark px-4 py-7 text-white md:flex">
+        <div className="flex flex-col gap-7">
+          <div className="flex items-center gap-2.5 px-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-lime text-brand-green-dark shadow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" fill="currentColor"/></svg>
+            </div>
+            <div className="leading-tight">
+              <div className="text-[15px] font-black tracking-tight">EstacionaT</div>
+              <div className="mt-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-lime">{ROLE_LABELS[role]}</div>
+            </div>
           </div>
-          <div className="adm-main-pad">{children}</div>
+
+          <nav className="flex flex-col gap-1">
+            {navItems.map(n => {
+              const active = page === n.id;
+              return (
+                <button
+                  key={n.id}
+                  onClick={() => setPage(n.id)}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-semibold uppercase tracking-wide transition-all ${
+                    active
+                      ? 'border-l-4 border-brand-lime bg-white/10 pl-[8px] text-brand-lime'
+                      : 'text-brand-green-light hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  {n.icon(active)}
+                  <span className="normal-case tracking-normal">{n.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
+        <button
+          className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[12px] font-medium text-brand-green-light transition-colors hover:bg-white/5 hover:text-white"
+          onClick={onLogout}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M10 11l4-3-4-3M14 8H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Cerrar sesión
+        </button>
+      </aside>
+
+      {/* ── Main column ── */}
+      <div className="min-w-0 flex-1 md:ml-56">
+        {/* Mobile topbar */}
+        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-black/5 bg-background/95 px-5 py-3.5 backdrop-blur-md md:hidden">
+          <span className="flex items-center gap-2 text-[13px] font-black tracking-tight text-brand-green-dark">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-lime text-brand-green-dark">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" fill="currentColor"/></svg>
+            </span>
+            EstacionaT
+          </span>
+          {isAdmin ? (
+            <button className="flex flex-col gap-1 border-none bg-none p-1" onClick={() => setShowMenu(true)}>
+              <span className="block h-[1.5px] w-[18px] rounded bg-brand-green-dark" />
+              <span className="block h-[1.5px] w-[18px] rounded bg-brand-green-dark" />
+              <span className="block h-[1.5px] w-[18px] rounded bg-brand-green-dark" />
+            </button>
+          ) : (
+            <button onClick={onLogout} className="border-none bg-none text-[11px] uppercase tracking-wider text-[#999]">Salir</button>
+          )}
+        </div>
+
+        <div className={isAdmin ? '' : 'pb-[76px] md:pb-0'}>{children}</div>
+
         {!isAdmin && (
-          <nav className="adm-tabs">
-            {navItems.map(n => (
-              <button key={n.id} onClick={() => setPage(n.id)} className={`adm-tab${page === n.id ? ' on' : ''}`}>
-                {n.icon(page === n.id)}
-                {n.shortLabel}
-              </button>
-            ))}
+          <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-black/8 bg-white/97 px-0 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden">
+            {navItems.map(n => {
+              const active = page === n.id;
+              return (
+                <button
+                  key={n.id}
+                  onClick={() => setPage(n.id)}
+                  className={`flex flex-1 flex-col items-center gap-1 border-none bg-none py-1 text-[9px] font-medium uppercase tracking-wide ${active ? 'text-brand-indigo' : 'text-[#bbb]'}`}
+                >
+                  {n.icon(active)}
+                  {n.shortLabel}
+                </button>
+              );
+            })}
           </nav>
         )}
       </div>
-    </>
+    </div>
   );
 }

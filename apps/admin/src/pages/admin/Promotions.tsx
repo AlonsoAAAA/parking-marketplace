@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Promotion } from '../../types';
-import { ADMIN_CSS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -50,7 +49,6 @@ export default function AdminPromotions({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS}</style>
       <div className="adm-page" style={{ maxWidth: 900 }}>
         <div className="adm-ph">
           <div><h1 className="adm-pt">Promociones</h1><p className="adm-ps">Códigos de descuento y ofertas por evento</p></div>

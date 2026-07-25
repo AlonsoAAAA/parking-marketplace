@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Claim } from '../../types';
-import { ADMIN_CSS, STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
+import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -56,7 +56,6 @@ export default function AdminClaims({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS}</style>
       <div className="adm-page" style={{ maxWidth: 960 }}>
         <div className="adm-ph">
           <div><h1 className="adm-pt">Reclamos</h1><p className="adm-ps">Gestión de incidencias y solicitudes de reembolso</p></div>

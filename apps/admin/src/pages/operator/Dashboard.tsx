@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Event } from '../../types';
-import { ADMIN_CSS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props {
@@ -79,25 +78,6 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
 
   return (
     <>
-      <style>{ADMIN_CSS + `
-        .occ-bar  { height: 5px; background: #EDEDED; border-radius: 4px; overflow: hidden; margin-top: 8px; }
-        .occ-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-        .dash-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
-        @media(min-width:640px) { .dash-metrics { grid-template-columns: repeat(3, 1fr); } }
-        .dash-metrics .dash-m:first-child { grid-column: 1 / -1; }
-        @media(min-width:640px) { .dash-metrics .dash-m:first-child { grid-column: auto; } }
-        .dash-m { background: #fff; border-radius: 16px; padding: 18px 20px; position: relative; overflow: hidden; }
-        .dash-m-dot { position: absolute; top: -16px; right: -16px; width: 80px; height: 80px; border-radius: 50%; opacity: 0.18; }
-        .dash-m-lbl { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #999; margin-bottom: 8px; }
-        .dash-m-val { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #1a1a1a; line-height: 1; }
-        .dash-m-sub { font-size: 11px; color: #bbb; margin-top: 5px; }
-        .ev-card { background: #fff; border-radius: 16px; padding: 18px; cursor: pointer; transition: box-shadow 0.15s, transform 0.1s; border: 1.5px solid transparent; }
-        .ev-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.08); }
-        .ev-card:active { transform: scale(0.98); }
-        .ev-rev-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 6px; }
-        .ev-rev-chip { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-      `}</style>
-
       <div className="adm-page" style={{ maxWidth: 840 }}>
         {/* Header */}
         <div style={{ marginBottom: 28 }}>

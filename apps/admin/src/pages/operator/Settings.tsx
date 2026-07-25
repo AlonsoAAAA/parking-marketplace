@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { SubOperator } from '../../types';
-import { ADMIN_CSS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -343,13 +342,6 @@ export default function OperatorSettings({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS + `
-        .sub-card { background: #fff; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px; }
-        .sub-avatar { width: 44px; height: 44px; border-radius: 50%; background: #1a1a1a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0; }
-        .sub-toggle { width: 42px; height: 24px; border-radius: 12px; border: none; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
-        .sub-toggle-knob { position: absolute; top: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left 0.2s; }
-      `}</style>
-
       <div className="adm-page" style={{ maxWidth: 640 }}>
         {/* Header */}
         <div className="adm-ph">

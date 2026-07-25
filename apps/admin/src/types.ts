@@ -1,7 +1,7 @@
-export type AdminPage = 'dashboard' | 'venues' | 'events' | 'parkings' | 'customers' | 'claims' | 'promotions' | 'payments' | 'fraud' | 'pricing';
-export type OperatorPage    = 'dashboard' | 'reservations' | 'scanner' | 'profile' | 'settings';
+export type AdminPage = 'dashboard' | 'venues' | 'events' | 'parkings' | 'customers' | 'claims' | 'promotions' | 'payments' | 'fraud' | 'pricing' | 'metrics';
+export type OperatorPage    = 'dashboard' | 'reservations' | 'scanner' | 'profile' | 'settings' | 'metrics';
 export type SubOperatorPage = 'reservations' | 'scanner';
-export type SubAdminPage    = 'dashboard' | 'reservations' | 'scanner';
+export type SubAdminPage    = 'dashboard' | 'reservations' | 'scanner' | 'metrics';
 export type UserRole        = 'admin' | 'operator' | 'sub_admin' | 'sub_operator';
 
 export interface SubOperator {

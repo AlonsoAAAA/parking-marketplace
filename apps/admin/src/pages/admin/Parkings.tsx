@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { ADMIN_CSS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -147,7 +146,6 @@ export default function AdminParkings({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS}</style>
       <div className="adm-page" style={{ maxWidth: 900 }}>
         <div className="adm-ph">
           <div><h1 className="adm-pt">Estacionamientos</h1><p className="adm-ps">{parkings.length} registros encontrados</p></div>

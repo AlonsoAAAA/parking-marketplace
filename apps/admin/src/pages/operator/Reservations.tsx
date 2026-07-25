@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Event, Reservation } from '../../types';
-import { ADMIN_CSS, STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
+import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; initialEventId?: string; }
@@ -135,16 +135,6 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS + `
-        .show-dt { display: none; }
-        @media(min-width:640px){ .show-dt { display: block; } .hide-dt { display: none; } }
-        .res-card { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; cursor: pointer; transition: box-shadow 0.15s; }
-        .res-card:active { box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
-        .res-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-        .adm-t tbody tr { cursor: pointer; }
-        .adm-t tbody tr:hover { background: #fafafa; }
-      `}</style>
-
       <div className="adm-page" style={{ maxWidth: 960 }}>
         <div className="adm-ph">
           <div>

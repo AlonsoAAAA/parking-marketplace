@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { FraudAlert, FraudRule, FraudStats } from '../../types';
-import { ADMIN_CSS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -83,7 +82,7 @@ function BarChart({ daily }: { daily: FraudStats['daily'] }) {
                 <rect x={x} y={H - 2} width={barW} height={2} fill="#F3F4F6" rx={1} />
               )}
               {isToday && (
-                <rect x={x} y={H + 8} width={barW} height={2} fill="#1a1a1a" rx={1} />
+                <rect x={x} y={H + 8} width={barW} height={2} fill="#04210f" rx={1} />
               )}
             </g>
           );
@@ -107,7 +106,7 @@ function BarChart({ daily }: { daily: FraudStats['daily'] }) {
           </div>
         ))}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 4 }}>
-          <div style={{ width: 16, height: 2, background: '#1a1a1a', borderRadius: 1 }} />
+          <div style={{ width: 16, height: 2, background: '#04210f', borderRadius: 1 }} />
           <span style={{ fontSize: 10, color: '#bbb', fontWeight: 500 }}>Hoy</span>
         </div>
       </div>
@@ -193,8 +192,8 @@ function AlertsTab({ token }: { token: string }) {
     <>
       <div className="adm-search-bar">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ opacity: 0.3, flexShrink: 0 }}>
-          <circle cx="5.5" cy="5.5" r="4.5" stroke="#1a1a1a" strokeWidth="1.4"/>
-          <path d="M9 9L12 12" stroke="#1a1a1a" strokeWidth="1.4" strokeLinecap="round"/>
+          <circle cx="5.5" cy="5.5" r="4.5" stroke="#04210f" strokeWidth="1.4"/>
+          <path d="M9 9L12 12" stroke="#04210f" strokeWidth="1.4" strokeLinecap="round"/>
         </svg>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por usuario, regla..." />
         {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 18, lineHeight: 1 }}>×</button>}
@@ -430,7 +429,7 @@ function RulesTab({ token }: { token: string }) {
                     disabled={isSaving}
                     style={{
                       width: 40, height: 22, borderRadius: 11, border: 'none', cursor: isSaving ? 'not-allowed' : 'pointer',
-                      background: rule.is_active ? '#1a1a1a' : '#e0e0e0',
+                      background: rule.is_active ? '#04210f' : '#e0e0e0',
                       position: 'relative', transition: 'background 0.2s',
                     }}
                     title={rule.is_active ? 'Desactivar' : 'Activar'}
@@ -479,7 +478,6 @@ export default function AdminFraud({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS}</style>
       <div className="adm-page" style={{ maxWidth: 1080 }}>
         <div className="adm-ph">
           <div>

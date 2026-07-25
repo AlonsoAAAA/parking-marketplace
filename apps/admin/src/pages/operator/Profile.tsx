@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { ADMIN_CSS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -56,7 +55,6 @@ export default function OperatorProfile({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS}</style>
       <div className="adm-page" style={{ maxWidth: 560 }}>
         <div className="adm-ph">
           <div><h1 className="adm-pt">Mi Perfil</h1><p className="adm-ps">Datos personales, fiscales y bancarios</p></div>

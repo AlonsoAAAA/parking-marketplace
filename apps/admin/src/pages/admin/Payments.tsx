@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Payment } from '../../types';
-import { ADMIN_CSS, STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
+import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -37,7 +37,6 @@ export default function AdminPayments({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS}</style>
       <div className="adm-page" style={{ maxWidth: 1080 }}>
         <div className="adm-ph">
           <div><h1 className="adm-pt">Pagos</h1><p className="adm-ps">Historial completo de transacciones</p></div>
@@ -50,7 +49,7 @@ export default function AdminPayments({ token }: Props) {
         </div>
 
         <div className="adm-search-bar">
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{opacity:0.3,flexShrink:0}}><circle cx="5.5" cy="5.5" r="4.5" stroke="#1a1a1a" strokeWidth="1.4"/><path d="M9 9L12 12" stroke="#1a1a1a" strokeWidth="1.4" strokeLinecap="round"/></svg>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{opacity:0.3,flexShrink:0}}><circle cx="5.5" cy="5.5" r="4.5" stroke="#04210f" strokeWidth="1.4"/><path d="M9 9L12 12" stroke="#04210f" strokeWidth="1.4" strokeLinecap="round"/></svg>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por usuario, evento o ID de Stripe..." />
           {search && <button onClick={() => setSearch('')} style={{background:'none',border:'none',cursor:'pointer',color:'#bbb',fontSize:18,lineHeight:1}}>×</button>}
         </div>

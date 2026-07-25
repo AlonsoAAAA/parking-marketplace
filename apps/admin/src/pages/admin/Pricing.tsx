@@ -86,7 +86,7 @@ const numInput = (value: number, onChange: (v: number) => void, min: number, max
       type="number" min={min} max={max} step={step} value={value}
       onChange={e => onChange(+e.target.value)}
       style={{ width: '100%', padding: '10px 14px', paddingRight: suffix ? 36 : 14, border: '1.5px solid #e8e8e8', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' as const, outline: 'none' }}
-      onFocus={e => e.target.style.borderColor = '#1a1a1a'}
+      onFocus={e => e.target.style.borderColor = '#04210f'}
       onBlur={e => e.target.style.borderColor = '#e8e8e8'}
     />
     {suffix && <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#bbb', fontSize: 13, pointerEvents: 'none' as const }}>{suffix}</span>}
@@ -96,7 +96,7 @@ const numInput = (value: number, onChange: (v: number) => void, min: number, max
 const slider = (value: number, onChange: (v: number) => void, min: number, max: number, step = 0.01) => (
   <input type="range" min={min} max={max} step={step} value={value}
     onChange={e => onChange(+e.target.value)}
-    style={{ width: '100%', accentColor: '#1a1a1a' }}
+    style={{ width: '100%', accentColor: '#04210f' }}
   />
 );
 
@@ -159,14 +159,14 @@ export default function AdminPricing({ token }: { token: string }) {
 
   const card = (children: React.ReactNode, title: string) => (
     <div style={{ background: '#fff', borderRadius: 16, padding: '24px 24px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', marginBottom: 16 }}>
-      <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#1a1a1a', margin: '0 0 20px' }}>{title}</h3>
+      <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#04210f', margin: '0 0 20px' }}>{title}</h3>
       {children}
     </div>
   );
 
   if (!loaded) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-      <div style={{ width: 24, height: 24, border: '2px solid #eee', borderTop: '2px solid #1a1a1a', borderRadius: '50%', animation: 'spin .7s linear infinite' }}/>
+      <div style={{ width: 24, height: 24, border: '2px solid #eee', borderTop: '2px solid #04210f', borderRadius: '50%', animation: 'spin .7s linear infinite' }}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -206,7 +206,7 @@ export default function AdminPricing({ token }: { token: string }) {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   {label('📍 Distancia al venue')}
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>{(config.weightDistance * 100).toFixed(0)}%</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightDistance * 100).toFixed(0)}%</span>
                 </div>
                 {slider(config.weightDistance, v => setWeight('weightDistance', v), 0, 1)}
                 <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Cerca = precio mayor · Lejos = precio menor</p>
@@ -216,7 +216,7 @@ export default function AdminPricing({ token }: { token: string }) {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   {label('⏱ Anticipación')}
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>{(config.weightAnticipation * 100).toFixed(0)}%</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightAnticipation * 100).toFixed(0)}%</span>
                 </div>
                 {slider(config.weightAnticipation, v => setWeight('weightAnticipation', v), 0, 1)}
                 <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Última hora = precio mayor · Semana antes = precio menor</p>
@@ -226,7 +226,7 @@ export default function AdminPricing({ token }: { token: string }) {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   {label('🔥 Demanda (ocupación)')}
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>{(config.weightDemand * 100).toFixed(0)}%</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightDemand * 100).toFixed(0)}%</span>
                 </div>
                 {slider(config.weightDemand, v => setWeight('weightDemand', v), 0, 1)}
                 <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Lleno = precio mayor · Vacío = precio menor</p>
@@ -260,7 +260,7 @@ export default function AdminPricing({ token }: { token: string }) {
             onClick={handleSave}
             disabled={saving || !weightsOk}
             style={{
-              width: '100%', padding: '13px', background: saved ? '#22c55e' : '#1a1a1a',
+              width: '100%', padding: '13px', background: saved ? '#22c55e' : '#04210f',
               color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
               cursor: saving || !weightsOk ? 'not-allowed' : 'pointer',
               opacity: !weightsOk ? 0.5 : 1,
@@ -329,7 +329,7 @@ export default function AdminPricing({ token }: { token: string }) {
                 ].map(m => (
                   <div key={m.label} style={{ background: '#f5f5f5', borderRadius: 10, padding: '10px 12px', textAlign: 'center' as const }}>
                     <div style={{ fontSize: 10, color: '#999', marginBottom: 3 }}>{m.label}</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a' }}>{m.value.toFixed(2)}×</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#04210f' }}>{m.value.toFixed(2)}×</div>
                   </div>
                 ))}
               </div>
@@ -348,13 +348,13 @@ export default function AdminPricing({ token }: { token: string }) {
                       <div style={{ color: '#555', fontWeight: 500 }}>{row.label}</div>
                       {row.sub && <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>{row.sub}</div>}
                     </div>
-                    <div style={{ fontWeight: 600, color: '#1a1a1a' }}>{row.value}</div>
+                    <div style={{ fontWeight: 600, color: '#04210f' }}>{row.value}</div>
                   </div>
                 ))}
               </div>
 
               {/* Total */}
-              <div style={{ marginTop: 16, padding: '14px 16px', background: '#1a1a1a', borderRadius: 12,
+              <div style={{ marginTop: 16, padding: '14px 16px', background: '#04210f', borderRadius: 12,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', letterSpacing: 1, textTransform: 'uppercase' as const }}>Precio final al usuario</div>

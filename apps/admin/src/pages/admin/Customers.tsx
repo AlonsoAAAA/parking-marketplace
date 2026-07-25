@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Customer } from '../../types';
-import { ADMIN_CSS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
@@ -15,21 +14,21 @@ const MODAL_CSS = `
   .modal-title { font-size:18px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px; }
   .modal-sub { font-size:13px;color:#999;margin-bottom:24px; }
   .modal-lbl { font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;display:block;margin-bottom:6px; }
-  .modal-inp { width:100%;padding:11px 14px;background:#f5f5f5;border:1.5px solid transparent;border-radius:10px;font-size:14px;font-family:inherit;color:#1a1a1a;box-sizing:border-box;margin-bottom:14px; }
-  .modal-inp:focus { border-color:#1a1a1a;background:#fff;outline:none; }
-  .modal-select { width:100%;padding:11px 14px;background:#f5f5f5;border:1.5px solid transparent;border-radius:10px;font-size:14px;font-family:inherit;color:#1a1a1a;box-sizing:border-box;margin-bottom:20px;appearance:none; }
-  .modal-select:focus { border-color:#1a1a1a;background:#fff;outline:none; }
+  .modal-inp { width:100%;padding:11px 14px;background:#f5f5f5;border:1.5px solid transparent;border-radius:10px;font-size:14px;font-family:inherit;color:#04210f;box-sizing:border-box;margin-bottom:14px; }
+  .modal-inp:focus { border-color:#04210f;background:#fff;outline:none; }
+  .modal-select { width:100%;padding:11px 14px;background:#f5f5f5;border:1.5px solid transparent;border-radius:10px;font-size:14px;font-family:inherit;color:#04210f;box-sizing:border-box;margin-bottom:20px;appearance:none; }
+  .modal-select:focus { border-color:#04210f;background:#fff;outline:none; }
   .modal-actions { display:flex;gap:10px; }
-  .modal-btn-primary { flex:1;padding:12px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer; }
+  .modal-btn-primary { flex:1;padding:12px;background:#04210f;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer; }
   .modal-btn-primary:disabled { opacity:0.5;cursor:not-allowed; }
-  .modal-btn-secondary { padding:12px 18px;background:#f5f5f5;color:#1a1a1a;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer; }
+  .modal-btn-secondary { padding:12px 18px;background:#f5f5f5;color:#04210f;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer; }
   .modal-err { background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:12px;color:#991b1b;margin-bottom:14px; }
 `;
 
 function roleBadge(role: string) {
   const style: React.CSSProperties = {
     padding: '3px 8px', borderRadius: 20, fontSize: 10, fontWeight: 600,
-    background: role === 'admin' ? '#1a1a1a' : role === 'operator' ? '#DBEAFE' : '#f5f5f5',
+    background: role === 'admin' ? '#04210f' : role === 'operator' ? '#DBEAFE' : '#f5f5f5',
     color: role === 'admin' ? '#fff' : role === 'operator' ? '#1E40AF' : '#999',
   };
   return <span style={style}>{ROLE_LABELS[role] || role}</span>;
@@ -100,7 +99,7 @@ export default function AdminCustomers({ token }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS}{MODAL_CSS}</style>
+      <style>{MODAL_CSS}</style>
       <div className="adm-page" style={{ maxWidth: 960 }}>
         <div className="adm-ph">
           <div>
@@ -111,7 +110,7 @@ export default function AdminCustomers({ token }: Props) {
         </div>
 
         <div className="adm-search-bar">
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{opacity:0.3,flexShrink:0}}><circle cx="5.5" cy="5.5" r="4.5" stroke="#1a1a1a" strokeWidth="1.4"/><path d="M9 9L12 12" stroke="#1a1a1a" strokeWidth="1.4" strokeLinecap="round"/></svg>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{opacity:0.3,flexShrink:0}}><circle cx="5.5" cy="5.5" r="4.5" stroke="#04210f" strokeWidth="1.4"/><path d="M9 9L12 12" stroke="#04210f" strokeWidth="1.4" strokeLinecap="round"/></svg>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre, teléfono o email..." />
           {search && <button onClick={() => setSearch('')} style={{background:'none',border:'none',cursor:'pointer',color:'#bbb',fontSize:18,lineHeight:1}}>×</button>}
         </div>

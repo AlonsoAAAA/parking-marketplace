@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Event } from '../../types';
-import { ADMIN_CSS, STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
+import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; onNavigate: (page: string) => void; }
@@ -48,16 +48,6 @@ export default function AdminDashboard({ token, onNavigate }: Props) {
 
   return (
     <>
-      <style>{ADMIN_CSS + `
-        .occ-bar { height: 4px; background: #EDEDED; border-radius: 4px; overflow: hidden; margin-top: 8px; }
-        .occ-fill { height: 100%; border-radius: 4px; background: #1a1a1a; }
-        .shortcuts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        @media(max-width:480px){ .shortcuts { grid-template-columns: repeat(2, 1fr); } }
-        .sc-btn { background: #fff; border-radius: 12px; padding: 16px; border: none; cursor: pointer; font-family: 'Inter', sans-serif; text-align: left; transition: opacity 0.15s; }
-        .sc-btn:hover { opacity: 0.8; }
-        .sc-icon { font-size: 24px; margin-bottom: 8px; }
-        .sc-label { font-size: 12px; font-weight: 600; color: #1a1a1a; }
-      `}</style>
       <div className="adm-page" style={{ maxWidth: 960 }}>
         <div style={{ marginBottom: 28 }}>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '3px', textTransform: 'uppercase', color: '#bbb', marginBottom: 6 }}>{today}</p>
