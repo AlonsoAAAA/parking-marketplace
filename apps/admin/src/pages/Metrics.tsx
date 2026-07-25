@@ -117,7 +117,7 @@ export default function Metrics({ token, scope }: Props) {
   if (error) return <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>;
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="adm-page space-y-6" style={{ maxWidth: 1100 }}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-brand-green-dark">Métricas</h2>
