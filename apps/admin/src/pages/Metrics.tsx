@@ -4,8 +4,10 @@ import { api } from '../lib/api';
 
 interface Props { token: string; scope: 'admin' | 'operator'; }
 
+const API_BASE = (import.meta as any).env?.VITE_API_URL ?? '';
+
 type Period = 'diario' | 'semanal' | 'mensual';
-type MetricKey = 'ventas' | 'reservas' | 'ocupacion' | 'reclamos';
+type MetricKey = 'ventas' | 'ganancia' | 'reservas' | 'ocupacion' | 'reclamos';
 
 const PERIOD_DAYS: Record<Period, number> = { diario: 14, semanal: 12 * 7, mensual: 6 * 30 };
 const BUCKET: Record<Period, 'day' | 'week' | 'month'> = { diario: 'day', semanal: 'week', mensual: 'month' };
@@ -29,6 +31,7 @@ export default function Metrics({ token, scope }: Props) {
   const [payments, setPayments] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
+  const [pricingConfig, setPricingConfig] = useState<{ marginMin: number; marginMax: number } | null>(null);
   const [period, setPeriod] = useState<Period>('diario');
   const [metric, setMetric] = useState<MetricKey>('ventas');
   const [view, setView] = useState<'resumen' | 'detalle'>('resumen');
@@ -53,6 +56,11 @@ export default function Metrics({ token, scope }: Props) {
       setClaims(Array.isArray(cl) ? cl : (cl?.data ?? []));
       setLoading(false);
     }).catch(e => { setError(e.message || 'Error al cargar métricas'); setLoading(false); });
+
+    fetch(`${API_BASE}/api/v1/pricing-config`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (d?.data) setPricingConfig(d.data); })
+      .catch(() => {});
   }, [token, scope]);
 
   // ── Series por periodo, agregadas de datos reales ────────────────────────
@@ -98,11 +106,22 @@ export default function Metrics({ token, scope }: Props) {
     const reservedSlots = events.reduce((s, e) => s + (Number(e.slotsReserved ?? e.slots_reserved) || 0), 0);
     const ocupacion = totalSlots > 0 ? Math.round((reservedSlots / totalSlots) * 100) : 0;
     const reclamosAbiertos = claims.filter(c => c.status !== 'resolved').length;
-    return { totalVentas, totalReservas, ocupacion, reclamosAbiertos };
-  }, [payments, events, claims]);
 
-  const CARDS: Array<{ key: MetricKey; label: string; value: string; color: string }> = [
-    { key: 'ventas',    label: 'Ganancias / Ventas',      value: fmtMoney(kpis.totalVentas), color: '#DFF085' },
+    // Ganancia estimada: no se guarda el precio de contrato por transacción, así que se
+    // aproxima con el margen promedio configurado en Precios dinámicos sobre el precio
+    // base (venta sin IVA). ganancia = basePrice - basePrice/(1+margen) = basePrice · margen/(1+margen)
+    const avgMarginPct = pricingConfig ? (pricingConfig.marginMin + pricingConfig.marginMax) / 2 : null;
+    const basePriceSum = totalVentas / 1.16;
+    const gananciaEstimada = avgMarginPct != null ? basePriceSum * (avgMarginPct / 100) / (1 + avgMarginPct / 100) : null;
+    const gananciaPctDeVenta = avgMarginPct != null && basePriceSum > 0 ? (gananciaEstimada! / basePriceSum) * 100 : null;
+
+    return { totalVentas, totalReservas, ocupacion, reclamosAbiertos, gananciaEstimada, gananciaPctDeVenta };
+  }, [payments, events, claims, pricingConfig]);
+
+  const CARDS: Array<{ key: MetricKey; label: string; value: string; sub?: string; color: string }> = [
+    { key: 'ventas',    label: 'Ventas totales',          value: fmtMoney(kpis.totalVentas), color: '#DFF085' },
+    { key: 'ganancia',  label: 'Ganancia (plataforma)',   value: kpis.gananciaEstimada != null ? fmtMoney(kpis.gananciaEstimada) : '—',
+      sub: kpis.gananciaPctDeVenta != null ? `≈${kpis.gananciaPctDeVenta.toFixed(1)}% de la venta` : 'Configura Precios dinámicos', color: '#c9da70' },
     { key: 'reservas',  label: 'Reservas de Cajones',     value: String(kpis.totalReservas), color: '#c3c0ff' },
     { key: 'ocupacion', label: '% Ocupación',             value: `${kpis.ocupacion}%`,       color: '#86B49F' },
     { key: 'reclamos',  label: 'Reportes y Reclamos',     value: String(kpis.reclamosAbiertos), color: '#72B8BC' },
@@ -136,18 +155,23 @@ export default function Metrics({ token, scope }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {CARDS.map(c => (
-          <button
-            key={c.key}
-            onClick={() => { setMetric(c.key); setView('detalle'); }}
-            className={`rounded-2xl border p-4 text-left shadow-sm transition-all ${metric === c.key && view === 'detalle' ? 'border-brand-indigo ring-2 ring-brand-indigo/30' : 'border-slate-100 hover:border-slate-200'} bg-white`}
-          >
-            <div className="mb-2 h-1.5 w-8 rounded-full" style={{ background: c.color }} />
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{c.label}</div>
-            <div className="mt-1 text-xl font-black text-brand-green-dark">{c.value}</div>
-          </button>
-        ))}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        {CARDS.map(c => {
+          const clickable = c.key !== 'ganancia';
+          const Tag = clickable ? 'button' : 'div';
+          return (
+            <Tag
+              key={c.key}
+              onClick={clickable ? () => { setMetric(c.key); setView('detalle'); } : undefined}
+              className={`rounded-2xl border p-4 text-left shadow-sm transition-all ${metric === c.key && view === 'detalle' ? 'border-brand-indigo ring-2 ring-brand-indigo/30' : 'border-slate-100 hover:border-slate-200'} bg-white`}
+            >
+              <div className="mb-2 h-1.5 w-8 rounded-full" style={{ background: c.color }} />
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{c.label}</div>
+              <div className="mt-1 text-xl font-black text-brand-green-dark">{c.value}</div>
+              {c.sub && <div className="mt-0.5 text-[11px] text-slate-400">{c.sub}</div>}
+            </Tag>
+          );
+        })}
       </div>
 
       {view === 'resumen' ? (
