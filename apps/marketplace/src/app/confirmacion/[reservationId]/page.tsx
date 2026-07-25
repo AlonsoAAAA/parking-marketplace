@@ -16,7 +16,7 @@ interface TicketData {
 const STEPS = [
   { title: 'Llega a tiempo', text: 'Te sugerimos llegar con anticipación al inicio del evento.' },
   { title: 'Muestra el QR', text: 'Ten tu QR digital listo en tu celular para que sea escaneado en el acceso.' },
-  { title: 'Estaciónate', text: 'El personal te asignará tu cajón exclusivo de forma inmediata.' },
+  { title: 'Estaciónate', text: 'El personal recibirá tu auto o te asignará tu lugar al llegar.' },
   { title: 'Disfruta', text: 'Tu coche se queda seguro en lote cerrado con vigilancia permanente.' },
 ];
 
