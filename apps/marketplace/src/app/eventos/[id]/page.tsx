@@ -151,6 +151,13 @@ export default function EventDetailPage() {
   const selectedPrices = selectedParking ? computeParkingPrices(selectedParking, event.startsAt, pricingCfg) : {};
   const selectedMinPrice = Object.values(selectedPrices).length ? Math.min(...Object.values(selectedPrices)) : 0;
 
+  // El mapa debe mostrar el mismo precio final (con margen + IVA) que la tarjeta,
+  // no el precio de contrato crudo que trae `parkings[].pricing`.
+  const mapParkings = parkings.map(p => ({
+    ...p,
+    pricing: computeParkingPrices(p, event.startsAt, pricingCfg),
+  }));
+
   return (
     <div className="bg-background min-h-screen pb-32 font-sans">
       <Navbar back="back" showExplore={false} />
@@ -304,7 +311,7 @@ export default function EventDetailPage() {
               <EventMap
                 key={event.id}
                 venueLat={event.lat} venueLng={event.lng!}
-                parkings={parkings} selected={selected}
+                parkings={mapParkings} selected={selected}
                 onSelect={handleSelect}
               />
             </div>
