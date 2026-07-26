@@ -214,15 +214,15 @@ export class AdminService {
   }
 
   async createEvent(data: {
-    parkingId?: string; name: string; venueName: string;
+    parkingId?: string; venueId?: string; name: string; venueName: string;
     startsAt: string; endsAt: string; price: number; status?: string;
     priceAuto?: number; priceSub?: number; pricePickup?: number; priceMoto?: number;
   }) {
     const [row] = await this.db.query(
-      `INSERT INTO events (parking_id, name, venue_name, starts_at, ends_at, price, total_slots, status,
+      `INSERT INTO events (parking_id, venue_id, name, venue_name, starts_at, ends_at, price, total_slots, status,
                            category, price_auto, price_sub, price_pickup, price_moto)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
-      [data.parkingId ?? null, data.name, data.venueName, data.startsAt, data.endsAt,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+      [data.parkingId ?? null, data.venueId ?? null, data.name, data.venueName, data.startsAt, data.endsAt,
        data.price, 0, data.status ?? 'draft',
        (data as any).category ?? null,
        data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null],
@@ -231,25 +231,26 @@ export class AdminService {
   }
 
   async updateEvent(id: string, data: Partial<{
-    name: string; venueName: string; startsAt: string; endsAt: string;
+    name: string; venueId: string; venueName: string; startsAt: string; endsAt: string;
     price: number; status: string; category: string;
     priceAuto: number; priceSub: number; pricePickup: number; priceMoto: number;
   }>) {
     await this.db.query(
       `UPDATE events
        SET name         = COALESCE($1, name),
-           venue_name   = COALESCE($2, venue_name),
-           starts_at    = COALESCE($3::timestamptz, starts_at),
-           ends_at      = COALESCE($4::timestamptz, ends_at),
-           price        = COALESCE($5, price),
-           status       = COALESCE($6, status),
-           category     = COALESCE($7, category),
-           price_auto   = COALESCE($8,  price_auto),
-           price_sub    = COALESCE($9,  price_sub),
-           price_pickup = COALESCE($10, price_pickup),
-           price_moto   = COALESCE($11, price_moto)
-       WHERE id = $12`,
-      [data.name, data.venueName, data.startsAt ?? null, data.endsAt ?? null,
+           venue_id     = COALESCE($2, venue_id),
+           venue_name   = COALESCE($3, venue_name),
+           starts_at    = COALESCE($4::timestamptz, starts_at),
+           ends_at      = COALESCE($5::timestamptz, ends_at),
+           price        = COALESCE($6, price),
+           status       = COALESCE($7, status),
+           category     = COALESCE($8, category),
+           price_auto   = COALESCE($9,  price_auto),
+           price_sub    = COALESCE($10, price_sub),
+           price_pickup = COALESCE($11, price_pickup),
+           price_moto   = COALESCE($12, price_moto)
+       WHERE id = $13`,
+      [data.name, data.venueId ?? null, data.venueName, data.startsAt ?? null, data.endsAt ?? null,
        data.price, data.status, data.category ?? null,
        data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null, id],
     );

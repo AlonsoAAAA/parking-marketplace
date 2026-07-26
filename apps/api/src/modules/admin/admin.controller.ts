@@ -79,6 +79,7 @@ class SetParkingVenuesDto {
 
 class CreateEventDto {
   @IsOptional() @IsString() parkingId?: string;
+  @IsOptional() @IsString() venueId?: string;
   @IsString() @MaxLength(200) name: string;
   @IsString() venueName: string;
   @IsDateString() startsAt: string;
@@ -94,6 +95,7 @@ class CreateEventDto {
 
 class UpdateEventDto {
   @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() venueId?: string;
   @IsOptional() @IsString() venueName?: string;
   @IsOptional() @IsDateString() startsAt?: string;
   @IsOptional() @IsDateString() endsAt?: string;

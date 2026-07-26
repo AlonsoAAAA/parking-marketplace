@@ -73,6 +73,7 @@ export default function AdminEvents({ token }: Props) {
       const num = (v: string) => v !== '' ? parseFloat(v) : undefined;
       const data = {
         name:       modal.name,
+        venueId:    modal.venueId || undefined,
         venueName:  modal.venueName,
         startsAt:   modal.startsAt ? new Date(modal.startsAt).toISOString() : undefined,
         endsAt:     modal.endsAt   ? new Date(modal.endsAt).toISOString()   : undefined,
