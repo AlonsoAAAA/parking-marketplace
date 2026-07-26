@@ -302,6 +302,7 @@ export default function EventDetailPage() {
           {event.lat && parkings.length > 0 ? (
             <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-md border border-slate-800 aspect-square lg:aspect-auto lg:h-[420px]">
               <EventMap
+                key={event.id}
                 venueLat={event.lat} venueLng={event.lng!}
                 parkings={parkings} selected={selected}
                 onSelect={handleSelect}
