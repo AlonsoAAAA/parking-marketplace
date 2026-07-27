@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, Car } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { Event } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
@@ -19,7 +19,7 @@ const CATEGORIES = [
 const EMPTY_EVENT = {
   id: '', name: '', venueId: '', venueName: '',
   startsAt: '', endsAt: '',
-  price: '', priceAuto: '', priceSub: '', pricePickup: '', priceMoto: '',
+  price: '',
   status: 'active' as const,
   category: '',
 };
@@ -70,7 +70,6 @@ export default function AdminEvents({ token }: Props) {
     if (!modal?.venueName?.trim()) { setError('Selecciona un venue'); return; }
     setSaving(true); setError('');
     try {
-      const num = (v: string) => v !== '' ? parseFloat(v) : undefined;
       const data = {
         name:       modal.name,
         venueId:    modal.venueId || undefined,
@@ -80,10 +79,6 @@ export default function AdminEvents({ token }: Props) {
         price:    parseFloat(modal.price) || 0,
         status:   modal.status,
         category: modal.category || undefined,
-        priceAuto:    num(modal.priceAuto),
-        priceSub:     num(modal.priceSub),
-        pricePickup:  num(modal.pricePickup),
-        priceMoto:    num(modal.priceMoto),
       };
       if (modal.id) await api.admin.updateEvent(token, modal.id, data);
       else          await api.admin.createEvent(token, data);
@@ -152,7 +147,7 @@ export default function AdminEvents({ token }: Props) {
                     const reserved = Number(e.slotsReserved || e.slots_reserved) || 0;
                     const sc       = STATUS_COLORS[e.status] || STATUS_COLORS.draft;
                     const pv       = calcIva(e.price);
-                    const openEdit = () => { const vn = e.venueName||e.venue_name||''; const mv = venues.find((v:any) => v.name === vn); setModal({ id: e.id, name: e.name, venueId: mv?.id||'', venueName: vn, startsAt: (e.startsAt||e.starts_at||'').slice(0,16), endsAt: (e.endsAt||e.ends_at||'').slice(0,16), price: String(e.price), priceAuto: String((e as any).price_auto||''), priceSub: String((e as any).price_sub||''), pricePickup: String((e as any).price_pickup||''), priceMoto: String((e as any).price_moto||''), status: e.status, category: (e as any).category||'' }); setError(''); };
+                    const openEdit = () => { const vn = e.venueName||e.venue_name||''; const mv = venues.find((v:any) => v.name === vn); setModal({ id: e.id, name: e.name, venueId: mv?.id||'', venueName: vn, startsAt: (e.startsAt||e.starts_at||'').slice(0,16), endsAt: (e.endsAt||e.ends_at||'').slice(0,16), price: String(e.price), status: e.status, category: (e as any).category||'' }); setError(''); };
                     return (
                       <tr key={e.id} onClick={openEdit}>
                         <td style={{ fontWeight: 600 }}>{e.name}</td>
@@ -252,48 +247,35 @@ export default function AdminEvents({ token }: Props) {
               <input className="adm-input" type="datetime-local" value={modal.endsAt} onChange={e => setModal((m: any) => ({...m, endsAt: e.target.value}))} style={{ width: '100%', minWidth: 0 }} />
             </div>
 
-            {/* Precios por tipo de vehículo */}
+            {/* Precio base (solo respaldo) */}
             <div style={{ marginBottom: 16 }}>
-              <label className="adm-label" style={{ marginBottom: 10, display: 'block' }}>Precios por tipo de vehículo (MXN)</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {([
-                  { key: 'price',       label: 'Base' },
-                  { key: 'priceAuto',   label: 'Auto' },
-                  { key: 'priceSub',    label: 'SUV / Camioneta' },
-                  { key: 'pricePickup', label: 'Pick Up' },
-                  { key: 'priceMoto',   label: 'Moto' },
-                ] as const).map(({ key, label }, i) => {
-                  const placeholder = ['180', 'ej. 180', 'ej. 220', 'ej. 250', 'ej. 80'][i];
-                  const rawVal = (modal as any)[key];
-                  const pv = calcIva(rawVal);
-                  const hasVal = rawVal !== '' && parseFloat(rawVal) > 0;
+              <label className="adm-label" style={{ marginBottom: 6, display: 'block' }}>Precio base de respaldo (MXN)</label>
+              <div style={{ background: '#f9f9f9', borderRadius: 10, padding: '10px 12px', maxWidth: 200 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>$</span>
+                  <input
+                    type="number"
+                    value={modal.price}
+                    onChange={e => setModal((m: any) => ({...m, price: e.target.value}))}
+                    placeholder="180"
+                    style={{ background: 'none', border: 'none', outline: 'none', fontSize: 15, fontWeight: 700, color: '#1a1a1a', width: '100%', fontFamily: 'Inter, sans-serif', minWidth: 0 }}
+                  />
+                </div>
+                {modal.price !== '' && parseFloat(modal.price) > 0 && (() => {
+                  const pv = calcIva(modal.price);
                   return (
-                    <div key={key} style={{ background: '#f9f9f9', borderRadius: 10, padding: '10px 12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#999', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 6 }}>
-                        <Car size={12} /> {label}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>$</span>
-                        <input
-                          type="number"
-                          value={rawVal}
-                          onChange={e => setModal((m: any) => ({...m, [key]: e.target.value}))}
-                          placeholder={placeholder}
-                          style={{ background: 'none', border: 'none', outline: 'none', fontSize: 15, fontWeight: 700, color: '#1a1a1a', width: '100%', fontFamily: 'Inter, sans-serif', minWidth: 0 }}
-                        />
-                      </div>
-                      {hasVal && (
-                        <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#aaa' }}>
-                          <span>IVA&nbsp;{fmtMXN(pv.iva)}</span>
-                          <span style={{ fontWeight: 700, color: '#555' }}>Total {fmtMXN(pv.total)}</span>
-                        </div>
-                      )}
+                    <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#aaa' }}>
+                      <span>IVA&nbsp;{fmtMXN(pv.iva)}</span>
+                      <span style={{ fontWeight: 700, color: '#555' }}>Total {fmtMXN(pv.total)}</span>
                     </div>
                   );
-                })}
+                })()}
               </div>
               <p style={{ fontSize: 11, color: '#bbb', marginTop: 8 }}>
-                El precio base se aplica cuando el tipo de vehículo no tiene precio específico.
+                Los precios reales por tipo de vehículo se configuran en el estacionamiento
+                (Estacionamientos → Editar) y se calculan ahí con el margen dinámico + IVA.
+                Este precio base solo se usa como respaldo si el estacionamiento no tiene
+                tarifa configurada para ese tipo de vehículo.
               </p>
             </div>
             <div className="adm-field">
