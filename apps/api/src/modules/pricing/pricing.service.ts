@@ -12,8 +12,10 @@ import { DataSource } from 'typeorm';
 // ─── Tipos públicos ───────────────────────────────────────────────────────────
 
 export interface PricingConfig {
-  marginMin:          number;   // %  ej. 15
-  marginMax:          number;   // %  ej. 60
+  mode:                'fixed' | 'dynamic'; // fijo (margen único) o dinámico (motor de multiplicadores)
+  fixedMarginPct:      number;   // %  margen único usado cuando mode === 'fixed'
+  marginMin:          number;   // %  ej. 15  (solo aplica en modo dinámico)
+  marginMax:          number;   // %  ej. 60  (solo aplica en modo dinámico)
   weightDistance:     number;   // 0-1
   weightAnticipation: number;   // 0-1
   weightDemand:       number;   // 0-1
@@ -100,8 +102,24 @@ export function demandMultiplier(occupancyPct: number): number {
 
 export function calculatePrice(params: CalculatePriceParams): PriceBreakdown {
   const { contractPrice, distanceKm, anticipationHours, occupancyPercent, config } = params;
-  const { marginMin, marginMax, weightDistance, weightAnticipation, weightDemand } = config;
+  const { mode, fixedMarginPct, marginMin, marginMax, weightDistance, weightAnticipation, weightDemand } = config;
 
+  // Modo FIJO: un solo margen, sin variar por distancia/anticipación/demanda.
+  // Los multiplicadores se reportan como 1× (informativos, no afectan el precio).
+  if (mode === 'fixed') {
+    const marginPercent = fixedMarginPct;
+    const basePrice  = +(contractPrice * (1 + marginPercent / 100)).toFixed(2);
+    const ivaAmount  = +(basePrice * IVA_RATE).toFixed(2);
+    const finalPrice = Math.round(basePrice + ivaAmount);
+    const profit     = +(basePrice - contractPrice).toFixed(2);
+    return {
+      contractPrice, basePrice, ivaAmount, finalPrice, profit,
+      marginPercent: +marginPercent.toFixed(2),
+      multipliers: { distance: 1, anticipation: 1, demand: 1, composite: 1 },
+    };
+  }
+
+  // Modo DINÁMICO: motor de multiplicadores (comportamiento original).
   // 1. Calcular multiplicadores individuales
   const mDist = distanceMultiplier(distanceKm);
   const mAnt  = anticipationMultiplier(anticipationHours);
@@ -153,6 +171,8 @@ export function calculatePrice(params: CalculatePriceParams): PriceBreakdown {
 // ─── Servicio NestJS ──────────────────────────────────────────────────────────
 
 const DEFAULT_CONFIG: PricingConfig = {
+  mode:               'fixed',
+  fixedMarginPct:     30,
   marginMin:          15,
   marginMax:          60,
   weightDistance:     0.40,
@@ -181,6 +201,8 @@ export class PricingService implements OnModuleInit {
     if (rows.length) {
       const r = rows[0];
       this.cache = {
+        mode:               r.mode === 'dynamic' ? 'dynamic' : 'fixed',
+        fixedMarginPct:     r.fixed_margin_pct != null ? +r.fixed_margin_pct : DEFAULT_CONFIG.fixedMarginPct,
         marginMin:          +r.margin_min,
         marginMax:          +r.margin_max,
         weightDistance:     +r.weight_distance,
@@ -204,15 +226,18 @@ export class PricingService implements OnModuleInit {
     if (existing.length) {
       await this.dataSource.query(
         `UPDATE pricing_config
-         SET margin_min          = $1,
-             margin_max          = $2,
-             weight_distance     = $3,
-             weight_anticipation = $4,
-             weight_demand       = $5,
+         SET mode                = $1,
+             fixed_margin_pct    = $2,
+             margin_min          = $3,
+             margin_max          = $4,
+             weight_distance     = $5,
+             weight_anticipation = $6,
+             weight_demand       = $7,
              updated_at          = NOW(),
-             updated_by          = $6
-         WHERE id = $7`,
+             updated_by          = $8
+         WHERE id = $9`,
         [
+          dto.mode, dto.fixedMarginPct,
           dto.marginMin, dto.marginMax,
           dto.weightDistance, dto.weightAnticipation, dto.weightDemand,
           updatedBy ?? null,
@@ -222,9 +247,10 @@ export class PricingService implements OnModuleInit {
     } else {
       await this.dataSource.query(
         `INSERT INTO pricing_config
-         (margin_min, margin_max, weight_distance, weight_anticipation, weight_demand, updated_by)
-         VALUES ($1,$2,$3,$4,$5,$6)`,
+         (mode, fixed_margin_pct, margin_min, margin_max, weight_distance, weight_anticipation, weight_demand, updated_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
+          dto.mode, dto.fixedMarginPct,
           dto.marginMin, dto.marginMax,
           dto.weightDistance, dto.weightAnticipation, dto.weightDemand,
           updatedBy ?? null,

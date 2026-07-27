@@ -28,6 +28,7 @@ interface ParkingOption {
 }
 
 interface PricingConfig {
+  mode: 'fixed' | 'dynamic'; fixedMarginPct: number;
   marginMin: number; marginMax: number;
   weightDistance: number; weightAnticipation: number; weightDemand: number;
 }
@@ -66,6 +67,10 @@ function demMult(pct: number) {
   return lerp(p, 80, 1.2, 100, 1.4);
 }
 function computeFinalPrice(contractPrice: number, distKm: number, antHours: number, occupancy: number, cfg: PricingConfig): number {
+  if (cfg.mode === 'fixed') {
+    const basePrice = contractPrice * (1 + cfg.fixedMarginPct / 100);
+    return Math.round(basePrice * (1 + IVA));
+  }
   const mDist = distMult(distKm), mAnt = antMult(antHours), mDem = demMult(occupancy);
   const { weightDistance: wd, weightAnticipation: wa, weightDemand: wdem, marginMin, marginMax } = cfg;
   const composite = wd * mDist + wa * mAnt + wdem * mDem;
@@ -100,6 +105,7 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pricingCfg, setPricingCfg] = useState<PricingConfig>({
+    mode: 'fixed', fixedMarginPct: 30,
     marginMin: 15, marginMax: 60, weightDistance: 0.40, weightAnticipation: 0.35, weightDemand: 0.25,
   });
 

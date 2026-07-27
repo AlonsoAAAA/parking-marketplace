@@ -11,6 +11,7 @@ interface ParkingDetail {
 }
 
 interface PricingConfig {
+  mode: 'fixed' | 'dynamic'; fixedMarginPct: number;
   marginMin: number; marginMax: number;
   weightDistance: number; weightAnticipation: number; weightDemand: number;
 }
@@ -44,6 +45,12 @@ function demMult(pct: number) {
   return lerp(p, 80, 1.2, 100, 1.4);
 }
 function computeFinalPrice(contractPrice: number, distKm: number, antHours: number, occupancy: number, cfg: PricingConfig) {
+  if (cfg.mode === 'fixed') {
+    const basePrice = +(contractPrice * (1 + cfg.fixedMarginPct / 100)).toFixed(2);
+    const ivaAmount = +(basePrice * IVA).toFixed(2);
+    const finalPrice = Math.round(basePrice + ivaAmount);
+    return { finalPrice, basePrice, ivaAmount, marginPct: +cfg.fixedMarginPct.toFixed(1) };
+  }
   const mDist = distMult(distKm), mAnt = antMult(antHours), mDem = demMult(occupancy);
   const { weightDistance: wd, weightAnticipation: wa, weightDemand: wdem, marginMin, marginMax } = cfg;
   const composite = wd * mDist + wa * mAnt + wdem * mDem;
@@ -98,6 +105,7 @@ export default function ParkingDetailPage() {
   const [loadingMarcas, setLoadingMarcas] = useState(true);
   const [categoria, setCategoria] = useState<VehicleCategory | null>(null);
   const [pricingCfg, setPricingCfg] = useState<PricingConfig>({
+    mode: 'fixed', fixedMarginPct: 30,
     marginMin: 15, marginMax: 60, weightDistance: 0.40, weightAnticipation: 0.35, weightDemand: 0.25,
   });
 
