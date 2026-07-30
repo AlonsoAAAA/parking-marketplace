@@ -31,6 +31,7 @@ class CreateVenueDto {
   @IsOptional() @IsNumber() @Type(() => Number) capacity?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
+  @IsOptional() @IsString() @MaxLength(3000000) photoUrl?: string;
 }
 
 class UpdateVenueDto {
@@ -40,6 +41,7 @@ class UpdateVenueDto {
   @IsOptional() @IsNumber() @Type(() => Number) capacity?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
+  @IsOptional() @IsString() @MaxLength(3000000) photoUrl?: string;
 }
 
 class ParkingPricingDto {

@@ -39,29 +39,30 @@ export class AdminService {
   // ─── Venues ───────────────────────────────────────────────────────────────
 
   listVenues() {
-    return this.db.query(`SELECT * FROM venues ORDER BY name`);
+    return this.db.query(`SELECT *, photo_url AS "photoUrl" FROM venues ORDER BY name`);
   }
 
-  async createVenue(data: { name: string; city: string; address: string; capacity: number; lat?: number; lng?: number }) {
+  async createVenue(data: { name: string; city: string; address: string; capacity: number; lat?: number; lng?: number; photoUrl?: string }) {
     const [row] = await this.db.query(
-      `INSERT INTO venues (name, city, address, capacity, lat, lng)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [data.name, data.city ?? 'CDMX', data.address ?? '', data.capacity ?? 0, data.lat ?? null, data.lng ?? null],
+      `INSERT INTO venues (name, city, address, capacity, lat, lng, photo_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [data.name, data.city ?? 'CDMX', data.address ?? '', data.capacity ?? 0, data.lat ?? null, data.lng ?? null, data.photoUrl ?? null],
     );
     return row;
   }
 
-  async updateVenue(id: string, data: Partial<{ name: string; city: string; address: string; capacity: number; lat: number; lng: number }>) {
+  async updateVenue(id: string, data: Partial<{ name: string; city: string; address: string; capacity: number; lat: number; lng: number; photoUrl: string }>) {
     await this.db.query(
       `UPDATE venues
-       SET name     = COALESCE($1, name),
-           city     = COALESCE($2, city),
-           address  = COALESCE($3, address),
-           capacity = COALESCE($4, capacity),
-           lat      = COALESCE($5, lat),
-           lng      = COALESCE($6, lng)
-       WHERE id = $7`,
-      [data.name, data.city, data.address, data.capacity, data.lat, data.lng, id],
+       SET name      = COALESCE($1, name),
+           city      = COALESCE($2, city),
+           address   = COALESCE($3, address),
+           capacity  = COALESCE($4, capacity),
+           lat       = COALESCE($5, lat),
+           lng       = COALESCE($6, lng),
+           photo_url = COALESCE($7, photo_url)
+       WHERE id = $8`,
+      [data.name, data.city, data.address, data.capacity, data.lat, data.lng, data.photoUrl, id],
     );
     const rows = await this.db.query(`SELECT * FROM venues WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Venue no encontrado');
