@@ -203,6 +203,19 @@ export default function OperatorProfile({ token }: Props) {
           </div>
         )}
       </div>
+
+      {saved && (
+        <div className="adm-overlay" onClick={() => setSaved(false)}>
+          <div className="adm-modal" style={{ maxWidth: 340, textAlign: 'center', padding: '32px 24px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28, color: '#065F46' }}>✓</div>
+            <div className="adm-modal-title" style={{ marginBottom: 6 }}>Datos guardados</div>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>Tu información se guardó correctamente.</p>
+            <button className="adm-btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setSaved(false)}>
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
