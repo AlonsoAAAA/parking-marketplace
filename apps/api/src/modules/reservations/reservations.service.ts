@@ -153,16 +153,26 @@ export class ReservationsService {
   }
 
   async findByEvent(eventId: string, operatorId: string) {
-    // Soporta operadores directos Y sub-operadores (que heredan el owner_id del padre)
+    // Soporta operadores directos Y sub-operadores (que heredan el owner_id del padre).
+    // Igual que listOperatorEvents: el evento es del operador si su parking_id
+    // directo le pertenece, O si el venue del evento tiene ligado (via
+    // venue_parkings) algún estacionamiento del operador — antes solo se
+    // checaba parking_id directo, lo que bloqueaba (403) eventos ligados al
+    // operador solo por venue_parkings, ocultando sus reservas reales.
     const authorized = await this.dataSource.query(
       `SELECT e.id FROM events e
-       JOIN parkings p ON p.id = e.parking_id
        WHERE e.id = $1
          AND (
-           p.owner_id = $2
-           OR p.owner_id = (
-             SELECT parent_operator_id FROM users
-             WHERE id = $2 AND role IN ('sub_operator', 'sub_admin')
+           e.parking_id IN (
+             SELECT id FROM parkings
+             WHERE owner_id = $2
+                OR owner_id = (SELECT parent_operator_id FROM users WHERE id = $2 AND role IN ('sub_operator', 'sub_admin'))
+           )
+           OR e.venue_id IN (
+             SELECT vp.venue_id FROM venue_parkings vp
+             JOIN parkings pk ON pk.id = vp.parking_id
+             WHERE pk.owner_id = $2
+                OR pk.owner_id = (SELECT parent_operator_id FROM users WHERE id = $2 AND role IN ('sub_operator', 'sub_admin'))
            )
          )`,
       [eventId, operatorId],

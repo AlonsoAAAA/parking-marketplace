@@ -8,6 +8,20 @@ const STORAGE_KEY = 'pm_operator_profile';
 const BANCOS = ['BBVA', 'Santander', 'Citibanamex', 'Banorte', 'HSBC', 'Scotiabank', 'Inbursa', 'Otro'];
 const REGIMENES = ['Persona Física con Actividad Empresarial', 'Régimen Simplificado de Confianza', 'Persona Moral', 'Otro'];
 
+// Declarado fuera de OperatorProfile: si vive dentro del componente, React lo
+// recrea en cada render y desmonta/remonta el subárbol en cada tecleo,
+// perdiendo el foco del input (y cerrando el teclado en móvil).
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="adm-tw" style={{ marginBottom: 16 }}>
+      <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '2.5px', textTransform: 'uppercase', color: '#bbb' }}>{title}</p>
+      </div>
+      <div style={{ padding: '18px 18px 6px' }}>{children}</div>
+    </div>
+  );
+}
+
 export default function OperatorProfile({ token }: Props) {
   const [saved, setSaved]   = useState(false);
   const [saving, setSaving] = useState(false);
@@ -43,15 +57,6 @@ export default function OperatorProfile({ token }: Props) {
     } catch (e: any) { setError(e.message || 'Error al guardar'); }
     finally { setSaving(false); }
   };
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="adm-tw" style={{ marginBottom: 16 }}>
-      <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '2.5px', textTransform: 'uppercase', color: '#bbb' }}>{title}</p>
-      </div>
-      <div style={{ padding: '18px 18px 6px' }}>{children}</div>
-    </div>
-  );
 
   return (
     <>
