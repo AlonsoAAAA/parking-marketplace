@@ -37,6 +37,8 @@ export interface Reservation {
   vehicle_type?: string;
   vehicle_model?: string;
   assigned_spot?: string;
+  parkingName?: string;
+  parkingAddress?: string;
 }
 
 export interface Event {

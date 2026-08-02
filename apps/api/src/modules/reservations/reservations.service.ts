@@ -182,12 +182,22 @@ export class ReservationsService {
       throw new BadRequestException('No tienes acceso a este evento');
     }
 
+    // r.* no traía el nombre/dirección del estacionamiento ni el monto pagado
+    // (faltaban los JOINs a parkings/payments), y el frontend lee "plates"
+    // mientras la columna real es vehicle_plate — de ahí que el boleto del
+    // operador mostrara Estacionamiento/Dirección/Placas/Monto en blanco.
     return this.dataSource.query(
       `SELECT r.*, u.phone, u.name as user_name,
-              q.scanned_at, q.token IS NOT NULL as has_ticket
+              q.scanned_at, q.token IS NOT NULL as has_ticket,
+              r.vehicle_plate AS plates,
+              p.name AS "parkingName", p.address AS "parkingAddress",
+              pay.amount AS amount
        FROM reservations r
        JOIN users u ON u.id = r.user_id
        LEFT JOIN qr_tokens q ON q.reservation_id = r.id
+       LEFT JOIN events e2 ON e2.id = r.event_id
+       LEFT JOIN parkings p ON p.id = COALESCE(r.parking_id, e2.parking_id)
+       LEFT JOIN payments pay ON pay.reservation_id = r.id AND pay.status = 'completed'
        WHERE r.event_id = $1
        ORDER BY r.created_at DESC`,
       [eventId],
