@@ -14,9 +14,9 @@ const TAB_LABELS: Record<string, string> = { all: 'Todos', open: 'Abiertos', in_
 function refundPercentPreview(eventStartsAt?: string, claimCreatedAt?: string): number | null {
   if (!eventStartsAt || !claimCreatedAt) return null;
   const hoursNotice = (new Date(eventStartsAt).getTime() - new Date(claimCreatedAt).getTime()) / 3600000;
-  if (hoursNotice > 48) return 96.5;
-  if (hoursNotice > 24) return 70;
-  if (hoursNotice > 6)  return 50;
+  if (hoursNotice > 48) return 100;
+  if (hoursNotice > 36) return 70;
+  if (hoursNotice > 24) return 50;
   return 0;
 }
 

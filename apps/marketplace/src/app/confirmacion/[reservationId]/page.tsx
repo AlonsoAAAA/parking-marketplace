@@ -225,7 +225,7 @@ export default function ConfirmacionPage() {
             <p className="leading-relaxed m-0">
               Puedes solicitar un reembolso desde{' '}
               <Link href="/mis-boletos" className="font-bold underline">Mis boletos</Link>{' '}
-              hasta 6 horas antes del inicio del evento. El monto es escalonado según tu anticipación — consulta los{' '}
+              hasta 24 horas antes del inicio del evento. El monto es escalonado según tu anticipación — consulta los{' '}
               <Link href="/terminos" className="font-bold underline">términos y condiciones</Link>.
             </p>
           </div>

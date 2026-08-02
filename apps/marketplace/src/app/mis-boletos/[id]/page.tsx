@@ -155,7 +155,7 @@ export default function BoletoDetailPage() {
   const isPending = ticket.reservation.status === 'pending';
   const isUsed    = ticket.reservation.status === 'used';
   const hasQR     = isPaid || isUsed;
-  const canRefund = isPaid && new Date(ticket.event.startsAt) > new Date(Date.now() + 6 * 3600 * 1000);
+  const canRefund = isPaid && new Date(ticket.event.startsAt) > new Date(Date.now() + 24 * 3600 * 1000);
   const exitTime  = fmtTime(new Date(new Date(ticket.event.startsAt).getTime() + 6 * 3600 * 1000).toISOString());
 
   return (
@@ -316,7 +316,7 @@ export default function BoletoDetailPage() {
                     <div className="bg-amber-50 border border-amber-100 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-xs">
                       <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                       <p className="leading-relaxed m-0">
-                        <span className="font-extrabold uppercase text-amber-950">Política de reembolso:</span> Reembolso escalonado según anticipación (hasta 100% con +48h, 70% entre 24-48h, 50% entre 6-24h). Sin reembolso dentro de las 6 horas previas al evento. Tu solicitud está sujeta a nuestros{' '}
+                        <span className="font-extrabold uppercase text-amber-950">Política de reembolso:</span> Reembolso escalonado según anticipación (100% con +48h, 70% entre 36-48h, 50% entre 24-36h). Sin reembolso dentro de las 24 horas previas al evento. Tu solicitud está sujeta a nuestros{' '}
                         <a href="/terminos" target="_blank" rel="noopener noreferrer" className="font-extrabold underline text-amber-950">
                           términos y condiciones
                         </a>

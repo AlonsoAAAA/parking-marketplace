@@ -537,13 +537,13 @@ export class AdminService {
   }
 
   // Reembolso escalonado según anticipación (horas entre la solicitud y el
-  // inicio del evento): +48h → 100% menos cargo de procesamiento (máx. 3.5%);
-  // 24-48h → 70%; 6-24h → 50%; <6h → sin reembolso (no debería llegar aquí,
-  // reservations.service.ts ya bloquea la solicitud en ese punto).
+  // inicio del evento): +48h → 100%; 36-48h → 70%; 24-36h → 50%; <24h → sin
+  // reembolso (no debería llegar aquí, reservations.service.ts ya bloquea
+  // la solicitud en ese punto).
   private refundPercentForNotice(hoursNotice: number): number {
-    if (hoursNotice > 48) return 96.5;
-    if (hoursNotice > 24) return 70;
-    if (hoursNotice > 6)  return 50;
+    if (hoursNotice > 48) return 100;
+    if (hoursNotice > 36) return 70;
+    if (hoursNotice > 24) return 50;
     return 0;
   }
 
@@ -569,7 +569,7 @@ export class AdminService {
     const hoursNotice = (new Date(payment.starts_at).getTime() - new Date(claim.created_at).getTime()) / 3600000;
     const refundPercent = this.refundPercentForNotice(hoursNotice);
     if (refundPercent <= 0) {
-      throw new BadRequestException('Esta solicitud está fuera del plazo de reembolso (menos de 6 horas antes del evento) — no aplica reembolso');
+      throw new BadRequestException('Esta solicitud está fuera del plazo de reembolso (menos de 24 horas antes del evento) — no aplica reembolso');
     }
     const refundAmountCents = Math.round(parseFloat(payment.amount) * (refundPercent / 100) * 100);
 
