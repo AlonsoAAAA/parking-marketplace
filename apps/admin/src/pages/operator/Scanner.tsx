@@ -145,6 +145,7 @@ export default function Scanner({ token }: { token: string }) {
   const rafRef        = useRef<number>(0);
   const processingRef = useRef(false);
   const streamRef     = useRef<MediaStream | null>(null);
+  const scanFrameRef  = useRef<() => void>(() => {});
 
   // ── Stop stream ─────────────────────────────────────────────────────────────
   const stopQrStream = useCallback(() => {
@@ -175,10 +176,15 @@ export default function Scanner({ token }: { token: string }) {
       } else {
         setError(`QR inválido: ${result.reason}`);
         processingRef.current = false;
+        // El QR es inválido/ya usado pero la cámara sigue activa — hay que
+        // retomar el loop de escaneo o el escáner queda "congelado" hasta
+        // refrescar la página, aunque el video se siga viendo.
+        if (streamRef.current) rafRef.current = requestAnimationFrame(scanFrameRef.current);
       }
     } catch (e: any) {
       setError(e.message || 'Error al validar el QR');
       processingRef.current = false;
+      if (streamRef.current) rafRef.current = requestAnimationFrame(scanFrameRef.current);
     } finally {
       setValidating(false);
     }
@@ -202,6 +208,8 @@ export default function Scanner({ token }: { token: string }) {
       rafRef.current = requestAnimationFrame(scanFrame);
     }
   }, [handleQrToken]);
+
+  useEffect(() => { scanFrameRef.current = scanFrame; }, [scanFrame]);
 
   // ── Start camera ─────────────────────────────────────────────────────────────
   const startQrCamera = useCallback(async () => {
