@@ -37,9 +37,9 @@ export class CheckinService {
         reservationId,
         dto.plate.toUpperCase(),
         dto.photoFront,
-        dto.photoBack,
-        dto.photoLeft,
-        dto.photoRight,
+        dto.photoBack  ?? null,
+        dto.photoLeft  ?? null,
+        dto.photoRight ?? null,
         operatorId,
       ],
     );

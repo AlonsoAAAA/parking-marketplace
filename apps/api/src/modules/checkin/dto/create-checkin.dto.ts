@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
 
 export class CreateCheckinDto {
   @IsString()
@@ -6,19 +6,20 @@ export class CreateCheckinDto {
   @MaxLength(20)
   plate: string;
 
+  // Única foto obligatoria — las otras 3 son opcionales (ver Scanner.tsx).
   @IsString()
   @IsNotEmpty()
   photoFront: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  photoBack: string;
+  photoBack?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  photoLeft: string;
+  photoLeft?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  photoRight: string;
+  photoRight?: string;
 }

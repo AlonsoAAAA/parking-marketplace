@@ -383,14 +383,17 @@ export default function Scanner({ token }: { token: string }) {
             </div>
 
             <div style={s.card}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12 }}>Token QR</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 4 }}>Folio o token del boleto</div>
+              <div style={{ fontSize: 11, color: T.muted, marginBottom: 12 }}>
+                Escribe el folio de 8 caracteres que aparece en el boleto (ej. <strong>TKT-A1B2C3D4</strong>), o pega el token completo del QR.
+              </div>
               <form onSubmit={handleManualSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <input
-                  style={{ ...s.input, fontSize: 13 }}
+                  style={{ ...s.input, fontSize: 13, fontFamily: 'monospace', letterSpacing: 1 }}
                   type="text"
                   value={manualToken}
                   onChange={e => setManualToken(e.target.value)}
-                  placeholder="Pega aquí el token del QR"
+                  placeholder="TKT-A1B2C3D4"
                   autoComplete="off"
                   autoCorrect="off"
                   spellCheck={false}
@@ -400,7 +403,7 @@ export default function Scanner({ token }: { token: string }) {
                   disabled={!manualToken.trim() || validating}
                   style={{ ...s.btnPrimary, ...(!manualToken.trim() || validating ? s.btnDisabled : {}) }}
                 >
-                  {validating ? 'Validando…' : 'Validar token'}
+                  {validating ? 'Validando…' : 'Validar folio'}
                 </button>
               </form>
             </div>
