@@ -100,18 +100,22 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
   useEffect(() => {
     api.operator.events(token)
       .then(d => {
-        const list = (d as any).data || [];
+        const list: Event[] = (d as any).data || [];
         setEvents(list);
+        const firstActive = list.find(e => e.status === 'active') ?? list[0];
         // Only auto-select first event if no initialEventId was provided
-        if (!initialEventId && list.length > 0) setSelectedEvent(list[0].id);
-        // If initialEventId was provided but doesn't exist in list, fall back to first
-        if (initialEventId && list.length > 0 && !list.find((e: any) => e.id === initialEventId)) {
-          setSelectedEvent(list[0].id);
+        if (!initialEventId && firstActive) setSelectedEvent(firstActive.id);
+        // If initialEventId was provided but doesn't exist in list, fall back to first activo
+        if (initialEventId && firstActive && !list.find((e: any) => e.id === initialEventId)) {
+          setSelectedEvent(firstActive.id);
         }
       })
       .catch(() => setEvents([]))
       .finally(() => setEventsLoading(false));
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const activeEvents   = useMemo(() => events.filter(e => e.status === 'active'), [events]);
+  const archivedEvents = useMemo(() => events.filter(e => e.status !== 'active'), [events]);
 
   useEffect(() => {
     if (!selectedEvent) return;
@@ -149,7 +153,16 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
           <div className="adm-field" style={{ maxWidth: 420, marginBottom: 16 }}>
             <label className="adm-label">Evento</label>
             <select className="adm-input" value={selectedEvent} onChange={e => setSelectedEvent(e.target.value)}>
-              {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name} — {ev.venueName || ev.venue_name}</option>)}
+              {activeEvents.length > 0 && (
+                <optgroup label="Activos">
+                  {activeEvents.map(ev => <option key={ev.id} value={ev.id}>{ev.name} — {ev.venueName || ev.venue_name}</option>)}
+                </optgroup>
+              )}
+              {archivedEvents.length > 0 && (
+                <optgroup label="Archivados">
+                  {archivedEvents.map(ev => <option key={ev.id} value={ev.id}>{ev.name} — {ev.venueName || ev.venue_name}</option>)}
+                </optgroup>
+              )}
               {events.length === 0 && <option value="">Sin eventos disponibles</option>}
             </select>
           </div>
