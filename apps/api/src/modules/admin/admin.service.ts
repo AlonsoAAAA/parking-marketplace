@@ -261,21 +261,52 @@ export class AdminService {
   }
 
   async listOperatorEvents(operatorId: string, status?: string) {
+    // Un evento pertenece al operador si su estacionamiento principal es de este
+    // operador, O si el venue del evento tiene ligado (via venue_parkings) algún
+    // estacionamiento del operador — antes solo se checaba parking_id directo,
+    // lo que ocultaba eventos ligados al operador solo por venue_parkings.
     return this.db.query(
-      `SELECT e.*, p.name AS "parkingName", p.address AS "parkingAddress"
+      `SELECT DISTINCT e.*, p.name AS "parkingName", p.address AS "parkingAddress",
+              (edc.id IS NOT NULL) AS "closedToday"
        FROM events e
-       JOIN parkings p ON p.id = e.parking_id
+       LEFT JOIN parkings p ON p.id = e.parking_id
+       LEFT JOIN event_daily_closures edc
+         ON edc.event_id = e.id AND edc.operator_id = $1 AND edc.closed_date = CURRENT_DATE
        WHERE (
-         p.owner_id = $1
-         OR p.owner_id = (
-           SELECT parent_operator_id FROM users
-           WHERE id = $1 AND role IN ('sub_operator', 'sub_admin')
+         e.parking_id IN (
+           SELECT id FROM parkings
+           WHERE owner_id = $1
+              OR owner_id = (SELECT parent_operator_id FROM users WHERE id = $1 AND role IN ('sub_operator', 'sub_admin'))
+         )
+         OR e.venue_id IN (
+           SELECT vp.venue_id FROM venue_parkings vp
+           JOIN parkings pk ON pk.id = vp.parking_id
+           WHERE pk.owner_id = $1
+              OR pk.owner_id = (SELECT parent_operator_id FROM users WHERE id = $1 AND role IN ('sub_operator', 'sub_admin'))
          )
        )
        ${status ? 'AND e.status = $2' : ''}
        ORDER BY e.starts_at DESC`,
       status ? [operatorId, status] : [operatorId],
     );
+  }
+
+  async setEventClosedToday(eventId: string, operatorId: string, closed: boolean) {
+    if (closed) {
+      await this.db.query(
+        `INSERT INTO event_daily_closures (event_id, operator_id, closed_date)
+         VALUES ($1, $2, CURRENT_DATE)
+         ON CONFLICT (event_id, operator_id, closed_date) DO NOTHING`,
+        [eventId, operatorId],
+      );
+    } else {
+      await this.db.query(
+        `DELETE FROM event_daily_closures
+         WHERE event_id = $1 AND operator_id = $2 AND closed_date = CURRENT_DATE`,
+        [eventId, operatorId],
+      );
+    }
+    return { eventId, closedToday: closed };
   }
 
   async updateEventPrices(eventId: string, operatorId: string, prices: {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, Calendar, Percent, CalendarDays } from 'lucide-react';
+import { DollarSign, Calendar, Percent, CalendarDays, PowerOff, Power } from 'lucide-react';
 import { Event } from '../../types';
 import { api } from '../../lib/api';
 
@@ -24,8 +24,32 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
   const [loading, setLoading]         = useState(true);
   const [dailyRevenue, setDailyRevenue] = useState<number | null>(null);
   const [eventStats, setEventStats]   = useState<Record<string, EventStats>>({});
+  const [togglingId, setTogglingId]   = useState<string | null>(null);
 
   const today = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // Solo eventos que ya terminaron se archivan de esta pantalla — un evento
+  // marcado "cerrado hoy" sigue vigente (puede reabrirse), solo deja de contar
+  // como activo.
+  const now = Date.now();
+  const upcoming = events.filter(e => {
+    const end = e.endsAt || e.ends_at;
+    return !end || new Date(end).getTime() >= now;
+  });
+  const activeEvents = upcoming.filter(e => !e.closedToday);
+  const closedEvents = upcoming.filter(e => e.closedToday);
+
+  const toggleClosedToday = async (ev: Event, closed: boolean) => {
+    setTogglingId(ev.id);
+    try {
+      await api.operator.setEventClosedToday(token, ev.id, closed);
+      setEvents(prev => prev.map(e => e.id === ev.id ? { ...e, closedToday: closed } : e));
+    } catch {
+      // no-op — el usuario puede reintentar
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   useEffect(() => {
     api.operator.events(token, 'active')
@@ -67,8 +91,8 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
       .finally(() => setLoading(false));
   }, [token]);
 
-  const totalReserved = events.reduce((s, e) => s + (Number(e.slotsReserved || e.slots_reserved) || 0), 0);
-  const totalSlots    = events.reduce((s, e) => s + (Number(e.totalSlots    || e.total_slots)    || 0), 0);
+  const totalReserved = activeEvents.reduce((s, e) => s + (Number(e.slotsReserved || e.slots_reserved) || 0), 0);
+  const totalSlots    = activeEvents.reduce((s, e) => s + (Number(e.totalSlots    || e.total_slots)    || 0), 0);
   const occupancyPct  = totalSlots > 0 ? Math.round((totalReserved / totalSlots) * 100) : 0;
 
   const CARDS = [
@@ -113,7 +137,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
           <span style={{ fontSize: 11, color: '#bbb' }}>Tap para ver reservas →</span>
         </div>
 
-        {events.length === 0 && !loading ? (
+        {activeEvents.length === 0 && !loading ? (
           <div className="adm-tw">
             <div className="adm-empty">
               <div className="adm-empty-icon"><CalendarDays /></div>
@@ -122,79 +146,114 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {events.map(e => {
-              const total    = Number(e.totalSlots    || e.total_slots)    || 1;
-              const reserved = Number(e.slotsReserved || e.slots_reserved) || 0;
-              const pct      = Math.round((reserved / total) * 100);
-              const barColor = pct >= 90 ? '#991B1B' : pct >= 70 ? '#D97706' : '#059669';
-              const st       = eventStats[e.id];
-              const paidCount = st?.paidCount ?? reserved;
-              const revenue   = st?.revenue   ?? 0;
-
-              return (
-                <div
-                  key={e.id}
-                  className="ev-card"
-                  onClick={() => onNavigateToReservations(e.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={k => k.key === 'Enter' && onNavigateToReservations(e.id)}
-                >
-                  {/* Event name + date */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a1a' }}>{e.name}</div>
-                      <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>
-                        {e.venueName || e.venue_name} · {fmtDate(e.startsAt || e.starts_at || '')}
-                      </div>
-                    </div>
-                    {/* Occupancy % badge */}
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px', color: barColor, lineHeight: 1 }}>
-                        {pct}%
-                      </div>
-                      <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>ocupación</div>
-                    </div>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="occ-bar">
-                    <div className="occ-fill" style={{ width: `${pct}%`, background: barColor }} />
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="ev-rev-row">
-                    {/* Paid reservations */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span className="ev-rev-chip" style={{ background: '#DBEAFE', color: '#1E40AF' }}>
-                        {paidCount} / {total} pagadas
-                      </span>
-                      <span style={{ fontSize: 11, color: '#bbb' }}>{total - reserved} libres</span>
-                    </div>
-
-                    {/* Revenue */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {st ? (
-                        <span className="ev-rev-chip" style={{ background: '#D1FAE5', color: '#065F46' }}>
-                          ${fmtMXN(revenue)} MXN
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 11, color: '#bbb' }}>calculando…</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* "Ver reservas" hint */}
-                  <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 11, color: '#bbb' }}>Ver reservas</span>
-                    <span style={{ fontSize: 13, color: '#bbb' }}>›</span>
-                  </div>
-                </div>
-              );
-            })}
+            {activeEvents.map(e => renderEventCard(e))}
           </div>
+        )}
+
+        {closedEvents.length > 0 && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '24px 0 12px' }}>
+              <p className="adm-section-lbl" style={{ margin: 0 }}>Cerrados hoy</p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {closedEvents.map(e => renderEventCard(e))}
+            </div>
+          </>
         )}
       </div>
     </>
   );
+
+  function renderEventCard(e: Event) {
+    const total    = Number(e.totalSlots    || e.total_slots)    || 1;
+    const reserved = Number(e.slotsReserved || e.slots_reserved) || 0;
+    const pct      = Math.round((reserved / total) * 100);
+    const barColor = pct >= 90 ? '#991B1B' : pct >= 70 ? '#D97706' : '#059669';
+    const st       = eventStats[e.id];
+    const paidCount = st?.paidCount ?? reserved;
+    const revenue   = st?.revenue   ?? 0;
+    const closed    = !!e.closedToday;
+
+    return (
+      <div
+        key={e.id}
+        className="ev-card"
+        style={closed ? { opacity: 0.65 } : undefined}
+        onClick={() => onNavigateToReservations(e.id)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={k => k.key === 'Enter' && onNavigateToReservations(e.id)}
+      >
+        {/* Event name + date */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a1a' }}>{e.name}</div>
+            <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>
+              {e.venueName || e.venue_name} · {fmtDate(e.startsAt || e.starts_at || '')}
+              {closed && <span style={{ color: '#991B1B', fontWeight: 700 }}> · cerrado hoy</span>}
+            </div>
+          </div>
+          {/* Occupancy % badge */}
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px', color: barColor, lineHeight: 1 }}>
+              {pct}%
+            </div>
+            <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>ocupación</div>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="occ-bar">
+          <div className="occ-fill" style={{ width: `${pct}%`, background: barColor }} />
+        </div>
+
+        {/* Stats row */}
+        <div className="ev-rev-row">
+          {/* Paid reservations */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="ev-rev-chip" style={{ background: '#DBEAFE', color: '#1E40AF' }}>
+              {paidCount} / {total} pagadas
+            </span>
+            <span style={{ fontSize: 11, color: '#bbb' }}>{total - reserved} libres</span>
+          </div>
+
+          {/* Revenue */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {st ? (
+              <span className="ev-rev-chip" style={{ background: '#D1FAE5', color: '#065F46' }}>
+                ${fmtMXN(revenue)} MXN
+              </span>
+            ) : (
+              <span style={{ fontSize: 11, color: '#bbb' }}>calculando…</span>
+            )}
+          </div>
+        </div>
+
+        {/* Acciones */}
+        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            disabled={togglingId === e.id}
+            onClick={ev => { ev.stopPropagation(); toggleClosedToday(e, !closed); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: 11, fontWeight: 700,
+              color: closed ? '#059669' : '#991B1B',
+              background: closed ? '#D1FAE5' : '#FEE2E2',
+              border: 'none', borderRadius: 8, padding: '5px 9px',
+              cursor: togglingId === e.id ? 'default' : 'pointer',
+              opacity: togglingId === e.id ? 0.6 : 1,
+            }}
+          >
+            {closed ? <Power size={12} /> : <PowerOff size={12} />}
+            {closed ? 'Reabrir hoy' : 'Marcar cerrado hoy'}
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 11, color: '#bbb' }}>Ver reservas</span>
+            <span style={{ fontSize: 13, color: '#bbb' }}>›</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 }

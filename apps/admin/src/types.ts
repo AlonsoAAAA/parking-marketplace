@@ -57,6 +57,7 @@ export interface Event {
   parkingName?: string;
   parkingAddress?: string;
   parkingId?: string;
+  closedToday?: boolean;
 }
 
 export interface Venue {

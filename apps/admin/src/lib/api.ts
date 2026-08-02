@@ -94,6 +94,8 @@ export const api = {
       req<any>(`/admin/operator/events${status ? `?status=${status}` : ''}`, {}, token),
     updateEventPrices: (token: string, id: string, data: object) =>
       req<any>(`/admin/operator/events/${id}/prices`, { method: 'PATCH', body: JSON.stringify(data) }, token),
+    setEventClosedToday: (token: string, id: string, closed: boolean) =>
+      req<any>(`/admin/operator/events/${id}/closed-today`, { method: 'PATCH', body: JSON.stringify({ closed }) }, token),
     // Sub-operator team management
     listTeam: (token: string) =>
       req<{ data: any[] }>('/operator/team', {}, token),

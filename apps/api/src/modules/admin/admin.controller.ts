@@ -110,6 +110,10 @@ class UpdateEventDto {
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceMoto?: number;
 }
 
+class SetEventClosedTodayDto {
+  @IsBoolean() closed: boolean;
+}
+
 class UpdateEventPricesDto {
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceAuto?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceSub?: number;
@@ -327,5 +331,16 @@ export class AdminController {
     @Req() req: any,
   ) {
     return this.adminService.updateEventPrices(id, req.user.id, dto);
+  }
+
+  @Patch('operator/events/:id/closed-today')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('operator', 'sub_operator', 'sub_admin', 'admin')
+  async setEventClosedToday(
+    @Param('id') id: string,
+    @Body() dto: SetEventClosedTodayDto,
+    @Req() req: any,
+  ) {
+    return { data: await this.adminService.setEventClosedToday(id, req.user.id, dto.closed) };
   }
 }
