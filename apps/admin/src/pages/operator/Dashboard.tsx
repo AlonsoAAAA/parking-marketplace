@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, Calendar, Percent, CalendarDays, PowerOff, Power } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, Percent, CalendarDays, PowerOff, Power } from 'lucide-react';
 import { Event } from '../../types';
 import { api } from '../../lib/api';
 
@@ -23,6 +23,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
   const [events, setEvents]           = useState<Event[]>([]);
   const [loading, setLoading]         = useState(true);
   const [dailyRevenue, setDailyRevenue] = useState<number | null>(null);
+  const [weekRevenue, setWeekRevenue]   = useState<number | null>(null);
   const [eventStats, setEventStats]   = useState<Record<string, EventStats>>({});
   const [togglingId, setTogglingId]   = useState<string | null>(null);
 
@@ -57,10 +58,11 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
         const evList: Event[] = (d as any).data || [];
         setEvents(evList);
 
-        if (evList.length === 0) { setDailyRevenue(0); return; }
+        if (evList.length === 0) { setDailyRevenue(0); setWeekRevenue(0); return; }
 
         // Fetch reservations for all events in parallel
         const todayStr = new Date().toISOString().slice(0, 10);
+        const weekAgo  = Date.now() - 7 * 24 * 3600 * 1000;
         const allPages = await Promise.all(
           evList.map(ev =>
             api.reservations.byEvent(token, ev.id).catch(() => [] as any[]),
@@ -68,6 +70,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
         );
 
         let totalRevToday = 0;
+        let totalRevWeek  = 0;
         const stats: Record<string, EventStats> = {};
 
         evList.forEach((ev, i) => {
@@ -79,6 +82,9 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
               if ((r.created_at || '').startsWith(todayStr)) {
                 totalRevToday += Number(r.amount) || 0;
               }
+              if (r.created_at && new Date(r.created_at).getTime() >= weekAgo) {
+                totalRevWeek += Number(r.amount) || 0;
+              }
             }
           });
           stats[ev.id] = { revenue, paidCount };
@@ -86,6 +92,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
 
         setEventStats(stats);
         setDailyRevenue(totalRevToday);
+        setWeekRevenue(totalRevWeek);
       })
       .catch(() => setEvents([]))
       .finally(() => setLoading(false));
@@ -97,6 +104,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
 
   const CARDS = [
     { label: 'Ventas hoy',       value: dailyRevenue === null ? '…' : `$${fmtMXN(dailyRevenue)}`, sub: 'MXN',               icon: DollarSign, color: 'text-emerald-700',  bg: 'bg-emerald-50' },
+    { label: 'Ventas de la semana', value: weekRevenue === null ? '…' : `$${fmtMXN(weekRevenue)}`, sub: 'últimos 7 días',   icon: TrendingUp, color: 'text-emerald-700',  bg: 'bg-emerald-50' },
     { label: 'Reservas activas', value: loading ? '—' : totalReserved,                            sub: 'status: pagado',     icon: Calendar,   color: 'text-brand-indigo', bg: 'bg-brand-indigo/10' },
     { label: 'Ocupación global', value: loading || totalSlots === 0 ? '—' : `${occupancyPct}%`,   sub: `${totalReserved}/${totalSlots} lugares`, icon: Percent, color: 'text-[#72B8BC]', bg: 'bg-[#72B8BC]/10' },
   ];
@@ -111,7 +119,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
         </div>
 
         {/* Metric cards */}
-        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {CARDS.map(c => {
             const Icon = c.icon;
             return (

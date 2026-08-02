@@ -265,9 +265,26 @@ export class AdminService {
     // operador, O si el venue del evento tiene ligado (via venue_parkings) algún
     // estacionamiento del operador — antes solo se checaba parking_id directo,
     // lo que ocultaba eventos ligados al operador solo por venue_parkings.
+    // totalSlots/slotsReserved propios del evento son 0 cuando el evento no
+    // gestiona cupo directamente (usa venue_parkings) — mismo fallback que
+    // venues.service.ts::findEvents, si no se calcula, el Dashboard del
+    // operador muestra 0% de ocupación y "0 reservas activas" aunque haya
+    // reservas pagadas reales.
     return this.db.query(
       `SELECT DISTINCT e.*, p.name AS "parkingName", p.address AS "parkingAddress",
-              (edc.id IS NOT NULL) AS "closedToday"
+              (edc.id IS NOT NULL) AS "closedToday",
+              COALESCE(
+                (SELECT SUM(ep.total_slots)   FROM event_parkings ep WHERE ep.event_id = e.id),
+                (SELECT SUM(pk.total_capacity) FROM venue_parkings vp JOIN parkings pk ON pk.id = vp.parking_id WHERE vp.venue_id = e.venue_id AND pk.is_active = true),
+                e.total_slots,
+                0
+              )::int AS "totalSlots",
+              COALESCE(
+                (SELECT SUM(ep.slots_reserved) FROM event_parkings ep WHERE ep.event_id = e.id),
+                (SELECT COUNT(*) FROM reservations r WHERE r.event_id = e.id AND r.status IN ('paid','used')),
+                e.slots_reserved,
+                0
+              )::int AS "slotsReserved"
        FROM events e
        LEFT JOIN parkings p ON p.id = e.parking_id
        LEFT JOIN event_daily_closures edc
