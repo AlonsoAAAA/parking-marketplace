@@ -107,6 +107,8 @@ export const api = {
     deleteSubOperator: (token: string, id: string) =>
       req<any>(`/operator/team/${id}`, { method: 'DELETE' }, token),
   },
+  codigoPostal: (cp: string) =>
+    req<{ data: { cp: string; ciudad: string; municipio: string; estado: string } | null }>(`/codigo-postal/${cp}`),
   scan: (token: string, qrToken: string) =>
     req<any>('/scan', { method: 'POST', body: JSON.stringify({ token: qrToken }) }, token),
   checkin: (token: string, reservationId: string, data: object) =>
