@@ -313,6 +313,12 @@ export class AdminController {
     return { data: await this.adminService.listPayments(status) };
   }
 
+  // Reservations (read-only, historial completo)
+  @Get('reservations')
+  async listReservations(@Query('status') status?: string) {
+    return { data: await this.adminService.listReservations(status) };
+  }
+
   // ─── Operator event price management ──────────────────────────────────────
 
   @Get('operator/events')

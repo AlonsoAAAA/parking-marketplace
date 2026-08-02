@@ -75,6 +75,7 @@ export const api = {
     updatePromotion:  (token: string, id: string, data: object) => req<any>(`/admin/promotions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
     deletePromotion:  (token: string, id: string)        => req<void>(`/admin/promotions/${id}`, { method: 'DELETE' }, token),
     payments:         (token: string)                    => req<any>('/admin/payments', {}, token),
+    reservations:     (token: string)                    => req<any>('/admin/reservations', {}, token),
     fraudStats:       (token: string)                    => req<any>('/admin/fraud/stats', {}, token),
     fraudAlerts:      (token: string, status?: string, level?: string) => {
       const qs = new URLSearchParams();

@@ -510,6 +510,32 @@ export class AdminService {
     );
   }
 
+  // ─── Reservations (historial completo) ──────────────────────────────────────
+
+  listReservations(status?: string) {
+    const params: any[] = [];
+    let where = '';
+    if (status && status !== 'all') { params.push(status); where = `WHERE r.status = $1`; }
+    return this.db.query(
+      `SELECT r.id, r.status, r.created_at AS "createdAt",
+              u.name  AS "userName", u.phone AS "userPhone",
+              e.name  AS "eventName", e.starts_at AS "eventStartsAt",
+              pay.amount, pay.status AS "paymentStatus",
+              q.scanned_at AS "scannedAt",
+              (SELECT COUNT(*) FROM claims c WHERE c.reservation_id = r.id)::int AS "claimCount",
+              (SELECT c.type FROM claims c WHERE c.reservation_id = r.id ORDER BY c.created_at DESC LIMIT 1) AS "lastClaimType",
+              (SELECT c.status FROM claims c WHERE c.reservation_id = r.id ORDER BY c.created_at DESC LIMIT 1) AS "lastClaimStatus"
+       FROM reservations r
+       JOIN users u  ON u.id = r.user_id
+       JOIN events e ON e.id = r.event_id
+       LEFT JOIN payments pay ON pay.reservation_id = r.id AND pay.status = 'completed'
+       LEFT JOIN qr_tokens q  ON q.reservation_id = r.id
+       ${where}
+       ORDER BY r.created_at DESC`,
+      params,
+    );
+  }
+
   async approveRefund(claimId: string) {
     const [claim] = await this.db.query(
       `SELECT id, type, status, reservation_id, description FROM claims WHERE id = $1`,

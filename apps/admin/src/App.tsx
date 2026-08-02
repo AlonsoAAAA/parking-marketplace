@@ -13,6 +13,7 @@ import AdminCustomers  from './pages/admin/Customers';
 import AdminClaims     from './pages/admin/Claims';
 import AdminPromotions from './pages/admin/Promotions';
 import AdminPayments   from './pages/admin/Payments';
+import AdminReservations from './pages/admin/Reservations';
 import AdminFraud      from './pages/admin/Fraud';
 import AdminPricing    from './pages/admin/Pricing';
 
@@ -56,6 +57,7 @@ const ADMIN_NAV: NavItem[] = [
   { id: 'claims',      label: 'Reclamos',          shortLabel: 'Reclamos', icon: a => ic(<><path d="M10 3L2 17h16L10 3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M10 9v4M10 14.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></>, a) },
   { id: 'promotions',  label: 'Promociones',       shortLabel: 'Promos',   icon: a => ic(<><path d="M17 3L3 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="5.5" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="14.5" cy="14.5" r="2.5" stroke="currentColor" strokeWidth="1.4"/></>, a) },
   { id: 'payments',    label: 'Pagos',             shortLabel: 'Pagos',    icon: a => ic(<><rect x="2" y="5" width="16" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M2 9h16" stroke="currentColor" strokeWidth="1.4"/><rect x="5" y="12" width="3" height="1.5" rx="0.5" fill="currentColor"/></>, a) },
+  { id: 'reservations', label: 'Reservas',         shortLabel: 'Reservas', icon: a => ic(<><rect x="2" y="3" width="16" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M6 1.5v3M14 1.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M5 10h4M5 13.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></>, a) },
   { id: 'fraud',       label: 'Fraude',            shortLabel: 'Fraude',   icon: a => ic(<><path d="M10 2L3 6v5c0 4.4 3 8.5 7 9.5 4-1 7-5.1 7-9.5V6L10 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></>, a) },
   { id: 'pricing',     label: 'Precios',           shortLabel: 'Precios',  icon: a => ic(<><path d="M12 2a7 7 0 1 0 0 14A7 7 0 0 0 12 2z" stroke="currentColor" strokeWidth="1.4"/><path d="M12 6v1.5M12 14.5V16M9.5 8.5C9.5 7.4 10.6 6.5 12 6.5s2.5.9 2.5 2-.9 1.8-2.5 2c-1.6.2-2.5 1-2.5 2.2s1.1 2 2.5 2 2.5-.9 2.5-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></>, a) },
   { id: 'metrics',     label: 'Métricas',          shortLabel: 'Métricas', icon: a => ic(<><path d="M3 17V9M9 17V4M15 17v-6M17 17H3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></>, a) },
@@ -99,6 +101,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
       {page === 'claims'     && <AdminClaims     {...props} />}
       {page === 'promotions' && <AdminPromotions {...props} />}
       {page === 'payments'   && <AdminPayments   {...props} />}
+      {page === 'reservations' && <AdminReservations {...props} />}
       {page === 'fraud'      && <AdminFraud      {...props} />}
       {page === 'pricing'    && <AdminPricing    {...props} />}
       {page === 'metrics'    && <Metrics         {...props} scope="admin" />}
