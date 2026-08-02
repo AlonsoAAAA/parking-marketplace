@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { ClipboardList } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { ClipboardList, RefreshCw } from 'lucide-react';
 import { Event, Reservation } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
@@ -14,10 +14,30 @@ const fmtDT = (iso: string) =>
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
+// Botón de status más visible que el .adm-pill genérico — usado en las
+// tarjetas de reserva para que el estatus (sobre todo "Pendiente") salte a
+// la vista de inmediato en vez de un texto chico.
+function StatusBadge({ status }: { status: string }) {
+  const sc = STATUS_COLORS[status] || STATUS_COLORS.expired;
+  return (
+    <span
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        padding: '6px 14px', borderRadius: 999,
+        fontSize: 12, fontWeight: 800, letterSpacing: '0.3px', textTransform: 'uppercase',
+        background: sc.bg, color: sc.color,
+        border: `1.5px solid ${sc.color}33`,
+        boxShadow: `0 1px 3px ${sc.color}22`,
+      }}
+    >
+      {STATUS_LABELS[status] || status}
+    </span>
+  );
+}
+
 // ── Ticket modal ────────────────────────────────────────────────────────────────
 function TicketModal({ r, events, onClose }: { r: Reservation; events: Event[]; onClose: () => void }) {
   const ev = events.find(e => e.id === r.event_id);
-  const sc = STATUS_COLORS[r.status] || STATUS_COLORS.expired;
 
   const rows: [string, string][] = [
     ['Nombre',    r.user_name || '—'],
@@ -59,7 +79,7 @@ function TicketModal({ r, events, onClose }: { r: Reservation; events: Event[]; 
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="adm-pill" style={sc}>{STATUS_LABELS[r.status]}</span>
+            <StatusBadge status={r.status} />
             <button
               onClick={onClose}
               style={{ background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', fontSize: 16, color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -117,14 +137,28 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
   const activeEvents   = useMemo(() => events.filter(e => e.status === 'active'), [events]);
   const archivedEvents = useMemo(() => events.filter(e => e.status !== 'active'), [events]);
 
-  useEffect(() => {
+  const loadReservations = useCallback((showSpinner = true) => {
     if (!selectedEvent) return;
-    setLoading(true);
+    if (showSpinner) setLoading(true);
     api.reservations.byEvent(token, selectedEvent)
       .then(d => setReservations(Array.isArray(d) ? d : []))
       .catch(() => setReservations([]))
       .finally(() => setLoading(false));
   }, [selectedEvent, token]);
+
+  useEffect(() => {
+    loadReservations(true);
+  }, [selectedEvent, token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Las reservas "pendientes" son las más sensibles al tiempo — un cliente
+  // puede iniciar el checkout mientras el operador ya tiene la pantalla
+  // abierta, y sin refrescar nunca aparecería. Se refresca en segundo plano
+  // cada 20s sin mostrar el spinner de carga completo.
+  useEffect(() => {
+    if (!selectedEvent) return;
+    const iv = setInterval(() => loadReservations(false), 20000);
+    return () => clearInterval(iv);
+  }, [selectedEvent, loadReservations]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -146,6 +180,15 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
             <h1 className="adm-pt">Reservaciones</h1>
             <p className="adm-ps">Lista de reservas por evento</p>
           </div>
+          <button
+            className="adm-btn adm-btn-ghost"
+            onClick={() => loadReservations(true)}
+            disabled={loading || !selectedEvent}
+            title="Actualizar lista (se refresca automáticamente cada 20s)"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />
+            Actualizar
+          </button>
         </div>
 
         {/* Event selector */}
@@ -240,7 +283,6 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
             {/* Mobile cards */}
             <div className="hide-dt">
               {filtered.map(r => {
-                const sc = STATUS_COLORS[r.status] || STATUS_COLORS.expired;
                 return (
                   <div key={r.id} className="res-card" onClick={() => setSelected(r)}>
                     <div className="res-card-top">
@@ -248,7 +290,7 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{r.user_name}</div>
                         <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{r.phone}</div>
                       </div>
-                      <span className="adm-pill" style={sc}>{STATUS_LABELS[r.status]}</span>
+                      <StatusBadge status={r.status} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
