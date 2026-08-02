@@ -197,6 +197,11 @@ export default function OperatorProfile({ token }: Props) {
         <button className="adm-btn" style={{ width: '100%', justifyContent: 'center', padding: '14px' }} onClick={save} disabled={saving}>
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
+        {saved && (
+          <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#065F46', marginTop: 12, textAlign: 'center', fontWeight: 600 }}>
+            ✓ Datos guardados correctamente
+          </div>
+        )}
       </div>
     </>
   );
