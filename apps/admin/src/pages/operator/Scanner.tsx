@@ -8,7 +8,11 @@ type Step = 'scan' | 'plate' | 'photos' | 'confirm';
 const PHOTO_LABELS = ['Frente', 'Atrás', 'Lado izquierdo', 'Lado derecho'] as const;
 const PHOTO_KEYS   = ['photoFront', 'photoBack', 'photoLeft', 'photoRight'] as const;
 
-interface ScanData { reservationId: string; userName: string; eventName: string; }
+interface ScanData { reservationId: string; userName: string; eventName: string; vehiclePlate?: string; }
+
+// Normaliza para comparar placas ignorando espacios/guiones/mayúsculas —
+// evita falsos "no coinciden" por formato, no por la placa en sí.
+const normalizePlate = (p: string) => p.toUpperCase().replace(/[^A-Z0-9]/g, '');
 type PhotoMap = Record<typeof PHOTO_KEYS[number], string>;
 
 // ── Design tokens (EstacionaT brand) ─────────────────────────────────────────
@@ -170,6 +174,7 @@ export default function Scanner({ token }: { token: string }) {
           reservationId: result.reservationId,
           userName:  result.userName  || 'Usuario',
           eventName: result.eventName || 'Evento',
+          vehiclePlate: result.vehiclePlate,
         });
         stopQrStream();
         setStep('plate');
@@ -270,7 +275,9 @@ export default function Scanner({ token }: { token: string }) {
     e.target.value = '';
   };
 
-  const photosComplete = PHOTO_KEYS.every(k => photos[k]);
+  // Solo la primera foto (Frente) es obligatoria; el resto son opcionales.
+  const REQUIRED_PHOTO_KEY = PHOTO_KEYS[0];
+  const photosComplete = !!photos[REQUIRED_PHOTO_KEY];
   const photosCount    = PHOTO_KEYS.filter(k => photos[k]).length;
 
   // ── Confirm ──────────────────────────────────────────────────────────────────
@@ -414,7 +421,16 @@ export default function Scanner({ token }: { token: string }) {
             </div>
 
             <form
-              onSubmit={e => { e.preventDefault(); if (plate.trim()) { setStep('photos'); setPhotos({}); } }}
+              onSubmit={e => {
+                e.preventDefault();
+                if (!plate.trim()) return;
+                setError('');
+                if (scanData.vehiclePlate && normalizePlate(plate) !== normalizePlate(scanData.vehiclePlate)) {
+                  setError('Placas no coinciden');
+                  return;
+                }
+                setStep('photos'); setPhotos({});
+              }}
               style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
             >
               <div>
@@ -452,7 +468,8 @@ export default function Scanner({ token }: { token: string }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {PHOTO_KEYS.map((key, i) => {
-                const taken = !!photos[key];
+                const taken    = !!photos[key];
+                const required = key === REQUIRED_PHOTO_KEY;
                 return (
                   <label
                     key={key}
@@ -475,6 +492,7 @@ export default function Scanner({ token }: { token: string }) {
                       <>
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6, color: T.secondary }}><Camera size={26} /></div>
                         <div style={{ fontSize: 12, fontWeight: 600, color: T.secondary, textAlign: 'center', padding: '0 8px' }}>{PHOTO_LABELS[i]}</div>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: required ? '#b91c1c' : T.muted, marginTop: 2 }}>{required ? 'Obligatoria' : 'Opcional'}</div>
                       </>
                     )}
                     <input id={`photo-input-${key}`} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={e => handlePhotoFile(e, key)} />
@@ -484,7 +502,7 @@ export default function Scanner({ token }: { token: string }) {
             </div>
 
             <div style={{ fontSize: 12, color: T.muted, textAlign: 'center' }}>
-              Toca cada cuadro para abrir la cámara. Puedes retomar tocando "Cambiar".
+              Toca cada cuadro para abrir la cámara. Solo la foto de "{PHOTO_LABELS[0]}" es obligatoria — puedes retomar tocando "Cambiar".
             </div>
 
             <button
@@ -492,7 +510,7 @@ export default function Scanner({ token }: { token: string }) {
               onClick={() => setStep('confirm')}
               style={{ ...s.btnPrimary, ...(!photosComplete ? s.btnDisabled : {}) }}
             >
-              {photosComplete ? 'Revisar y confirmar →' : `Faltan ${4 - photosCount} foto${4 - photosCount !== 1 ? 's' : ''}`}
+              {photosComplete ? 'Revisar y confirmar →' : `Falta la foto de "${PHOTO_LABELS[0]}"`}
             </button>
           </div>
         )}

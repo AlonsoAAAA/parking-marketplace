@@ -61,7 +61,7 @@ export class QrService {
 
     // 2. Buscar en BD con info completa
     const result = await this.dataSource.query(
-      `SELECT q.*, r.status as reservation_status, r.event_id, r.user_id,
+      `SELECT q.*, r.status as reservation_status, r.event_id, r.user_id, r.vehicle_plate,
               e.name as event_name, e.starts_at, e.ends_at,
               u.name as user_name, u.phone as user_phone
        FROM qr_tokens q
@@ -119,6 +119,7 @@ export class QrService {
       reservationId: record.reservation_id,
       userName: record.user_name,
       eventName: record.event_name,
+      vehiclePlate: record.vehicle_plate ?? undefined,
       reservation: {
         id: record.reservation_id,
         userId: record.user_id,

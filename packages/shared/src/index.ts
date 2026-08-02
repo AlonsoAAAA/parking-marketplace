@@ -109,6 +109,7 @@ export interface ScanResult {
   reservationId?: string;
   userName?: string;
   eventName?: string;
+  vehiclePlate?: string;
   reservation?: Reservation;
   event?: ParkingEvent;
   scannedAt?: Date;

@@ -17,6 +17,7 @@ interface TicketData {
   payment: { amount: number };
   qrToken: string | null;
   userPhone: string | null;
+  vehiclePlate: string | null;
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -241,6 +242,12 @@ export default function BoletoDetailPage() {
                   <span className="text-slate-500 font-semibold">Hora máxima de salida:</span>
                   <span className="font-bold text-rose-700 text-right">{exitTime} hrs (+6 hrs)</span>
                 </div>
+                {ticket.vehiclePlate && (
+                  <div className="flex justify-between items-start gap-4">
+                    <span className="text-slate-500 font-semibold">Placas:</span>
+                    <span className="font-bold text-slate-800 text-right font-mono tracking-wider">{ticket.vehiclePlate}</span>
+                  </div>
+                )}
               </div>
             </div>
 
