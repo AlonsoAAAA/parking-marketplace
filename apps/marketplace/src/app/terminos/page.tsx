@@ -26,7 +26,7 @@ export default function TerminosPage() {
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 md:p-5 mb-6">
           <div className="text-[12px] font-extrabold uppercase tracking-wider text-amber-950 mb-1.5">⚠️ Política de cancelaciones</div>
           <div className="text-xs font-semibold text-amber-800 leading-relaxed">
-            NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 6 HORAS PREVIAS AL INICIO DEL EVENTO.
+            NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 24 HORAS PREVIAS AL INICIO DEL EVENTO.
             Transcurrido dicho plazo, el pago es definitivo e irrevocable.
           </div>
         </div>
@@ -43,19 +43,11 @@ export default function TerminosPage() {
               </thead>
               <tbody>
                 <tr className="border-b border-slate-100">
-                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Más de 48 horas antes del evento</td>
-                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">100% menos cargo de procesamiento (máx. 3.5%)</td>
-                </tr>
-                <tr className="border-b border-slate-100 bg-slate-50">
-                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Entre 24 y 48 horas antes del evento</td>
-                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">70% del precio pagado</td>
-                </tr>
-                <tr className="border-b border-slate-100">
-                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Entre 6 y 24 horas antes del evento</td>
-                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">50% del precio pagado</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Más de 24 horas antes del evento</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">100% del precio pagado</td>
                 </tr>
                 <tr className="bg-rose-50">
-                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Menos de 6 horas antes del evento</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700 leading-relaxed">Menos de 24 horas antes del evento</td>
                   <td className="px-4 py-3 font-extrabold text-rose-700 leading-relaxed">Sin reembolso — Reserva definitiva</td>
                 </tr>
               </tbody>

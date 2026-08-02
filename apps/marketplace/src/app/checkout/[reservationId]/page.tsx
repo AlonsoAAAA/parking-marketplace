@@ -171,7 +171,7 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
 
       <div className="bg-slate-50 rounded-2xl p-4 text-center border border-slate-100">
         <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-          🛡️ <span className="text-slate-800 font-bold">Garantía de cancelación:</span> Reembolso del 100% cancelando hasta 6 horas antes del evento.
+          🛡️ <span className="text-slate-800 font-bold">Garantía de cancelación:</span> Reembolso del 100% cancelando hasta 24 horas antes del evento.
         </p>
       </div>
     </div>
