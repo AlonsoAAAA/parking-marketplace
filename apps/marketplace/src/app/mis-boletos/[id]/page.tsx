@@ -258,14 +258,6 @@ export default function BoletoDetailPage() {
               </div>
             )}
 
-            {/* Política */}
-            <div className="bg-amber-50 border border-amber-100 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-xs">
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <p className="leading-relaxed m-0">
-                <span className="font-extrabold uppercase text-amber-950">Política de reembolso:</span> Reembolso escalonado según anticipación (hasta 100% con +48h, 70% entre 24-48h, 50% entre 6-24h). Sin reembolso dentro de las 6 horas previas al evento.
-              </p>
-            </div>
-
             {/* Solicitar reembolso */}
             {canRefund && !refundDone && (
               <div className="space-y-4 pt-2 border-t border-slate-100">
@@ -324,11 +316,11 @@ export default function BoletoDetailPage() {
                     <div className="bg-amber-50 border border-amber-100 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-xs">
                       <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                       <p className="leading-relaxed m-0">
-                        Tu solicitud está sujeta a nuestros{' '}
+                        <span className="font-extrabold uppercase text-amber-950">Política de reembolso:</span> Reembolso escalonado según anticipación (hasta 100% con +48h, 70% entre 24-48h, 50% entre 6-24h). Sin reembolso dentro de las 6 horas previas al evento. Tu solicitud está sujeta a nuestros{' '}
                         <a href="/terminos" target="_blank" rel="noopener noreferrer" className="font-extrabold underline text-amber-950">
                           términos y condiciones
                         </a>
-                        . Podemos rechazarla si no cumple con la política de reembolso.
+                        {' '}y puede ser rechazada.
                       </p>
                     </div>
 
