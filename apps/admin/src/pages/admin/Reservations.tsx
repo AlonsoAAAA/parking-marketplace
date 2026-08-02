@@ -6,7 +6,9 @@ import { api } from '../../lib/api';
 
 interface Props { token: string; }
 
-const STATUS_OPTS = ['all', 'paid', 'pending', 'used', 'cancelled', 'expired'];
+// "paid" se agrupa visualmente bajo "Pendiente" (de escanear/usar) — ver
+// matchSt más abajo — para no tener dos pestañas mostrando "Pendiente".
+const STATUS_OPTS = ['all', 'pending', 'used', 'cancelled', 'expired'];
 
 const fmtMoney = (n?: number | string) => n == null ? '—' : `$${parseFloat(n as string).toLocaleString('es-MX', { minimumFractionDigits: 0 })}`;
 const fmtDate  = (iso?: string) => iso ? new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
@@ -27,7 +29,8 @@ export default function AdminReservations({ token }: Props) {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return reservations.filter(r => {
-      const matchSt = filter === 'all' || r.status === filter;
+      const matchSt = filter === 'all' || r.status === filter
+        || (filter === 'pending' && r.status === 'paid');
       const matchQ  = !q || (r.userName || '').toLowerCase().includes(q) || (r.eventName || '').toLowerCase().includes(q);
       return matchSt && matchQ;
     });

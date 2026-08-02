@@ -6,7 +6,10 @@ import { api } from '../../lib/api';
 
 interface Props { token: string; initialEventId?: string; }
 
-const STATUS_TABS = ['all', 'paid', 'pending', 'used', 'cancelled', 'expired'];
+// Solo 4 estatus visibles para el operador: "paid" (pagada, aún sin
+// escanear) se agrupa visualmente bajo "Pendiente" junto con "pending"
+// (reserva sin pagar aún) — ver matchSt más abajo.
+const STATUS_TABS = ['all', 'pending', 'used', 'cancelled', 'expired'];
 
 const fmtDT = (iso: string) =>
   new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -163,7 +166,8 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return reservations.filter(r => {
-      const matchSt = status === 'all' || r.status === status;
+      const matchSt = status === 'all' || r.status === status
+        || (status === 'pending' && r.status === 'paid');
       const matchQ  = !q
         || (r.user_name || '').toLowerCase().includes(q)
         || r.phone.includes(q)

@@ -6,7 +6,9 @@
 
 export const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   pending:     { bg: '#FEF3C7', color: '#92400E' },
-  paid:        { bg: '#D1FAE5', color: '#065F46' },
+  // "paid" (reserva pagada, boleto válido aún no escaneado) se muestra al
+  // operador como "Pendiente" (de escanear) — mismo color que pending.
+  paid:        { bg: '#FEF3C7', color: '#92400E' },
   used:        { bg: '#DBEAFE', color: '#1E40AF' },
   cancelled:   { bg: '#FEE2E2', color: '#991B1B' },
   expired:     { bg: '#F3F4F6', color: '#6B7280' },
@@ -23,7 +25,7 @@ export const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendiente', paid: 'Pagado', used: 'Usado',
+  pending: 'Pendiente', paid: 'Pendiente', used: 'Usado',
   cancelled: 'Cancelado', expired: 'Expirado', active: 'Activo',
   draft: 'Borrador', sold_out: 'Agotado', finished: 'Finalizado',
   open: 'Abierto', in_progress: 'En proceso', resolved: 'Resuelto',
