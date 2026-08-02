@@ -338,7 +338,7 @@ export default function ParkingDetailPage() {
                   TRASERO / DELANTERO
                 </div>
               </div>
-              <p className="text-center text-[10px] text-slate-400 italic">Ingresa tal como aparece en la tarjeta de circulación.</p>
+              <p className="text-center text-xs font-bold text-slate-600">Ingresa tal como aparece en la tarjeta de circulación.</p>
             </div>
 
             {error && (
