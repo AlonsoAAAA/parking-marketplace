@@ -41,7 +41,7 @@ const CAT_EMOJIS: Record<string, string> = {
 const BENEFITS = [
   { icon: ShieldCheck, bg: 'bg-[#DFF085]/20', fg: 'text-brand-dark', title: '100% garantizado', text: 'Tu cajón está apartado y bloqueado en nuestro sistema antes de que salgas de casa. No compitas por lugar.' },
   { icon: QrCode,      bg: 'bg-[#383497]/10', fg: 'text-[#383497]', title: 'WhatsApp QR Access', text: 'Recibe de inmediato el pase QR directo en tu WhatsApp. No requieres descargar ninguna app adicional.' },
-  { icon: Clock,       bg: 'bg-indigo-50',    fg: 'text-indigo-700', title: 'Cancelación flexible', text: '¿Hubo cambios de planes? Cancela gratis sin penalizaciones hasta 24 horas antes de que inicie tu evento.' },
+  { icon: Clock,       bg: 'bg-indigo-50',    fg: 'text-indigo-700', title: 'Cancelación flexible', text: '¿Hubo cambios de planes? Cancela con reembolso escalonado según tu anticipación, hasta 6 horas antes del evento.' },
   { icon: Zap,         bg: 'bg-[#aecfb2]/20', fg: 'text-brand-dark', title: 'Cero filas o demoras', text: 'Acceso automatizado leyendo tus placas. Entra rápido y sal con agilidad sin hacer filas de cobro.' },
 ];
 

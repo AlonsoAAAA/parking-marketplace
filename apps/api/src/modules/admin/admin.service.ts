@@ -380,7 +380,7 @@ export class AdminService {
     return this.db.query(
       `SELECT c.*,
               u.name  AS "userName",  u.phone AS "userPhone",
-              e.name  AS "eventName"
+              e.name  AS "eventName", e.starts_at AS "eventStartsAt"
        FROM claims c
        LEFT JOIN users u        ON u.id = c.user_id
        LEFT JOIN reservations r ON r.id = c.reservation_id
@@ -536,9 +536,20 @@ export class AdminService {
     );
   }
 
+  // Reembolso escalonado según anticipación (horas entre la solicitud y el
+  // inicio del evento): +48h → 100% menos cargo de procesamiento (máx. 3.5%);
+  // 24-48h → 70%; 6-24h → 50%; <6h → sin reembolso (no debería llegar aquí,
+  // reservations.service.ts ya bloquea la solicitud en ese punto).
+  private refundPercentForNotice(hoursNotice: number): number {
+    if (hoursNotice > 48) return 96.5;
+    if (hoursNotice > 24) return 70;
+    if (hoursNotice > 6)  return 50;
+    return 0;
+  }
+
   async approveRefund(claimId: string) {
     const [claim] = await this.db.query(
-      `SELECT id, type, status, reservation_id, description FROM claims WHERE id = $1`,
+      `SELECT id, type, status, reservation_id, description, created_at FROM claims WHERE id = $1`,
       [claimId],
     );
     if (!claim) throw new NotFoundException('Reclamo no encontrado');
@@ -546,25 +557,39 @@ export class AdminService {
     if (claim.status === 'resolved') throw new BadRequestException('Este reclamo ya fue resuelto');
 
     const [payment] = await this.db.query(
-      `SELECT id, provider_payment_id, amount FROM payments WHERE reservation_id = $1 AND status = 'completed'`,
+      `SELECT pay.id, pay.provider_payment_id, pay.amount, e.starts_at
+       FROM payments pay
+       JOIN reservations r ON r.id = pay.reservation_id
+       JOIN events e       ON e.id = r.event_id
+       WHERE pay.reservation_id = $1 AND pay.status = 'completed'`,
       [claim.reservation_id],
     );
     if (!payment) throw new BadRequestException('No se encontró un pago completado para esta reserva');
 
-    const refund = await this.stripe.refunds.create({ payment_intent: payment.provider_payment_id });
+    const hoursNotice = (new Date(payment.starts_at).getTime() - new Date(claim.created_at).getTime()) / 3600000;
+    const refundPercent = this.refundPercentForNotice(hoursNotice);
+    if (refundPercent <= 0) {
+      throw new BadRequestException('Esta solicitud está fuera del plazo de reembolso (menos de 6 horas antes del evento) — no aplica reembolso');
+    }
+    const refundAmountCents = Math.round(parseFloat(payment.amount) * (refundPercent / 100) * 100);
+
+    const refund = await this.stripe.refunds.create({
+      payment_intent: payment.provider_payment_id,
+      amount: refundAmountCents,
+    });
 
     await this.db.query(
-      `UPDATE payments SET status='refunded', refund_id=$1, refunded_at=NOW(), refund_reason=$2 WHERE id=$3`,
-      [refund.id, claim.description, payment.id],
+      `UPDATE payments SET status='refunded', refund_id=$1, refunded_at=NOW(), refund_reason=$2, refund_percent=$3 WHERE id=$4`,
+      [refund.id, claim.description, refundPercent, payment.id],
     );
     await this.db.query(
       `UPDATE reservations SET status='cancelled' WHERE id=$1`,
       [claim.reservation_id],
     );
     await this.db.query(
-      `UPDATE claims SET status='resolved', admin_notes='Reembolso aprobado y procesado.', resolved_at=NOW(), updated_at=NOW() WHERE id=$1`,
-      [claimId],
+      `UPDATE claims SET status='resolved', admin_notes=$1, resolved_at=NOW(), updated_at=NOW() WHERE id=$2`,
+      [`Reembolso aprobado y procesado (${refundPercent}% según anticipación).`, claimId],
     );
-    return { refundId: refund.id };
+    return { refundId: refund.id, refundPercent };
   }
 }

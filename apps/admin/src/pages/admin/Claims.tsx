@@ -9,6 +9,17 @@ interface Props { token: string; }
 const TABS = ['all', 'open', 'in_progress', 'resolved'];
 const TAB_LABELS: Record<string, string> = { all: 'Todos', open: 'Abiertos', in_progress: 'En proceso', resolved: 'Resueltos' };
 
+// Espejo de admin.service.ts::refundPercentForNotice — solo para mostrar un
+// preview al admin antes de aprobar; el % real lo calcula el backend.
+function refundPercentPreview(eventStartsAt?: string, claimCreatedAt?: string): number | null {
+  if (!eventStartsAt || !claimCreatedAt) return null;
+  const hoursNotice = (new Date(eventStartsAt).getTime() - new Date(claimCreatedAt).getTime()) / 3600000;
+  if (hoursNotice > 48) return 96.5;
+  if (hoursNotice > 24) return 70;
+  if (hoursNotice > 6)  return 50;
+  return 0;
+}
+
 export default function AdminClaims({ token }: Props) {
   const [claims, setClaims]     = useState<Claim[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -45,7 +56,9 @@ export default function AdminClaims({ token }: Props) {
 
   const handleApproveRefund = async () => {
     if (!selected) return;
-    if (!confirm(`¿Aprobar el reembolso para ${selected.userName}? Esta acción es irreversible.`)) return;
+    const pct = refundPercentPreview(selected.eventStartsAt, selected.created_at);
+    const pctMsg = pct != null ? ` Según la anticipación de la solicitud corresponde ~${pct}% del monto pagado.` : '';
+    if (!confirm(`¿Aprobar el reembolso para ${selected.userName}?${pctMsg} Esta acción es irreversible.`)) return;
     setRefunding(true);
     try {
       await api.admin.approveRefund(token, selected.id);
@@ -167,7 +180,15 @@ export default function AdminClaims({ token }: Props) {
             {/* Botón aprobar reembolso */}
             {selected.status !== 'resolved' && (
               <div style={{ marginBottom: 16, padding: '14px 16px', background: '#fef2f2', borderRadius: 10, border: '1px solid #fecaca' }}>
-                <p style={{ fontSize: 12, color: '#991b1b', marginBottom: 10, fontWeight: 600 }}>Acción de reembolso</p>
+                <p style={{ fontSize: 12, color: '#991b1b', marginBottom: 4, fontWeight: 600 }}>Acción de reembolso</p>
+                {(() => {
+                  const pct = refundPercentPreview(selected.eventStartsAt, selected.created_at);
+                  return pct != null ? (
+                    <p style={{ fontSize: 11, color: '#991b1b', marginBottom: 10 }}>
+                      Reembolso escalonado: corresponde <strong>~{pct}%</strong> del monto pagado según la anticipación.
+                    </p>
+                  ) : null;
+                })()}
                 <button
                   className="adm-btn"
                   style={{ background: '#991b1b', width: '100%', marginBottom: 8 }}

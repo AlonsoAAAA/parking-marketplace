@@ -102,6 +102,7 @@ export interface Claim {
   resolved_at?: string;
   created_at: string;
   updated_at?: string;
+  eventStartsAt?: string;
 }
 
 export interface Promotion {

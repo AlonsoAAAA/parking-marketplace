@@ -62,7 +62,7 @@ export class NotificationsService {
       `🎟️ Ver y descargar tu código QR:`,
       `${marketplaceUrl}/mis-boletos/${data.id}`,
       ``,
-      `⚠️ *Política de cancelaciones:* NO SE ACEPTAN CANCELACIONES NI DEVOLUCIONES DENTRO DE LAS 24 HORAS PREVIAS AL INICIO DEL EVENTO. Transcurrido dicho plazo, el pago es definitivo e irrevocable.`,
+      `⚠️ *Política de cancelaciones:* reembolso escalonado según anticipación (100% menos cargo de procesamiento con +48h, 70% entre 24-48h, 50% entre 6-24h). Sin reembolso dentro de las 6 horas previas al evento.`,
       ``,
       `📄 Términos y condiciones: https://www.estacionat.mx/terminos`,
     ].join('\n');

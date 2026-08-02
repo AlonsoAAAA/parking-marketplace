@@ -223,9 +223,10 @@ export default function ConfirmacionPage() {
           <div className="space-y-1 text-xs">
             <h4 className="font-extrabold uppercase tracking-wide text-amber-950 m-0">Política de cancelación importante</h4>
             <p className="leading-relaxed m-0">
-              Puedes solicitar un reembolso del 100% desde{' '}
+              Puedes solicitar un reembolso desde{' '}
               <Link href="/mis-boletos" className="font-bold underline">Mis boletos</Link>{' '}
-              hasta 24 horas antes del inicio del evento. Pasado ese plazo no se admiten cancelaciones ni reembolsos.
+              hasta 6 horas antes del inicio del evento. El monto es escalonado según tu anticipación — consulta los{' '}
+              <Link href="/terminos" className="font-bold underline">términos y condiciones</Link>.
             </p>
           </div>
         </div>

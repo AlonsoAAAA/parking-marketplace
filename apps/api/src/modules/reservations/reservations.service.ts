@@ -402,8 +402,8 @@ export class ReservationsService {
     if (row.status !== 'paid') throw new BadRequestException('Solo puedes solicitar reembolso de reservas pagadas');
 
     const hoursUntilEvent = (new Date(row.starts_at).getTime() - Date.now()) / 3600000;
-    if (hoursUntilEvent <= 24) {
-      throw new BadRequestException('El plazo para solicitar reembolso (24 horas antes del evento) ha vencido');
+    if (hoursUntilEvent <= 6) {
+      throw new BadRequestException('El plazo para solicitar reembolso (6 horas antes del evento) ha vencido');
     }
 
     const [claim] = await this.dataSource.query(
