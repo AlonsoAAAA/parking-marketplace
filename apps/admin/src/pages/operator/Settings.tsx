@@ -388,70 +388,73 @@ export default function OperatorSettings({ token }: Props) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {team.map(sub => (
-              <div key={sub.id} className="sub-card">
-                {/* Avatar */}
-                <div className="sub-avatar">
-                  {(sub.name || '?').charAt(0).toUpperCase()}
+              <div key={sub.id} className="sub-card" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
+                {/* Fila 1: avatar + nombre/teléfono/rol + status */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="sub-avatar">
+                    {(sub.name || '?').charAt(0).toUpperCase()}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {sub.name || '—'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                      <span style={{ fontSize: 12, color: '#bbb', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                        {fmtPhone(sub.phone)}
+                      </span>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase',
+                        padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap',
+                        background: sub.role === 'sub_admin' ? '#EEF2FF' : '#F0FDF4',
+                        color:      sub.role === 'sub_admin' ? '#4338CA' : '#166534',
+                      }}>
+                        {sub.role === 'sub_admin' ? 'Admin' : 'Operador'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span
+                    className="adm-pill"
+                    style={{
+                      flexShrink: 0,
+                      ...(sub.is_active
+                        ? { background: '#D1FAE5', color: '#065F46' }
+                        : { background: '#F3F4F6', color: '#6B7280' }),
+                    }}
+                  >
+                    {sub.is_active ? 'Activo' : 'Inactivo'}
+                  </span>
                 </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {sub.name || '—'}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <span style={{ fontSize: 12, color: '#bbb', fontFamily: 'monospace' }}>
-                      {fmtPhone(sub.phone)}
-                    </span>
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase',
-                      padding: '1px 6px', borderRadius: 4,
-                      background: sub.role === 'sub_admin' ? '#EEF2FF' : '#F0FDF4',
-                      color:      sub.role === 'sub_admin' ? '#4338CA' : '#166534',
-                    }}>
-                      {sub.role === 'sub_admin' ? 'Admin' : 'Operador'}
-                    </span>
-                  </div>
+                {/* Fila 2: acciones */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                  <button
+                    className="sub-toggle"
+                    style={{ background: sub.is_active ? '#1a1a1a' : '#ddd', marginRight: 'auto' }}
+                    onClick={() => toggleActive(sub)}
+                    title={sub.is_active ? 'Desactivar' : 'Activar'}
+                  >
+                    <span className="sub-toggle-knob" style={{ left: sub.is_active ? 20 : 2 }} />
+                  </button>
+
+                  <button
+                    onClick={() => { setEditing(sub); setModalErr(''); }}
+                    style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                    title="Editar"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2L12 4.5 4.5 12H2v-2.5L9.5 2z" stroke="#666" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(sub.id)}
+                    disabled={deleting === sub.id}
+                    style={{ background: '#fef2f2', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: deleting === sub.id ? 0.5 : 1 }}
+                    title="Eliminar"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="#dc2626" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
                 </div>
-
-                {/* Status pill */}
-                <span
-                  className="adm-pill"
-                  style={sub.is_active
-                    ? { background: '#D1FAE5', color: '#065F46' }
-                    : { background: '#F3F4F6', color: '#6B7280' }}
-                >
-                  {sub.is_active ? 'Activo' : 'Inactivo'}
-                </span>
-
-                {/* Toggle */}
-                <button
-                  className="sub-toggle"
-                  style={{ background: sub.is_active ? '#1a1a1a' : '#ddd' }}
-                  onClick={() => toggleActive(sub)}
-                  title={sub.is_active ? 'Desactivar' : 'Activar'}
-                >
-                  <span className="sub-toggle-knob" style={{ left: sub.is_active ? 20 : 2 }} />
-                </button>
-
-                {/* Edit */}
-                <button
-                  onClick={() => { setEditing(sub); setModalErr(''); }}
-                  style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                  title="Editar"
-                >
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2L12 4.5 4.5 12H2v-2.5L9.5 2z" stroke="#666" strokeWidth="1.3" strokeLinejoin="round"/></svg>
-                </button>
-
-                {/* Delete */}
-                <button
-                  onClick={() => handleDelete(sub.id)}
-                  disabled={deleting === sub.id}
-                  style={{ background: '#fef2f2', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: deleting === sub.id ? 0.5 : 1 }}
-                  title="Eliminar"
-                >
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="#dc2626" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
               </div>
             ))}
           </div>
