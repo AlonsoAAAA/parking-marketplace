@@ -321,6 +321,17 @@ export default function BoletoDetailPage() {
                       )}
                     </div>
 
+                    <div className="bg-amber-50 border border-amber-100 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-xs">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <p className="leading-relaxed m-0">
+                        Tu solicitud está sujeta a nuestros{' '}
+                        <a href="/terminos" target="_blank" rel="noopener noreferrer" className="font-extrabold underline text-amber-950">
+                          términos y condiciones
+                        </a>
+                        . Podemos rechazarla si no cumple con la política de reembolso.
+                      </p>
+                    </div>
+
                     <button
                       type="button"
                       disabled={!refundReason.trim() || refundSending}
