@@ -116,7 +116,7 @@ function SubOpModal({
             {/* Phone — only on create */}
             {!isEdit && (
               <div className="adm-field">
-                <label className="adm-label">Número de WhatsApp</label>
+                <label className="adm-label">Número celular</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <div style={{ padding: '12px 14px', background: '#f5f5f5', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#1a1a1a', flexShrink: 0 }}>+52</div>
                   <input
@@ -129,7 +129,7 @@ function SubOpModal({
                   />
                 </div>
                 <p style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>
-                  Se enviará un código de verificación por WhatsApp
+                  Se enviará un código de verificación por SMS
                 </p>
               </div>
             )}

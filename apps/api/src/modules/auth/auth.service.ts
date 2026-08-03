@@ -17,7 +17,15 @@ export class AuthService {
     private otpRepo: Repository<OtpEntity>,
   ) {}
 
-  // Paso 1: Enviar OTP por WhatsApp
+  // Paso 1: Enviar OTP por SMS
+  // Canal temporal mientras Meta valida la cuenta de WhatsApp Business — el
+  // WABA está en estado "Test" y Meta rechaza la creación de templates de
+  // Authentication hasta completar la verificación de negocio (confirmado
+  // directamente contra la Graph API: "does not have permission to create
+  // message template"). SMS no depende de Meta ni de templates aprobados,
+  // así que sirve como canal de arranque mientras eso se resuelve. Cuando
+  // el WABA quede validado, este método se reemplaza por el envío vía
+  // WhatsApp Cloud API con template de Authentication.
   async sendOtp(phone: string): Promise<{ message: string; devOtp?: string }> {
     const cleanPhone = normalizePhone(phone);
     const isDev = this.config.get('NODE_ENV') === 'development';
@@ -30,9 +38,9 @@ export class AuthService {
       ['phone'],
     );
 
-    await this.sendWhatsAppOtp(cleanPhone, otp);
+    await this.sendOtpSms(cleanPhone, otp);
 
-    return { message: 'Código enviado por WhatsApp', ...(isDev && { devOtp: otp }) };
+    return { message: 'Código enviado por SMS', ...(isDev && { devOtp: otp }) };
   }
 
   // Paso 2: Verificar OTP y devolver JWT
@@ -111,54 +119,45 @@ export class AuthService {
     return { access_token: token, token, isNewUser };
   }
 
-  private async sendWhatsAppOtp(phone: string, otp: string): Promise<void> {
+  private async sendOtpSms(phone: string, otp: string): Promise<void> {
     const accountSid = this.config.get('TWILIO_ACCOUNT_SID');
     const authToken = this.config.get('TWILIO_AUTH_TOKEN');
-    const fromNumber = this.config.get('TWILIO_WHATSAPP_NUMBER');
+    const fromNumber = this.config.get('TWILIO_SMS_FROM_NUMBER');
 
-    // Normalizar siempre a 521XXXXXXXXXX (13 dígitos) para WhatsApp mexicano
+    // Normalizar a 52XXXXXXXXXX (12 dígitos, sin '1' extra) — formato E.164
+    // estándar de SMS, distinto del prefijo 521 que usa WhatsApp para México.
     const digits = phone.replace(/\D/g, '');
-    let waPhone: string;
+    let smsPhone: string;
     if (digits.length === 10) {
-      // Solo los 10 dígitos → agregar 521
-      waPhone = `521${digits}`;
-    } else if (digits.length === 12 && digits.startsWith('52')) {
-      // 52XXXXXXXXXX → 521XXXXXXXXXX
-      waPhone = `521${digits.slice(2)}`;
+      smsPhone = `52${digits}`;
     } else if (digits.length === 13 && digits.startsWith('521')) {
-      // Ya tiene formato correcto
-      waPhone = digits;
+      smsPhone = `52${digits.slice(3)}`;
+    } else if (digits.length === 12 && digits.startsWith('52')) {
+      smsPhone = digits;
     } else {
-      waPhone = digits;
+      smsPhone = digits;
     }
 
     // El OTP en texto plano solo se loguea en desarrollo — nunca en producción.
     if (this.config.get('NODE_ENV') === 'development') {
-      console.log(`📱 OTP para +${waPhone}: ${otp}`);
+      console.log(`📱 OTP para +${smsPhone}: ${otp}`);
     }
 
     if (!accountSid || !authToken || !fromNumber) {
-      console.log('⚠️  Twilio no configurado — OTP solo en consola');
+      console.log('⚠️  Twilio SMS no configurado — OTP solo en consola');
       return;
     }
 
-    // Plantilla aprobada por Meta (producción). Si no está configurada, se usa
-    // texto libre — válido solo con el sandbox de Twilio para pruebas.
-    const templateSid = this.config.get('TWILIO_OTP_TEMPLATE_SID');
-
     try {
       const twilio = require('twilio')(accountSid, authToken);
-      const payload: any = { from: fromNumber, to: `whatsapp:+${waPhone}` };
-      if (templateSid) {
-        payload.contentSid = templateSid;
-        payload.contentVariables = JSON.stringify({ '1': otp });
-      } else {
-        payload.body = `Tu código de verificación para EstacionaT es: *${otp}*\n\nVálido por 10 minutos.`;
-      }
-      await twilio.messages.create(payload);
-      console.log(`✅ WhatsApp enviado a +${waPhone}`);
+      await twilio.messages.create({
+        from: fromNumber,
+        to: `+${smsPhone}`,
+        body: `Tu código de verificación para EstacionaT es: ${otp}\n\nVálido por 10 minutos. No lo compartas con nadie.`,
+      });
+      console.log(`✅ SMS enviado a +${smsPhone}`);
     } catch (e) {
-      console.error(`❌ Twilio error: ${e?.message} (código: ${e?.code})`);
+      console.error(`❌ Twilio SMS error: ${e?.message} (código: ${e?.code})`);
     }
   }
 }

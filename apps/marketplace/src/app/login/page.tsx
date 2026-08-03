@@ -62,7 +62,7 @@ function LoginContent() {
     e.preventDefault();
     const fullCode = otp.join('');
     if (fullCode.length !== 6) {
-      setError('Ingresa el código de 6 dígitos completo enviado a tu WhatsApp.');
+      setError('Ingresa el código de 6 dígitos completo enviado por SMS.');
       return;
     }
     setError(''); setLoading(true);
@@ -138,8 +138,8 @@ function LoginContent() {
             {step === 1 && (
               <form onSubmit={handleSendOtp} className="space-y-6">
                 <div className="text-center space-y-2">
-                  <h2 className="text-xl md:text-2xl font-extrabold text-brand-dark tracking-tight">Inicia sesión con WhatsApp</h2>
-                  <p className="text-slate-500 text-xs">Te enviaremos un código de seguridad de un solo uso por WhatsApp.</p>
+                  <h2 className="text-xl md:text-2xl font-extrabold text-brand-dark tracking-tight">Inicia sesión</h2>
+                  <p className="text-slate-500 text-xs">Te enviaremos un código de seguridad de un solo uso por SMS.</p>
                 </div>
 
                 <div className="space-y-1">
@@ -160,7 +160,7 @@ function LoginContent() {
                 <button type="submit" disabled={loading}
                   className="w-full bg-[#383497] hover:bg-[#2b278c] disabled:bg-slate-200 text-white py-4 px-6 rounded-2xl font-sans text-sm font-black uppercase tracking-wider shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
                   <MessageSquare className="w-4 h-4 text-indigo-200" />
-                  <span>{loading ? 'Enviando...' : 'Enviar código por WhatsApp'}</span>
+                  <span>{loading ? 'Enviando...' : 'Enviar código por SMS'}</span>
                 </button>
               </form>
             )}
@@ -240,7 +240,7 @@ function LoginContent() {
 
           <div className="flex justify-center items-center gap-1.5 text-slate-400 text-xs">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Acceso autenticado y verificado por WhatsApp</span>
+            <span>Acceso autenticado y verificado por SMS</span>
           </div>
         </div>
       </div>
