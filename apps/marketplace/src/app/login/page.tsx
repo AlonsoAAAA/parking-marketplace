@@ -47,11 +47,31 @@ function LoginContent() {
   };
 
   const handleOtpChange = (index: number, value: string) => {
-    if (isNaN(Number(value))) return;
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return;
+
+    // Autocompletado del teléfono (SMS) o pegado: puede llegar el código completo
+    // de golpe en una sola cajita en vez de un dígito a la vez.
+    if (digits.length > 1) {
+      const next = [...otp];
+      for (let i = 0; i < digits.length && index + i < 6; i++) next[index + i] = digits[i];
+      setOtp(next);
+      const focusIndex = Math.min(index + digits.length, 5);
+      inputRefs.current[focusIndex]?.focus();
+      return;
+    }
+
     const next = [...otp];
-    next[index] = value.slice(-1);
+    next[index] = digits;
     setOtp(next);
-    if (value && index < 5) inputRefs.current[index + 1]?.focus();
+    if (index < 5) inputRefs.current[index + 1]?.focus();
+  };
+
+  const handleOtpPaste = (index: number, e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '');
+    if (!pasted) return;
+    e.preventDefault();
+    handleOtpChange(index, pasted);
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -179,8 +199,10 @@ function LoginContent() {
                     <input
                       key={idx}
                       ref={el => { inputRefs.current[idx] = el; }}
-                      type="text" required maxLength={1} value={digit}
+                      type="tel" inputMode="numeric" pattern="[0-9]*" autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+                      required maxLength={idx === 0 ? 6 : 1} value={digit}
                       onChange={e => handleOtpChange(idx, e.target.value)}
+                      onPaste={e => handleOtpPaste(idx, e)}
                       onKeyDown={e => handleKeyDown(idx, e)}
                       className="w-11 h-14 bg-slate-50 border-2 border-slate-200 text-center font-mono text-xl font-bold text-slate-800 rounded-xl focus:outline-none focus:border-[#383497] focus:ring-2 focus:ring-[#383497]/15 transition-all"
                     />
