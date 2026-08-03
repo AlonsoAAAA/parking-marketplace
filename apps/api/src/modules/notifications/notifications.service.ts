@@ -28,9 +28,9 @@ export class NotificationsService {
 
     const data = result[0];
 
-    // Enviar por WhatsApp
     if (data.phone) {
       await this.sendWhatsAppTicket(data);
+      await this.sendSmsTicket(data);
     }
   }
 
@@ -94,6 +94,51 @@ export class NotificationsService {
       console.log(`✅ WhatsApp enviado a +${data.phone} — SID: ${sent.sid}`);
     } catch (e: any) {
       console.error(`❌ WhatsApp error para +${data.phone}:`, e?.message);
+    }
+  }
+
+  private async sendSmsTicket(data: any): Promise<void> {
+    const accountSid = this.config.get('TWILIO_ACCOUNT_SID');
+    const authToken  = this.config.get('TWILIO_AUTH_TOKEN');
+    const fromNumber = this.config.get('TWILIO_SMS_FROM_NUMBER');
+
+    if (!accountSid || !authToken || !fromNumber) {
+      console.log(`📱 [SMS desactivado] Boleto para +${data.phone} — ${data.event_name}`);
+      return;
+    }
+
+    const fecha = new Date(data.starts_at).toLocaleString('es-MX', {
+      weekday: 'long', year: 'numeric', month: 'long',
+      day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+
+    const marketplaceUrl = this.config.get('MARKETPLACE_URL') ?? 'https://estacionat.mx';
+    const ticketUrl = `${marketplaceUrl}/mis-boletos/${data.id}`;
+
+    const message = [
+      `Tu lugar en ${data.event_name} esta confirmado.`,
+      `${data.venue_name || data.parking_name} — ${fecha}`,
+      `Tu boleto con QR: ${ticketUrl}`,
+    ].join('\n');
+
+    // El teléfono se guarda en formato WhatsApp (521XXXXXXXXXX, 13 dígitos) —
+    // SMS usa el E.164 estándar (52XXXXXXXXXX, 12 dígitos, sin el '1' extra).
+    const digits = (data.phone as string).replace(/\D/g, '');
+    const smsPhone = digits.length === 13 && digits.startsWith('521')
+      ? `52${digits.slice(3)}`
+      : digits;
+
+    const twilio = require('twilio')(accountSid, authToken);
+
+    try {
+      const sent = await twilio.messages.create({
+        from: fromNumber,
+        to: `+${smsPhone}`,
+        body: message,
+      });
+      console.log(`✅ SMS de boleto enviado a +${smsPhone} — SID: ${sent.sid}`);
+    } catch (e: any) {
+      console.error(`❌ SMS error para +${smsPhone}:`, e?.message);
     }
   }
 }
