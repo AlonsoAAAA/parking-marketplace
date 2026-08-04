@@ -157,6 +157,7 @@ export default function BoletoDetailPage() {
   const isUsed    = ticket.reservation.status === 'used';
   const hasQR     = isPaid || isUsed;
   const canRefund = isPaid && new Date(ticket.event.startsAt) > new Date(Date.now() + 24 * 3600 * 1000);
+  const canChangeVehicle = isPaid && new Date(ticket.event.startsAt) > new Date();
   const exitTime  = fmtTime(new Date(new Date(ticket.event.startsAt).getTime() + 6 * 3600 * 1000).toISOString());
 
   return (
@@ -262,6 +263,18 @@ export default function BoletoDetailPage() {
                 <div className="flex justify-between text-slate-800 font-bold text-xs pt-2 border-t border-slate-100">
                   <span>TOTAL:</span><span>${ticket.payment.amount.toFixed(2)} MXN</span>
                 </div>
+              </div>
+            )}
+
+            {/* Cambiar vehículo */}
+            {canChangeVehicle && (
+              <div className="pt-2 border-t border-slate-100">
+                <Link
+                  href={`/mis-boletos/${id}/cambiar-vehiculo`}
+                  className="w-full text-[#383497] hover:text-[#2b278c] text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1 py-1 no-underline"
+                >
+                  <span>Cambiar vehículo</span>
+                </Link>
               </div>
             )}
 
