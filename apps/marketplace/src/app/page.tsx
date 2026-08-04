@@ -18,14 +18,6 @@ interface Venue {
   photoUrl?: string;
 }
 
-const MOCK_VENUES: Venue[] = [
-  { id: 'v1', name: 'Foro Sol',                      address: 'Viaducto Río de la Piedad 187, CDMX',  category: 'conciertos', upcomingEvents: 3, priceFrom: 180 },
-  { id: 'v2', name: 'Estadio Azteca',                address: 'Calzada de Tlalpan 3465, CDMX',        category: 'deportes',   upcomingEvents: 2, priceFrom: 220 },
-  { id: 'v3', name: 'Autódromo Hermanos Rodríguez',  address: 'Ciudad Deportiva, CDMX',               category: 'festival',   upcomingEvents: 1, priceFrom: 350 },
-  { id: 'v4', name: 'Palacio de los Deportes',       address: 'Av. del Conscripto 311, CDMX',         category: 'conciertos', upcomingEvents: 2, priceFrom: 200 },
-  { id: 'v5', name: 'Palacio de Bellas Artes',       address: 'Av. Juárez s/n, Centro, CDMX',         category: 'teatro',     upcomingEvents: 1, priceFrom: 160 },
-];
-
 const CATEGORIES = [
   { key: '',           label: 'Todos'     },
   { key: 'conciertos', label: 'Conciertos'},
@@ -62,8 +54,8 @@ export default function HomePage() {
     const q = category ? `?category=${category}` : '';
     fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/venues${q}`)
       .then(r => r.json())
-      .then(d => setVenues(d.data?.length ? d.data : MOCK_VENUES))
-      .catch(() => setVenues(MOCK_VENUES))
+      .then(d => setVenues(d.data ?? []))
+      .catch(() => setVenues([]))
       .finally(() => setLoading(false));
   }, [category]);
 
