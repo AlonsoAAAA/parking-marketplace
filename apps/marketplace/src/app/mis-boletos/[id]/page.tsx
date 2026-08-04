@@ -198,6 +198,12 @@ export default function BoletoDetailPage() {
             {/* QR */}
             {hasQR && (
               <div className="flex flex-col items-center space-y-3 pt-2">
+                {ticket.vehiclePlate && (
+                  <div className="w-full max-w-[260px] bg-[#04210f] rounded-2xl px-4 py-3 text-center space-y-1">
+                    <span className="text-emerald-400 text-[9px] font-mono uppercase tracking-widest block">Placas registradas</span>
+                    <span className="text-white text-2xl font-black font-mono tracking-[0.15em] block">{ticket.vehiclePlate}</span>
+                  </div>
+                )}
                 <div className="p-4 bg-slate-50 rounded-2xl border-2 border-dotted border-slate-300">
                   <div className="bg-white p-2 rounded-xl">
                     <div className="w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] flex items-center justify-center" ref={qrRef}>
@@ -245,12 +251,6 @@ export default function BoletoDetailPage() {
                   <span className="text-slate-500 font-semibold">Hora máxima de salida:</span>
                   <span className="font-bold text-rose-700 text-right">{exitTime} hrs (+6 hrs)</span>
                 </div>
-                {ticket.vehiclePlate && (
-                  <div className="flex justify-between items-start gap-4">
-                    <span className="text-slate-500 font-semibold">Placas:</span>
-                    <span className="font-bold text-slate-800 text-right font-mono tracking-wider">{ticket.vehiclePlate}</span>
-                  </div>
-                )}
               </div>
             </div>
 
