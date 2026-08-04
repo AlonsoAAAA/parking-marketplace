@@ -275,6 +275,7 @@ export default function OperatorSettings({ token }: Props) {
   const [saving,  setSaving]  = useState(false);
   const [modalErr, setModalErr] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [listErr, setListErr] = useState('');
 
   const activeCount = team.filter(s => s.is_active).length;
 
@@ -319,20 +320,26 @@ export default function OperatorSettings({ token }: Props) {
 
   // ── Quick toggle active ─────────────────────────────────────────────────────
   const toggleActive = async (sub: SubOperator) => {
+    setListErr('');
     try {
       await api.operator.updateSubOperator(token, sub.id, { isActive: !sub.is_active });
       setTeam(prev => prev.map(s => s.id === sub.id ? { ...s, is_active: !s.is_active } : s));
-    } catch {}
+    } catch (e: any) {
+      setListErr(e.message || 'No se pudo actualizar el operador');
+    }
   };
 
   // ── Delete ──────────────────────────────────────────────────────────────────
   const handleDelete = async (id: string) => {
     if (!window.confirm('¿Eliminar este operador? Esta acción no se puede deshacer.')) return;
     setDeleting(id);
+    setListErr('');
     try {
       await api.operator.deleteSubOperator(token, id);
       setTeam(prev => prev.filter(s => s.id !== id));
-    } catch {}
+    } catch (e: any) {
+      setListErr(e.message || 'No se pudo eliminar el operador');
+    }
     finally { setDeleting(null); }
   };
 
@@ -372,6 +379,12 @@ export default function OperatorSettings({ token }: Props) {
 
         {/* Team list */}
         <p className="adm-section-lbl">Equipo de operadores</p>
+
+        {listErr && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#991b1b', marginBottom: 12 }}>
+            {listErr}
+          </div>
+        )}
 
         {loading ? (
           <div className="adm-tw"><div className="adm-empty"><div className="adm-empty-icon"><Loader2 className="animate-spin" /></div><div className="adm-empty-text">Cargando…</div></div></div>
