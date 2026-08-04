@@ -218,15 +218,17 @@ export class AdminService {
     parkingId?: string; venueId?: string; name: string; venueName: string;
     startsAt: string; endsAt: string; price: number; status?: string;
     priceAuto?: number; priceSub?: number; pricePickup?: number; priceMoto?: number;
+    imageUrl?: string;
   }) {
     const [row] = await this.db.query(
       `INSERT INTO events (parking_id, venue_id, name, venue_name, starts_at, ends_at, price, total_slots, status,
-                           category, price_auto, price_sub, price_pickup, price_moto)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+                           category, price_auto, price_sub, price_pickup, price_moto, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
       [data.parkingId ?? null, data.venueId ?? null, data.name, data.venueName, data.startsAt, data.endsAt,
        data.price, 0, data.status ?? 'draft',
        (data as any).category ?? null,
-       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null],
+       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null,
+       data.imageUrl ?? null],
     );
     return row;
   }
@@ -235,6 +237,7 @@ export class AdminService {
     name: string; venueId: string; venueName: string; startsAt: string; endsAt: string;
     price: number; status: string; category: string;
     priceAuto: number; priceSub: number; pricePickup: number; priceMoto: number;
+    imageUrl: string;
   }>) {
     await this.db.query(
       `UPDATE events
@@ -249,11 +252,13 @@ export class AdminService {
            price_auto   = COALESCE($9,  price_auto),
            price_sub    = COALESCE($10, price_sub),
            price_pickup = COALESCE($11, price_pickup),
-           price_moto   = COALESCE($12, price_moto)
-       WHERE id = $13`,
+           price_moto   = COALESCE($12, price_moto),
+           image_url    = COALESCE($13, image_url)
+       WHERE id = $14`,
       [data.name, data.venueId ?? null, data.venueName, data.startsAt ?? null, data.endsAt ?? null,
        data.price, data.status, data.category ?? null,
-       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null, id],
+       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null,
+       data.imageUrl ?? null, id],
     );
     const rows = await this.db.query(`SELECT * FROM events WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Evento no encontrado');

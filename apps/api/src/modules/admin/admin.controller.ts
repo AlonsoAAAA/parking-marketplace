@@ -93,6 +93,7 @@ class CreateEventDto {
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceSub?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) pricePickup?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceMoto?: number;
+  @IsOptional() @IsString() @MaxLength(1000) imageUrl?: string;
 }
 
 class UpdateEventDto {
@@ -108,6 +109,7 @@ class UpdateEventDto {
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceSub?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) pricePickup?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceMoto?: number;
+  @IsOptional() @IsString() @MaxLength(1000) imageUrl?: string;
 }
 
 class SetEventClosedTodayDto {

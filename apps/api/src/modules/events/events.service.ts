@@ -15,6 +15,7 @@ export class EventsService {
            e.parking_id       AS "parkingId",
            e.created_at       AS "createdAt",
            e.category,
+           e.image_url        AS "imageUrl",
            p.name             AS "parkingName",
            p.address          AS "parkingAddress",
            COALESCE(p.lat, v.lat)::float AS lat,

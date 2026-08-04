@@ -60,6 +60,8 @@ export interface Event {
   parkingAddress?: string;
   parkingId?: string;
   closedToday?: boolean;
+  imageUrl?: string;
+  image_url?: string;
 }
 
 export interface Venue {

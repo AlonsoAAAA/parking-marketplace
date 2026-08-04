@@ -19,6 +19,7 @@ interface EventDetail {
   price: number; totalSlots: number; slotsReserved: number; status: string;
   parkingName: string; parkingAddress: string; category?: string;
   lat?: number; lng?: number;
+  imageUrl?: string;
 }
 interface ParkingOption {
   id: string; name: string; address: string; lat: number; lng: number;
@@ -170,6 +171,17 @@ export default function EventDetailPage() {
 
       {/* Hero oscuro */}
       <div className="bg-[#04210f] text-white pt-28 pb-16 px-6 relative overflow-hidden">
+        {event.imageUrl && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={event.imageUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover opacity-40"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#04210f] via-[#04210f]/80 to-[#04210f]/40" />
+          </>
+        )}
         <div className="max-w-5xl mx-auto space-y-6 relative z-10">
           <div className="space-y-3">
             <span className="bg-[#DFF085] text-brand-dark text-[10px] font-mono font-black uppercase tracking-widest px-3 py-1 rounded-full">

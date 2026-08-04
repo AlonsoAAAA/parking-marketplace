@@ -1,8 +1,35 @@
-import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { CalendarDays, X } from 'lucide-react';
 import { Event } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
+
+/** Redimensiona/comprime una imagen en el navegador antes de mandarla como base64.
+ *  Evita subir fotos de 10+ MB directo de un celular a un campo de texto en la DB. */
+function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.src = reader.result as string; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('canvas no soportado')); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 interface Props { token: string; }
 
@@ -22,6 +49,7 @@ const EMPTY_EVENT = {
   price: '',
   status: 'active' as const,
   category: '',
+  imageUrl: undefined as string | undefined,
 };
 
 // El input datetime-local trabaja en hora local del navegador, sin timezone.
@@ -46,6 +74,8 @@ export default function AdminEvents({ token }: Props) {
   const [saving, setSaving]       = useState(false);
   const [deleting, setDeleting]   = useState(false);
   const [error, setError]         = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = () => {
     setLoading(true);
@@ -88,6 +118,7 @@ export default function AdminEvents({ token }: Props) {
         price:    parseFloat(modal.price) || 0,
         status:   modal.status,
         category: modal.category || undefined,
+        imageUrl: modal.imageUrl,
       };
       if (modal.id) await api.admin.updateEvent(token, modal.id, data);
       else          await api.admin.createEvent(token, data);
@@ -95,6 +126,17 @@ export default function AdminEvents({ token }: Props) {
       load();
     } catch (e: any) { setError(e.message || 'Error al guardar'); }
     finally { setSaving(false); }
+  };
+
+  const handlePhotoSelect = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setError('Selecciona un archivo de imagen'); return; }
+    setUploading(true); setError('');
+    try {
+      const dataUrl = await compressImage(file);
+      setModal((m: any) => m && ({ ...m, imageUrl: dataUrl }));
+    } catch { setError('No se pudo procesar la imagen'); }
+    finally { setUploading(false); }
   };
 
   const confirmDelete = async () => {
@@ -156,7 +198,7 @@ export default function AdminEvents({ token }: Props) {
                     const reserved = Number(e.slotsReserved || e.slots_reserved) || 0;
                     const sc       = STATUS_COLORS[e.status] || STATUS_COLORS.draft;
                     const pv       = calcIva(e.price);
-                    const openEdit = () => { const vn = e.venueName||e.venue_name||''; const mv = venues.find((v:any) => v.name === vn); setModal({ id: e.id, name: e.name, venueId: mv?.id||'', venueName: vn, startsAt: isoToLocalInput(e.startsAt||e.starts_at||''), endsAt: isoToLocalInput(e.endsAt||e.ends_at||''), price: String(e.price), status: e.status, category: (e as any).category||'' }); setError(''); };
+                    const openEdit = () => { const vn = e.venueName||e.venue_name||''; const mv = venues.find((v:any) => v.name === vn); setModal({ id: e.id, name: e.name, venueId: mv?.id||'', venueName: vn, startsAt: isoToLocalInput(e.startsAt||e.starts_at||''), endsAt: isoToLocalInput(e.endsAt||e.ends_at||''), price: String(e.price), status: e.status, category: (e as any).category||'', imageUrl: (e as any).imageUrl || (e as any).image_url || undefined }); setError(''); };
                     return (
                       <tr key={e.id} onClick={openEdit}>
                         <td style={{ fontWeight: 600 }}>{e.name}</td>
@@ -244,6 +286,50 @@ export default function AdminEvents({ token }: Props) {
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="adm-field">
+              <label className="adm-label">Foto del evento</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={e => { handlePhotoSelect(e.target.files?.[0]); e.target.value = ''; }}
+              />
+              {modal.imageUrl ? (
+                <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', border: '1px solid #eee' }}>
+                  <img src={modal.imageUrl} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Cambiar foto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModal((m: any) => m && ({ ...m, imageUrl: undefined }))}
+                    aria-label="Quitar foto"
+                    style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 999, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    width: '100%', height: 100, borderRadius: 10, border: '1.5px dashed #ddd', background: '#fafafa',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    color: '#999', fontSize: 12, fontWeight: 600, cursor: uploading ? 'wait' : 'pointer',
+                  }}
+                >
+                  {uploading ? 'Procesando…' : 'Subir foto'}
+                </button>
+              )}
             </div>
 
             {/* Fechas — apiladas para evitar overflow del datetime picker */}
