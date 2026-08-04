@@ -56,13 +56,20 @@ export class OperatorService {
     // Mark OTP as consumed
     await this.otpRepo.update({ phone: otpPhone }, { verified: true });
 
-    // ── 3. Prevent duplicate phone ─────────────────────────────────────────────
+    // ── 3. Prevent duplicate phone — salvo que sea un cliente normal sin equipo,
+    //      en cuyo caso esa misma cuenta se convierte en operador (conserva su
+    //      historial de compras, deja de poder loguearse como cliente normal).
     const existing = await this.db.query(
-      `SELECT id FROM users WHERE phone = $1`,
+      `SELECT id, role, parent_operator_id FROM users WHERE phone = $1`,
       [userPhone],
     );
-    if (existing.length) {
-      throw new ConflictException('Ya existe una cuenta con ese número de teléfono');
+    const existingUser = existing[0];
+    if (existingUser && !(existingUser.role === 'user' && !existingUser.parent_operator_id)) {
+      throw new ConflictException(
+        existingUser.role === 'user'
+          ? 'Ese número ya es parte de otro equipo de operadores'
+          : 'Ya existe una cuenta con ese número de teléfono',
+      );
     }
 
     // ── 4. Operator info for welcome message ───────────────────────────────────
@@ -71,15 +78,23 @@ export class OperatorService {
       [operatorId],
     );
 
-    // ── 5. Create sub-operator ─────────────────────────────────────────────────
+    // ── 5. Crear o convertir a sub-operador ─────────────────────────────────────
     const teamRole = data.role === 'sub_admin' ? 'sub_admin' : 'sub_operator';
 
-    const [user] = await this.db.query(
-      `INSERT INTO users (name, phone, role, channel, parent_operator_id, is_active)
-       VALUES ($1, $2, $3, 'whatsapp', $4, true)
-       RETURNING id, name, phone, role, is_active, created_at`,
-      [data.name.trim(), userPhone, teamRole, operatorId],
-    );
+    const [user] = existingUser
+      ? await this.db.query(
+          `UPDATE users
+           SET name = $1, role = $2, parent_operator_id = $3, is_active = true
+           WHERE id = $4
+           RETURNING id, name, phone, role, is_active, created_at`,
+          [data.name.trim(), teamRole, operatorId, existingUser.id],
+        )
+      : await this.db.query(
+          `INSERT INTO users (name, phone, role, channel, parent_operator_id, is_active)
+           VALUES ($1, $2, $3, 'whatsapp', $4, true)
+           RETURNING id, name, phone, role, is_active, created_at`,
+          [data.name.trim(), userPhone, teamRole, operatorId],
+        );
 
     // ── 6. WhatsApp welcome (non-fatal) ────────────────────────────────────────
     await this.sendWelcomeMessage(userPhone, data.name, operator?.name).catch(() => {});
