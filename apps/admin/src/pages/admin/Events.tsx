@@ -24,6 +24,15 @@ const EMPTY_EVENT = {
   category: '',
 };
 
+// El input datetime-local trabaja en hora local del navegador, sin timezone.
+// La API devuelve/espera ISO en UTC — hay que convertir en ambos sentidos para
+// que la hora mostrada/guardada no se desplace por el offset de zona horaria.
+const isoToLocalInput = (iso: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
 export default function AdminEvents({ token }: Props) {
   const [events, setEvents]   = useState<Event[]>([]);
   const [venues, setVenues]   = useState<any[]>([]);
@@ -147,7 +156,7 @@ export default function AdminEvents({ token }: Props) {
                     const reserved = Number(e.slotsReserved || e.slots_reserved) || 0;
                     const sc       = STATUS_COLORS[e.status] || STATUS_COLORS.draft;
                     const pv       = calcIva(e.price);
-                    const openEdit = () => { const vn = e.venueName||e.venue_name||''; const mv = venues.find((v:any) => v.name === vn); setModal({ id: e.id, name: e.name, venueId: mv?.id||'', venueName: vn, startsAt: (e.startsAt||e.starts_at||'').slice(0,16), endsAt: (e.endsAt||e.ends_at||'').slice(0,16), price: String(e.price), status: e.status, category: (e as any).category||'' }); setError(''); };
+                    const openEdit = () => { const vn = e.venueName||e.venue_name||''; const mv = venues.find((v:any) => v.name === vn); setModal({ id: e.id, name: e.name, venueId: mv?.id||'', venueName: vn, startsAt: isoToLocalInput(e.startsAt||e.starts_at||''), endsAt: isoToLocalInput(e.endsAt||e.ends_at||''), price: String(e.price), status: e.status, category: (e as any).category||'' }); setError(''); };
                     return (
                       <tr key={e.id} onClick={openEdit}>
                         <td style={{ fontWeight: 600 }}>{e.name}</td>
