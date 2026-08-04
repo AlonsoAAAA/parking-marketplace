@@ -131,7 +131,7 @@ export default function VenuePage() {
                           {soldOut ? 'Agotado' : low ? `${avail} quedan` : `${avail} lugares`}
                         </span>
                         <span className="bg-[#04210f] text-[#DFF085] font-mono font-bold text-xs px-2.5 py-1 rounded-lg whitespace-nowrap">
-                          desde ${ev.price} MXN
+                          Reservar
                         </span>
                       </div>
                     </div>
