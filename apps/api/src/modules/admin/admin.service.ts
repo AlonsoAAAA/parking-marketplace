@@ -209,7 +209,7 @@ export class AdminService {
        FROM events e
        LEFT JOIN parkings p ON p.id = e.parking_id
        ${where}
-       ORDER BY e.starts_at DESC`,
+       ORDER BY e.starts_at ASC`,
       params,
     );
   }
@@ -308,7 +308,7 @@ export class AdminService {
          )
        )
        ${status ? 'AND e.status = $2' : ''}
-       ORDER BY e.starts_at DESC`,
+       ORDER BY e.starts_at ASC`,
       status ? [operatorId, status] : [operatorId],
     );
   }
