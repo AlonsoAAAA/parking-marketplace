@@ -52,14 +52,22 @@ const EMPTY_EVENT = {
   imageUrl: undefined as string | undefined,
 };
 
-// El input datetime-local trabaja en hora local del navegador, sin timezone.
-// La API devuelve/espera ISO en UTC — hay que convertir en ambos sentidos para
-// que la hora mostrada/guardada no se desplace por el offset de zona horaria.
+// Todos los eventos son en Ciudad de México (UTC-6 fijo, sin horario de
+// verano desde la reforma de 2022) — el offset se ancla a CDMX explícitamente
+// en vez de al timezone del navegador de quien esté usando el admin, para que
+// la hora configurada no cambie según desde dónde se edite ni desde dónde se
+// vea en el marketplace.
+const CDMX_OFFSET = '-06:00';
+
+// El input datetime-local trabaja en hora local sin timezone. La API
+// devuelve/espera ISO en UTC — se convierte a/desde CDMX de forma fija.
 const isoToLocalInput = (iso: string) => {
   if (!iso) return '';
   const d = new Date(iso);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  return new Date(d.getTime() - 6 * 3600_000).toISOString().slice(0, 16);
 };
+
+const localInputToIso = (local: string) => new Date(`${local}:00${CDMX_OFFSET}`).toISOString();
 
 export default function AdminEvents({ token }: Props) {
   const [events, setEvents]   = useState<Event[]>([]);
@@ -113,8 +121,8 @@ export default function AdminEvents({ token }: Props) {
         name:       modal.name,
         venueId:    modal.venueId || undefined,
         venueName:  modal.venueName,
-        startsAt:   modal.startsAt ? new Date(modal.startsAt).toISOString() : undefined,
-        endsAt:     modal.endsAt   ? new Date(modal.endsAt).toISOString()   : undefined,
+        startsAt:   modal.startsAt ? localInputToIso(modal.startsAt) : undefined,
+        endsAt:     modal.endsAt   ? localInputToIso(modal.endsAt)   : undefined,
         price:    parseFloat(modal.price) || 0,
         status:   modal.status,
         category: modal.category || undefined,
@@ -151,7 +159,7 @@ export default function AdminEvents({ token }: Props) {
   };
 
   const IVA_RATE = 0.16;
-  const fmtDate  = (iso: string) => iso ? new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
+  const fmtDate  = (iso: string) => iso ? new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'America/Mexico_City' }) : '—';
   const fmtMXN   = (n: number)   => `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const calcIva  = (base: number | string) => { const b = parseFloat(base as string) || 0; return { base: b, iva: b * IVA_RATE, total: b * (1 + IVA_RATE) }; };
 

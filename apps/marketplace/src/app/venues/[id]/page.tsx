@@ -123,7 +123,7 @@ export default function VenuePage() {
                         <div className="font-bold text-sm md:text-base text-slate-900 leading-snug mt-1 group-hover:text-brand-dark transition-colors">{ev.name}</div>
                         <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono mt-1">
                           <Calendar className="w-3.5 h-3.5 text-[#383497]" />
-                          {d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'})} · {d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} hrs
+                          {d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short',timeZone:'America/Mexico_City'})} · {d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'})} hrs
                         </div>
                       </div>
                       <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">

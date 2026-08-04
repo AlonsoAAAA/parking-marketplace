@@ -28,11 +28,13 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   cancelled: { label: 'Cancelado', cls: 'bg-[#FEEBEA] text-[#D32F2F] border-[#fbd4d2]/50' },
 };
 
+// Todos los eventos son en CDMX — se ancla explícitamente esa zona horaria
+// para que la fecha/hora se vea igual sin importar dónde esté el visitante.
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' });
 }
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
 }
 
 export default function MisBoletosPage() {

@@ -169,7 +169,7 @@ export default function ConfirmacionPage() {
               <div className="p-4 grid grid-cols-3 gap-2">
                 <span className="text-slate-400 font-mono text-[10px] uppercase">Fecha</span>
                 <span className="col-span-2 text-slate-700 font-semibold capitalize">
-                  {new Date(ticket.event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long'})}
+                  {new Date(ticket.event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long',timeZone:'America/Mexico_City'})}
                 </span>
               </div>
               <div className="p-4 space-y-2 bg-emerald-50/30">

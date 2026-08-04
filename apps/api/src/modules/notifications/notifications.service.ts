@@ -47,6 +47,7 @@ export class NotificationsService {
     const fecha = new Date(data.starts_at).toLocaleString('es-MX', {
       weekday: 'long', year: 'numeric', month: 'long',
       day: 'numeric', hour: '2-digit', minute: '2-digit',
+      timeZone: 'America/Mexico_City',
     });
 
     const marketplaceUrl = this.config.get('MARKETPLACE_URL') ?? 'https://estacionat.mx';
@@ -110,6 +111,7 @@ export class NotificationsService {
     const fecha = new Date(data.starts_at).toLocaleString('es-MX', {
       weekday: 'long', year: 'numeric', month: 'long',
       day: 'numeric', hour: '2-digit', minute: '2-digit',
+      timeZone: 'America/Mexico_City',
     });
 
     const marketplaceUrl = this.config.get('MARKETPLACE_URL') ?? 'https://estacionat.mx';

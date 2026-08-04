@@ -13,8 +13,9 @@ interface EventStats {
   paidCount: number;
 }
 
+// CDMX fijo — los eventos son siempre ahí, sin importar el timezone del navegador.
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' });
 
 const fmtMXN = (n: number) =>
   n.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -27,7 +28,7 @@ export default function OperatorDashboard({ token, onNavigateToReservations }: P
   const [eventStats, setEventStats]   = useState<Record<string, EventStats>>({});
   const [togglingId, setTogglingId]   = useState<string | null>(null);
 
-  const today = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Mexico_City' });
 
   // Solo eventos que ya terminaron se archivan de esta pantalla — un evento
   // marcado "cerrado hoy" sigue vigente (puede reabrirse), solo deja de contar

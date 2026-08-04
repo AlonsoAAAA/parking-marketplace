@@ -11,11 +11,12 @@ interface Props { token: string; initialEventId?: string; }
 // (reserva sin pagar aún) — ver matchSt más abajo.
 const STATUS_TABS = ['all', 'pending', 'used', 'cancelled', 'expired'];
 
+// CDMX fijo — los eventos son siempre ahí, sin importar el timezone del navegador.
 const fmtDT = (iso: string) =>
-  new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
 
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
 
 // Botón de status más visible que el .adm-pill genérico — usado en las
 // tarjetas de reserva para que el estatus (sobre todo "Pendiente") salte a

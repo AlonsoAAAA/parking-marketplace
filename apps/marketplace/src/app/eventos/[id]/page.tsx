@@ -219,8 +219,8 @@ export default function EventDetailPage() {
         <div className="lg:col-span-7 space-y-6">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             {[
-              [CalendarDays, 'Fecha', new Date(event.startsAt).toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})],
-              [Clock, 'Hora', new Date(event.startsAt).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})+' hrs'],
+              [CalendarDays, 'Fecha', new Date(event.startsAt).toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'America/Mexico_City'})],
+              [Clock, 'Hora', new Date(event.startsAt).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'})+' hrs'],
               [MapPin, 'Venue', event.venueName+', CDMX'],
             ].map(([Icon, k, v]: any, i) => (
               <div key={k} className={`flex items-center gap-3 px-5 py-3.5 ${i < 2 ? 'border-b border-slate-100' : ''}`}>
