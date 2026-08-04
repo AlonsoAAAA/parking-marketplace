@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageSquare, ArrowRight, ShieldCheck, Check } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2;
 
 function LoginContent() {
   const router = useRouter();
@@ -15,10 +15,8 @@ function LoginContent() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     if (step === 2) setTimeout(() => inputRefs.current[0]?.focus(), 200);
@@ -94,31 +92,10 @@ function LoginContent() {
       if (!res.ok) throw new Error();
       const data = await res.json();
       localStorage.setItem('token', data.access_token || data.token);
-      if (data.isNewUser) {
-        setIsNewUser(true);
-        setStep(3);
-      } else {
-        router.push(nextUrl);
-      }
+      router.push(nextUrl);
     } catch {
       setError('Código incorrecto o expirado.');
     } finally { setLoading(false); }
-  };
-
-  const handleCompleteLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError('Por favor ingresa tu nombre completo.');
-      return;
-    }
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/users/me`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-    } catch {}
-    router.push(nextUrl);
   };
 
   return (
@@ -129,7 +106,7 @@ function LoginContent() {
 
           {/* Indicador de progreso índigo */}
           <div className="flex items-center justify-between px-6">
-            {([1, 2, 3] as Step[]).map((s, i) => (
+            {([1, 2] as Step[]).map((s, i) => (
               <div key={s} className="contents">
                 <div className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-bold transition-all ${
@@ -140,10 +117,10 @@ function LoginContent() {
                   <span className={`text-[10px] font-mono uppercase tracking-wider font-bold transition-all ${
                     step >= s ? 'text-[#383497]' : 'text-slate-400'
                   }`}>
-                    {s === 1 ? 'Teléfono' : s === 2 ? 'Código' : 'Nombre'}
+                    {s === 1 ? 'Teléfono' : 'Código'}
                   </span>
                 </div>
-                {i < 2 && (
+                {i < 1 && (
                   <div className="flex-1 h-[2px] bg-slate-200 mx-3 relative">
                     <div className="absolute top-0 left-0 h-full bg-[#383497] transition-all duration-300"
                       style={{ width: step > s ? '100%' : '0%' }} />
@@ -222,32 +199,6 @@ function LoginContent() {
                     ← Cambiar teléfono
                   </button>
                 </div>
-              </form>
-            )}
-
-            {step === 3 && (
-              <form onSubmit={handleCompleteLogin} className="space-y-6">
-                <div className="text-center space-y-2">
-                  <h2 className="text-xl md:text-2xl font-extrabold text-brand-dark tracking-tight">¡Bienvenido!</h2>
-                  <p className="text-slate-500 text-xs">Completa tu registro ingresando tu nombre para poder emitir tus boletos.</p>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-mono text-slate-400 uppercase">Nombre completo</label>
-                  <input
-                    type="text" required value={name} onChange={e => setName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3.5 focus:outline-none focus:ring-2 focus:ring-[#383497]/15 focus:border-[#383497] transition-all"
-                    placeholder="Ej. Sofía Valenzuela Méndez" autoFocus
-                  />
-                </div>
-
-                {error && <p className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3.5 rounded-xl text-center">{error}</p>}
-
-                <button type="submit"
-                  className="w-full bg-[#383497] hover:bg-[#2b278c] text-white py-4 px-6 rounded-2xl font-sans text-sm font-black uppercase tracking-wider shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
-                  <span>Continuar</span>
-                  <Check className="w-4 h-4" />
-                </button>
               </form>
             )}
 
