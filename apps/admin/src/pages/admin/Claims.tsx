@@ -9,6 +9,17 @@ interface Props { token: string; }
 const TABS = ['all', 'open', 'in_progress', 'resolved'];
 const TAB_LABELS: Record<string, string> = { all: 'Todos', open: 'Abiertos', in_progress: 'En proceso', resolved: 'Resueltos' };
 
+// Espejo de admin.service.ts::refundPercentForNotice — solo para mostrar un
+// preview al admin antes de aprobar; el % real lo calcula el backend.
+function refundPercentPreview(eventStartsAt?: string, claimCreatedAt?: string): number | null {
+  if (!eventStartsAt || !claimCreatedAt) return null;
+  const hoursNotice = (new Date(eventStartsAt).getTime() - new Date(claimCreatedAt).getTime()) / 3600000;
+  if (hoursNotice > 48) return 100;
+  if (hoursNotice > 36) return 70;
+  if (hoursNotice > 24) return 50;
+  return 0;
+}
+
 export default function AdminClaims({ token }: Props) {
   const [claims, setClaims]     = useState<Claim[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -16,6 +27,9 @@ export default function AdminClaims({ token }: Props) {
   const [selected, setSelected] = useState<Claim | null>(null);
   const [saving, setSaving]     = useState(false);
   const [refunding, setRefunding] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('No se cumplen nuestros términos y condiciones.');
 
   const load = () => {
     setLoading(true);
@@ -42,7 +56,9 @@ export default function AdminClaims({ token }: Props) {
 
   const handleApproveRefund = async () => {
     if (!selected) return;
-    if (!confirm(`¿Aprobar el reembolso para ${selected.userName}? Esta acción es irreversible.`)) return;
+    const pct = refundPercentPreview(selected.eventStartsAt, selected.created_at);
+    const pctMsg = pct != null ? ` Según la anticipación de la solicitud corresponde ~${pct}% del monto pagado.` : '';
+    if (!confirm(`¿Aprobar el reembolso para ${selected.userName}?${pctMsg} Esta acción es irreversible.`)) return;
     setRefunding(true);
     try {
       await api.admin.approveRefund(token, selected.id);
@@ -51,6 +67,19 @@ export default function AdminClaims({ token }: Props) {
     } catch (e: any) {
       alert(e.message || 'Error al procesar el reembolso');
     } finally { setRefunding(false); }
+  };
+
+  const handleReject = async () => {
+    if (!selected || !rejectReason.trim()) return;
+    setRejecting(true);
+    try {
+      await api.admin.updateClaim(token, selected.id, { status: 'resolved', adminNotes: rejectReason.trim() });
+      setRejectOpen(false);
+      setSelected(null);
+      load();
+    } catch (e: any) {
+      alert(e.message || 'Error al rechazar la solicitud');
+    } finally { setRejecting(false); }
   };
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit' });
@@ -103,7 +132,7 @@ export default function AdminClaims({ token }: Props) {
                         <td style={{ fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</td>
                         <td><span className="adm-pill" style={sc}>{STATUS_LABELS[c.status]}</span></td>
                         <td style={{ fontSize: 11, color: '#bbb' }}>{fmtDate(c.created_at)}</td>
-                        <td><button className="adm-btn adm-btn-ghost adm-btn-sm" onClick={() => setSelected(c)}>Ver</button></td>
+                        <td><button className="adm-btn adm-btn-ghost adm-btn-sm" onClick={() => { setSelected(c); setRejectOpen(false); setRejectReason('No se cumplen nuestros términos y condiciones.'); }}>Ver</button></td>
                       </tr>
                     );
                   })}
@@ -151,15 +180,64 @@ export default function AdminClaims({ token }: Props) {
             {/* Botón aprobar reembolso */}
             {selected.status !== 'resolved' && (
               <div style={{ marginBottom: 16, padding: '14px 16px', background: '#fef2f2', borderRadius: 10, border: '1px solid #fecaca' }}>
-                <p style={{ fontSize: 12, color: '#991b1b', marginBottom: 10, fontWeight: 600 }}>Acción de reembolso</p>
+                <p style={{ fontSize: 12, color: '#991b1b', marginBottom: 4, fontWeight: 600 }}>Acción de reembolso</p>
+                {(() => {
+                  const pct = refundPercentPreview(selected.eventStartsAt, selected.created_at);
+                  return pct != null ? (
+                    <p style={{ fontSize: 11, color: '#991b1b', marginBottom: 10 }}>
+                      Reembolso escalonado: corresponde <strong>~{pct}%</strong> del monto pagado según la anticipación.
+                    </p>
+                  ) : null;
+                })()}
                 <button
                   className="adm-btn"
-                  style={{ background: '#991b1b', width: '100%' }}
+                  style={{ background: '#991b1b', width: '100%', marginBottom: 8 }}
                   onClick={handleApproveRefund}
-                  disabled={refunding}
+                  disabled={refunding || rejecting}
                 >
                   {refunding ? 'Procesando reembolso...' : '✓ Aprobar y procesar reembolso en Stripe'}
                 </button>
+
+                {!rejectOpen ? (
+                  <button
+                    className="adm-btn adm-btn-ghost"
+                    style={{ width: '100%', color: '#991b1b', borderColor: '#fecaca' }}
+                    onClick={() => setRejectOpen(true)}
+                    disabled={refunding || rejecting}
+                  >
+                    ✕ Rechazar solicitud
+                  </button>
+                ) : (
+                  <div style={{ marginTop: 6 }}>
+                    <label style={{ display: 'block', fontSize: 11, color: '#991b1b', marginBottom: 6, fontWeight: 600 }}>Motivo de rechazo</label>
+                    <textarea
+                      value={rejectReason}
+                      onChange={e => setRejectReason(e.target.value)}
+                      rows={2}
+                      style={{ width: '100%', fontSize: 12, borderRadius: 8, border: '1px solid #fecaca', padding: 8, resize: 'vertical', fontFamily: 'inherit', marginBottom: 8 }}
+                    />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        className="adm-btn"
+                        style={{ background: '#991b1b', flex: 1 }}
+                        onClick={handleReject}
+                        disabled={rejecting || !rejectReason.trim()}
+                      >
+                        {rejecting ? 'Rechazando...' : 'Confirmar rechazo'}
+                      </button>
+                      <button className="adm-btn adm-btn-ghost" onClick={() => setRejectOpen(false)} disabled={rejecting}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selected.status === 'resolved' && selected.admin_notes && (
+              <div style={{ marginBottom: 16, padding: '12px 14px', background: '#f5f5f5', borderRadius: 10 }}>
+                <p style={{ fontSize: 11, color: '#999', marginBottom: 4, fontWeight: 600 }}>Nota del equipo</p>
+                <p style={{ fontSize: 13, color: '#555' }}>{selected.admin_notes}</p>
               </div>
             )}
 

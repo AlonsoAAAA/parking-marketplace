@@ -39,29 +39,30 @@ export class AdminService {
   // ─── Venues ───────────────────────────────────────────────────────────────
 
   listVenues() {
-    return this.db.query(`SELECT * FROM venues ORDER BY name`);
+    return this.db.query(`SELECT *, photo_url AS "photoUrl" FROM venues ORDER BY name`);
   }
 
-  async createVenue(data: { name: string; city: string; address: string; capacity: number; lat?: number; lng?: number }) {
+  async createVenue(data: { name: string; city: string; address: string; capacity: number; lat?: number; lng?: number; photoUrl?: string }) {
     const [row] = await this.db.query(
-      `INSERT INTO venues (name, city, address, capacity, lat, lng)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [data.name, data.city ?? 'CDMX', data.address ?? '', data.capacity ?? 0, data.lat ?? null, data.lng ?? null],
+      `INSERT INTO venues (name, city, address, capacity, lat, lng, photo_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [data.name, data.city ?? 'CDMX', data.address ?? '', data.capacity ?? 0, data.lat ?? null, data.lng ?? null, data.photoUrl ?? null],
     );
     return row;
   }
 
-  async updateVenue(id: string, data: Partial<{ name: string; city: string; address: string; capacity: number; lat: number; lng: number }>) {
+  async updateVenue(id: string, data: Partial<{ name: string; city: string; address: string; capacity: number; lat: number; lng: number; photoUrl: string }>) {
     await this.db.query(
       `UPDATE venues
-       SET name     = COALESCE($1, name),
-           city     = COALESCE($2, city),
-           address  = COALESCE($3, address),
-           capacity = COALESCE($4, capacity),
-           lat      = COALESCE($5, lat),
-           lng      = COALESCE($6, lng)
-       WHERE id = $7`,
-      [data.name, data.city, data.address, data.capacity, data.lat, data.lng, id],
+       SET name      = COALESCE($1, name),
+           city      = COALESCE($2, city),
+           address   = COALESCE($3, address),
+           capacity  = COALESCE($4, capacity),
+           lat       = COALESCE($5, lat),
+           lng       = COALESCE($6, lng),
+           photo_url = COALESCE($7, photo_url)
+       WHERE id = $8`,
+      [data.name, data.city, data.address, data.capacity, data.lat, data.lng, data.photoUrl, id],
     );
     const rows = await this.db.query(`SELECT * FROM venues WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Venue no encontrado');
@@ -208,7 +209,7 @@ export class AdminService {
        FROM events e
        LEFT JOIN parkings p ON p.id = e.parking_id
        ${where}
-       ORDER BY e.starts_at DESC`,
+       ORDER BY e.starts_at ASC`,
       params,
     );
   }
@@ -217,15 +218,17 @@ export class AdminService {
     parkingId?: string; venueId?: string; name: string; venueName: string;
     startsAt: string; endsAt: string; price: number; status?: string;
     priceAuto?: number; priceSub?: number; pricePickup?: number; priceMoto?: number;
+    imageUrl?: string;
   }) {
     const [row] = await this.db.query(
       `INSERT INTO events (parking_id, venue_id, name, venue_name, starts_at, ends_at, price, total_slots, status,
-                           category, price_auto, price_sub, price_pickup, price_moto)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+                           category, price_auto, price_sub, price_pickup, price_moto, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
       [data.parkingId ?? null, data.venueId ?? null, data.name, data.venueName, data.startsAt, data.endsAt,
        data.price, 0, data.status ?? 'draft',
        (data as any).category ?? null,
-       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null],
+       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null,
+       data.imageUrl ?? null],
     );
     return row;
   }
@@ -234,6 +237,7 @@ export class AdminService {
     name: string; venueId: string; venueName: string; startsAt: string; endsAt: string;
     price: number; status: string; category: string;
     priceAuto: number; priceSub: number; pricePickup: number; priceMoto: number;
+    imageUrl: string;
   }>) {
     await this.db.query(
       `UPDATE events
@@ -248,11 +252,13 @@ export class AdminService {
            price_auto   = COALESCE($9,  price_auto),
            price_sub    = COALESCE($10, price_sub),
            price_pickup = COALESCE($11, price_pickup),
-           price_moto   = COALESCE($12, price_moto)
-       WHERE id = $13`,
+           price_moto   = COALESCE($12, price_moto),
+           image_url    = COALESCE($13, image_url)
+       WHERE id = $14`,
       [data.name, data.venueId ?? null, data.venueName, data.startsAt ?? null, data.endsAt ?? null,
        data.price, data.status, data.category ?? null,
-       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null, id],
+       data.priceAuto ?? null, data.priceSub ?? null, data.pricePickup ?? null, data.priceMoto ?? null,
+       data.imageUrl ?? null, id],
     );
     const rows = await this.db.query(`SELECT * FROM events WHERE id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException('Evento no encontrado');
@@ -260,21 +266,69 @@ export class AdminService {
   }
 
   async listOperatorEvents(operatorId: string, status?: string) {
+    // Un evento pertenece al operador si su estacionamiento principal es de este
+    // operador, O si el venue del evento tiene ligado (via venue_parkings) algún
+    // estacionamiento del operador — antes solo se checaba parking_id directo,
+    // lo que ocultaba eventos ligados al operador solo por venue_parkings.
+    // totalSlots/slotsReserved propios del evento son 0 cuando el evento no
+    // gestiona cupo directamente (usa venue_parkings) — mismo fallback que
+    // venues.service.ts::findEvents, si no se calcula, el Dashboard del
+    // operador muestra 0% de ocupación y "0 reservas activas" aunque haya
+    // reservas pagadas reales.
     return this.db.query(
-      `SELECT e.*, p.name AS "parkingName", p.address AS "parkingAddress"
+      `SELECT DISTINCT e.*, p.name AS "parkingName", p.address AS "parkingAddress",
+              (edc.id IS NOT NULL) AS "closedToday",
+              COALESCE(
+                (SELECT SUM(ep.total_slots)   FROM event_parkings ep WHERE ep.event_id = e.id),
+                (SELECT SUM(pk.total_capacity) FROM venue_parkings vp JOIN parkings pk ON pk.id = vp.parking_id WHERE vp.venue_id = e.venue_id AND pk.is_active = true),
+                e.total_slots,
+                0
+              )::int AS "totalSlots",
+              COALESCE(
+                (SELECT SUM(ep.slots_reserved) FROM event_parkings ep WHERE ep.event_id = e.id),
+                (SELECT COUNT(*) FROM reservations r WHERE r.event_id = e.id AND r.status IN ('paid','used')),
+                e.slots_reserved,
+                0
+              )::int AS "slotsReserved"
        FROM events e
-       JOIN parkings p ON p.id = e.parking_id
+       LEFT JOIN parkings p ON p.id = e.parking_id
+       LEFT JOIN event_daily_closures edc
+         ON edc.event_id = e.id AND edc.operator_id = $1 AND edc.closed_date = CURRENT_DATE
        WHERE (
-         p.owner_id = $1
-         OR p.owner_id = (
-           SELECT parent_operator_id FROM users
-           WHERE id = $1 AND role IN ('sub_operator', 'sub_admin')
+         e.parking_id IN (
+           SELECT id FROM parkings
+           WHERE owner_id = $1
+              OR owner_id = (SELECT parent_operator_id FROM users WHERE id = $1 AND role IN ('sub_operator', 'sub_admin'))
+         )
+         OR e.venue_id IN (
+           SELECT vp.venue_id FROM venue_parkings vp
+           JOIN parkings pk ON pk.id = vp.parking_id
+           WHERE pk.owner_id = $1
+              OR pk.owner_id = (SELECT parent_operator_id FROM users WHERE id = $1 AND role IN ('sub_operator', 'sub_admin'))
          )
        )
        ${status ? 'AND e.status = $2' : ''}
-       ORDER BY e.starts_at DESC`,
+       ORDER BY e.starts_at ASC`,
       status ? [operatorId, status] : [operatorId],
     );
+  }
+
+  async setEventClosedToday(eventId: string, operatorId: string, closed: boolean) {
+    if (closed) {
+      await this.db.query(
+        `INSERT INTO event_daily_closures (event_id, operator_id, closed_date)
+         VALUES ($1, $2, CURRENT_DATE)
+         ON CONFLICT (event_id, operator_id, closed_date) DO NOTHING`,
+        [eventId, operatorId],
+      );
+    } else {
+      await this.db.query(
+        `DELETE FROM event_daily_closures
+         WHERE event_id = $1 AND operator_id = $2 AND closed_date = CURRENT_DATE`,
+        [eventId, operatorId],
+      );
+    }
+    return { eventId, closedToday: closed };
   }
 
   async updateEventPrices(eventId: string, operatorId: string, prices: {
@@ -348,7 +402,7 @@ export class AdminService {
     return this.db.query(
       `SELECT c.*,
               u.name  AS "userName",  u.phone AS "userPhone",
-              e.name  AS "eventName"
+              e.name  AS "eventName", e.starts_at AS "eventStartsAt"
        FROM claims c
        LEFT JOIN users u        ON u.id = c.user_id
        LEFT JOIN reservations r ON r.id = c.reservation_id
@@ -478,9 +532,46 @@ export class AdminService {
     );
   }
 
+  // ─── Reservations (historial completo) ──────────────────────────────────────
+
+  listReservations(status?: string) {
+    const params: any[] = [];
+    let where = '';
+    if (status && status !== 'all') { params.push(status); where = `WHERE r.status = $1`; }
+    return this.db.query(
+      `SELECT r.id, r.status, r.created_at AS "createdAt",
+              u.name  AS "userName", u.phone AS "userPhone",
+              e.name  AS "eventName", e.starts_at AS "eventStartsAt",
+              pay.amount, pay.status AS "paymentStatus",
+              q.scanned_at AS "scannedAt",
+              (SELECT COUNT(*) FROM claims c WHERE c.reservation_id = r.id)::int AS "claimCount",
+              (SELECT c.type FROM claims c WHERE c.reservation_id = r.id ORDER BY c.created_at DESC LIMIT 1) AS "lastClaimType",
+              (SELECT c.status FROM claims c WHERE c.reservation_id = r.id ORDER BY c.created_at DESC LIMIT 1) AS "lastClaimStatus"
+       FROM reservations r
+       JOIN users u  ON u.id = r.user_id
+       JOIN events e ON e.id = r.event_id
+       LEFT JOIN payments pay ON pay.reservation_id = r.id AND pay.status = 'completed'
+       LEFT JOIN qr_tokens q  ON q.reservation_id = r.id
+       ${where}
+       ORDER BY r.created_at DESC`,
+      params,
+    );
+  }
+
+  // Reembolso escalonado según anticipación (horas entre la solicitud y el
+  // inicio del evento): +48h → 100%; 36-48h → 70%; 24-36h → 50%; <24h → sin
+  // reembolso (no debería llegar aquí, reservations.service.ts ya bloquea
+  // la solicitud en ese punto).
+  private refundPercentForNotice(hoursNotice: number): number {
+    if (hoursNotice > 48) return 100;
+    if (hoursNotice > 36) return 70;
+    if (hoursNotice > 24) return 50;
+    return 0;
+  }
+
   async approveRefund(claimId: string) {
     const [claim] = await this.db.query(
-      `SELECT id, type, status, reservation_id, description FROM claims WHERE id = $1`,
+      `SELECT id, type, status, reservation_id, description, created_at FROM claims WHERE id = $1`,
       [claimId],
     );
     if (!claim) throw new NotFoundException('Reclamo no encontrado');
@@ -488,25 +579,39 @@ export class AdminService {
     if (claim.status === 'resolved') throw new BadRequestException('Este reclamo ya fue resuelto');
 
     const [payment] = await this.db.query(
-      `SELECT id, provider_payment_id, amount FROM payments WHERE reservation_id = $1 AND status = 'completed'`,
+      `SELECT pay.id, pay.provider_payment_id, pay.amount, e.starts_at
+       FROM payments pay
+       JOIN reservations r ON r.id = pay.reservation_id
+       JOIN events e       ON e.id = r.event_id
+       WHERE pay.reservation_id = $1 AND pay.status = 'completed'`,
       [claim.reservation_id],
     );
     if (!payment) throw new BadRequestException('No se encontró un pago completado para esta reserva');
 
-    const refund = await this.stripe.refunds.create({ payment_intent: payment.provider_payment_id });
+    const hoursNotice = (new Date(payment.starts_at).getTime() - new Date(claim.created_at).getTime()) / 3600000;
+    const refundPercent = this.refundPercentForNotice(hoursNotice);
+    if (refundPercent <= 0) {
+      throw new BadRequestException('Esta solicitud está fuera del plazo de reembolso (menos de 24 horas antes del evento) — no aplica reembolso');
+    }
+    const refundAmountCents = Math.round(parseFloat(payment.amount) * (refundPercent / 100) * 100);
+
+    const refund = await this.stripe.refunds.create({
+      payment_intent: payment.provider_payment_id,
+      amount: refundAmountCents,
+    });
 
     await this.db.query(
-      `UPDATE payments SET status='refunded', refund_id=$1, refunded_at=NOW(), refund_reason=$2 WHERE id=$3`,
-      [refund.id, claim.description, payment.id],
+      `UPDATE payments SET status='refunded', refund_id=$1, refunded_at=NOW(), refund_reason=$2, refund_percent=$3 WHERE id=$4`,
+      [refund.id, claim.description, refundPercent, payment.id],
     );
     await this.db.query(
       `UPDATE reservations SET status='cancelled' WHERE id=$1`,
       [claim.reservation_id],
     );
     await this.db.query(
-      `UPDATE claims SET status='resolved', admin_notes='Reembolso aprobado y procesado.', resolved_at=NOW(), updated_at=NOW() WHERE id=$1`,
-      [claimId],
+      `UPDATE claims SET status='resolved', admin_notes=$1, resolved_at=NOW(), updated_at=NOW() WHERE id=$2`,
+      [`Reembolso aprobado y procesado (${refundPercent}% según anticipación).`, claimId],
     );
-    return { refundId: refund.id };
+    return { refundId: refund.id, refundPercent };
   }
 }

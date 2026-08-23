@@ -116,7 +116,7 @@ function SubOpModal({
             {/* Phone — only on create */}
             {!isEdit && (
               <div className="adm-field">
-                <label className="adm-label">Número de WhatsApp</label>
+                <label className="adm-label">Número celular</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <div style={{ padding: '12px 14px', background: '#f5f5f5', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#1a1a1a', flexShrink: 0 }}>+52</div>
                   <input
@@ -129,7 +129,7 @@ function SubOpModal({
                   />
                 </div>
                 <p style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>
-                  Se enviará un código de verificación por WhatsApp
+                  Se enviará un código de verificación por SMS
                 </p>
               </div>
             )}
@@ -275,6 +275,7 @@ export default function OperatorSettings({ token }: Props) {
   const [saving,  setSaving]  = useState(false);
   const [modalErr, setModalErr] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [listErr, setListErr] = useState('');
 
   const activeCount = team.filter(s => s.is_active).length;
 
@@ -319,20 +320,26 @@ export default function OperatorSettings({ token }: Props) {
 
   // ── Quick toggle active ─────────────────────────────────────────────────────
   const toggleActive = async (sub: SubOperator) => {
+    setListErr('');
     try {
       await api.operator.updateSubOperator(token, sub.id, { isActive: !sub.is_active });
       setTeam(prev => prev.map(s => s.id === sub.id ? { ...s, is_active: !s.is_active } : s));
-    } catch {}
+    } catch (e: any) {
+      setListErr(e.message || 'No se pudo actualizar el operador');
+    }
   };
 
   // ── Delete ──────────────────────────────────────────────────────────────────
   const handleDelete = async (id: string) => {
     if (!window.confirm('¿Eliminar este operador? Esta acción no se puede deshacer.')) return;
     setDeleting(id);
+    setListErr('');
     try {
       await api.operator.deleteSubOperator(token, id);
       setTeam(prev => prev.filter(s => s.id !== id));
-    } catch {}
+    } catch (e: any) {
+      setListErr(e.message || 'No se pudo eliminar el operador');
+    }
     finally { setDeleting(null); }
   };
 
@@ -373,6 +380,12 @@ export default function OperatorSettings({ token }: Props) {
         {/* Team list */}
         <p className="adm-section-lbl">Equipo de operadores</p>
 
+        {listErr && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#991b1b', marginBottom: 12 }}>
+            {listErr}
+          </div>
+        )}
+
         {loading ? (
           <div className="adm-tw"><div className="adm-empty"><div className="adm-empty-icon"><Loader2 className="animate-spin" /></div><div className="adm-empty-text">Cargando…</div></div></div>
         ) : team.length === 0 ? (
@@ -388,70 +401,73 @@ export default function OperatorSettings({ token }: Props) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {team.map(sub => (
-              <div key={sub.id} className="sub-card">
-                {/* Avatar */}
-                <div className="sub-avatar">
-                  {(sub.name || '?').charAt(0).toUpperCase()}
+              <div key={sub.id} className="sub-card" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
+                {/* Fila 1: avatar + nombre/teléfono/rol + status */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="sub-avatar">
+                    {(sub.name || '?').charAt(0).toUpperCase()}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {sub.name || '—'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                      <span style={{ fontSize: 12, color: '#bbb', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                        {fmtPhone(sub.phone)}
+                      </span>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase',
+                        padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap',
+                        background: sub.role === 'sub_admin' ? '#EEF2FF' : '#F0FDF4',
+                        color:      sub.role === 'sub_admin' ? '#4338CA' : '#166534',
+                      }}>
+                        {sub.role === 'sub_admin' ? 'Admin' : 'Operador'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span
+                    className="adm-pill"
+                    style={{
+                      flexShrink: 0,
+                      ...(sub.is_active
+                        ? { background: '#D1FAE5', color: '#065F46' }
+                        : { background: '#F3F4F6', color: '#6B7280' }),
+                    }}
+                  >
+                    {sub.is_active ? 'Activo' : 'Inactivo'}
+                  </span>
                 </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {sub.name || '—'}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <span style={{ fontSize: 12, color: '#bbb', fontFamily: 'monospace' }}>
-                      {fmtPhone(sub.phone)}
-                    </span>
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase',
-                      padding: '1px 6px', borderRadius: 4,
-                      background: sub.role === 'sub_admin' ? '#EEF2FF' : '#F0FDF4',
-                      color:      sub.role === 'sub_admin' ? '#4338CA' : '#166534',
-                    }}>
-                      {sub.role === 'sub_admin' ? 'Admin' : 'Operador'}
-                    </span>
-                  </div>
+                {/* Fila 2: acciones */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                  <button
+                    className="sub-toggle"
+                    style={{ background: sub.is_active ? '#1a1a1a' : '#ddd', marginRight: 'auto' }}
+                    onClick={() => toggleActive(sub)}
+                    title={sub.is_active ? 'Desactivar' : 'Activar'}
+                  >
+                    <span className="sub-toggle-knob" style={{ left: sub.is_active ? 20 : 2 }} />
+                  </button>
+
+                  <button
+                    onClick={() => { setEditing(sub); setModalErr(''); }}
+                    style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                    title="Editar"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2L12 4.5 4.5 12H2v-2.5L9.5 2z" stroke="#666" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(sub.id)}
+                    disabled={deleting === sub.id}
+                    style={{ background: '#fef2f2', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: deleting === sub.id ? 0.5 : 1 }}
+                    title="Eliminar"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="#dc2626" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
                 </div>
-
-                {/* Status pill */}
-                <span
-                  className="adm-pill"
-                  style={sub.is_active
-                    ? { background: '#D1FAE5', color: '#065F46' }
-                    : { background: '#F3F4F6', color: '#6B7280' }}
-                >
-                  {sub.is_active ? 'Activo' : 'Inactivo'}
-                </span>
-
-                {/* Toggle */}
-                <button
-                  className="sub-toggle"
-                  style={{ background: sub.is_active ? '#1a1a1a' : '#ddd' }}
-                  onClick={() => toggleActive(sub)}
-                  title={sub.is_active ? 'Desactivar' : 'Activar'}
-                >
-                  <span className="sub-toggle-knob" style={{ left: sub.is_active ? 20 : 2 }} />
-                </button>
-
-                {/* Edit */}
-                <button
-                  onClick={() => { setEditing(sub); setModalErr(''); }}
-                  style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                  title="Editar"
-                >
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2L12 4.5 4.5 12H2v-2.5L9.5 2z" stroke="#666" strokeWidth="1.3" strokeLinejoin="round"/></svg>
-                </button>
-
-                {/* Delete */}
-                <button
-                  onClick={() => handleDelete(sub.id)}
-                  disabled={deleting === sub.id}
-                  style={{ background: '#fef2f2', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: deleting === sub.id ? 0.5 : 1 }}
-                  title="Eliminar"
-                >
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="#dc2626" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
               </div>
             ))}
           </div>

@@ -13,6 +13,7 @@ import Stripe from 'stripe';
 import { QrService } from '../qr/qr.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { FraudService } from '../fraud/fraud.service';
+import { PaymentsService } from './payments.service';
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -24,6 +25,7 @@ export class WebhooksController {
     private qrService: QrService,
     private notificationsService: NotificationsService,
     private fraud: FraudService,
+    private paymentsService: PaymentsService,
   ) {
     this.stripe = new Stripe(this.config.get('STRIPE_SECRET_KEY'), {
       apiVersion: '2023-10-16',
@@ -72,6 +74,14 @@ export class WebhooksController {
     }
 
     const intent = event.data.object as Stripe.PaymentIntent;
+
+    // Cambio de vehículo: flujo separado que no toca `payments`/QR/reserva "paid"
+    if (intent.metadata.type === 'vehicle_change') {
+      await this.paymentsService.applyPaidVehicleChange(intent.id);
+      console.log(`✅ Cambio de vehículo aplicado tras pago: ${intent.id}`);
+      return { received: true };
+    }
+
     const reservationId = intent.metadata.reservation_id;
 
     // 3. Idempotencia + validación de amount

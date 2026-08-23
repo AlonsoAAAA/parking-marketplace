@@ -1,11 +1,38 @@
-import { useState, useEffect } from 'react';
-import { MapPin } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { MapPin, Image as ImageIcon, X } from 'lucide-react';
 import { Venue } from '../../types';
 import { api } from '../../lib/api';
 
 interface Props { token: string; }
 
-const EMPTY: Venue = { id: '', name: '', city: 'Ciudad de México', address: '', capacity: undefined, lat: undefined, lng: undefined };
+const EMPTY: Venue = { id: '', name: '', city: 'Ciudad de México', address: '', capacity: undefined, lat: undefined, lng: undefined, photoUrl: undefined };
+
+/** Redimensiona/comprime una imagen en el navegador antes de mandarla como base64.
+ *  Evita subir fotos de 10+ MB directo de un celular a un campo de texto en la DB. */
+function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.src = reader.result as string; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('canvas no soportado')); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function AdminVenues({ token }: Props) {
   const [venues, setVenues]   = useState<Venue[]>([]);
@@ -13,6 +40,8 @@ export default function AdminVenues({ token }: Props) {
   const [modal, setModal]     = useState<Venue | null>(null);
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = () => {
     setLoading(true);
@@ -27,7 +56,7 @@ export default function AdminVenues({ token }: Props) {
     if (!modal?.name.trim() || !modal?.address.trim()) { setError('Nombre y dirección son requeridos'); return; }
     setSaving(true); setError('');
     try {
-      const data = { name: modal.name, city: modal.city, address: modal.address, capacity: modal.capacity, lat: modal.lat, lng: modal.lng };
+      const data = { name: modal.name, city: modal.city, address: modal.address, capacity: modal.capacity, lat: modal.lat, lng: modal.lng, photoUrl: modal.photoUrl };
       if (modal.id) await api.admin.updateVenue(token, modal.id, data);
       else          await api.admin.createVenue(token, data);
       setModal(null);
@@ -40,6 +69,17 @@ export default function AdminVenues({ token }: Props) {
     if (!confirm('¿Eliminar este venue?')) return;
     try { await api.admin.deleteVenue(token, id); load(); }
     catch (e: any) { alert(e.message || 'Error al eliminar'); }
+  };
+
+  const handlePhotoSelect = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setError('Selecciona un archivo de imagen'); return; }
+    setUploading(true); setError('');
+    try {
+      const dataUrl = await compressImage(file);
+      setModal(m => m && ({ ...m, photoUrl: dataUrl }));
+    } catch { setError('No se pudo procesar la imagen'); }
+    finally { setUploading(false); }
   };
 
   return (
@@ -67,10 +107,19 @@ export default function AdminVenues({ token }: Props) {
         ) : (
           <div className="adm-tw">
             <table className="adm-t">
-              <thead><tr><th>Venue</th><th>Ciudad</th><th>Dirección</th><th>Capacidad</th><th></th></tr></thead>
+              <thead><tr><th></th><th>Venue</th><th>Ciudad</th><th>Dirección</th><th>Capacidad</th><th></th></tr></thead>
               <tbody>
                 {venues.map(v => (
                   <tr key={v.id}>
+                    <td style={{ width: 48 }}>
+                      {v.photoUrl ? (
+                        <img src={v.photoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', display: 'block' }} />
+                      ) : (
+                        <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>
+                          <ImageIcon size={16} />
+                        </div>
+                      )}
+                    </td>
                     <td style={{ fontWeight: 600 }}>{v.name}</td>
                     <td style={{ color: '#555' }}>{v.city}</td>
                     <td style={{ color: '#555', fontSize: 12 }}>{v.address}</td>
@@ -100,6 +149,52 @@ export default function AdminVenues({ token }: Props) {
               <div className="adm-field"><label className="adm-label">Latitud</label><input className="adm-input" type="number" step="any" value={modal.lat ?? ''} onChange={e => setModal(m => m && ({...m, lat: e.target.value ? Number(e.target.value) : undefined}))} placeholder="19.4326" /></div>
               <div className="adm-field"><label className="adm-label">Longitud</label><input className="adm-input" type="number" step="any" value={modal.lng ?? ''} onChange={e => setModal(m => m && ({...m, lng: e.target.value ? Number(e.target.value) : undefined}))} placeholder="-99.1332" /></div>
             </div>
+
+            <div className="adm-field">
+              <label className="adm-label">Foto real del venue</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={e => { handlePhotoSelect(e.target.files?.[0]); e.target.value = ''; }}
+              />
+              {modal.photoUrl ? (
+                <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', border: '1px solid #eee' }}>
+                  <img src={modal.photoUrl} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Cambiar foto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModal(m => m && ({ ...m, photoUrl: undefined }))}
+                    aria-label="Quitar foto"
+                    style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: 999, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    width: '100%', height: 100, borderRadius: 10, border: '1.5px dashed #ddd', background: '#fafafa',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    color: '#999', fontSize: 12, fontWeight: 600, cursor: uploading ? 'wait' : 'pointer',
+                  }}
+                >
+                  <ImageIcon size={20} />
+                  {uploading ? 'Procesando...' : 'Subir foto real del venue'}
+                </button>
+              )}
+            </div>
+
             <div className="adm-modal-footer">
               <button className="adm-btn adm-btn-ghost" onClick={() => setModal(null)}>Cancelar</button>
               <button className="adm-btn" onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>

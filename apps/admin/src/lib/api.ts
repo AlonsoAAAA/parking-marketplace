@@ -75,6 +75,7 @@ export const api = {
     updatePromotion:  (token: string, id: string, data: object) => req<any>(`/admin/promotions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token),
     deletePromotion:  (token: string, id: string)        => req<void>(`/admin/promotions/${id}`, { method: 'DELETE' }, token),
     payments:         (token: string)                    => req<any>('/admin/payments', {}, token),
+    reservations:     (token: string)                    => req<any>('/admin/reservations', {}, token),
     fraudStats:       (token: string)                    => req<any>('/admin/fraud/stats', {}, token),
     fraudAlerts:      (token: string, status?: string, level?: string) => {
       const qs = new URLSearchParams();
@@ -94,6 +95,8 @@ export const api = {
       req<any>(`/admin/operator/events${status ? `?status=${status}` : ''}`, {}, token),
     updateEventPrices: (token: string, id: string, data: object) =>
       req<any>(`/admin/operator/events/${id}/prices`, { method: 'PATCH', body: JSON.stringify(data) }, token),
+    setEventClosedToday: (token: string, id: string, closed: boolean) =>
+      req<any>(`/admin/operator/events/${id}/closed-today`, { method: 'PATCH', body: JSON.stringify({ closed }) }, token),
     // Sub-operator team management
     listTeam: (token: string) =>
       req<{ data: any[] }>('/operator/team', {}, token),
@@ -104,6 +107,8 @@ export const api = {
     deleteSubOperator: (token: string, id: string) =>
       req<any>(`/operator/team/${id}`, { method: 'DELETE' }, token),
   },
+  codigoPostal: (cp: string) =>
+    req<{ data: { cp: string; ciudad: string; municipio: string; estado: string } | null }>(`/codigo-postal/${cp}`),
   scan: (token: string, qrToken: string) =>
     req<any>('/scan', { method: 'POST', body: JSON.stringify({ token: qrToken }) }, token),
   checkin: (token: string, reservationId: string, data: object) =>

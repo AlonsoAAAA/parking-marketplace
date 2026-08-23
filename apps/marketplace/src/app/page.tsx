@@ -18,14 +18,6 @@ interface Venue {
   photoUrl?: string;
 }
 
-const MOCK_VENUES: Venue[] = [
-  { id: 'v1', name: 'Foro Sol',                      address: 'Viaducto Río de la Piedad 187, CDMX',  category: 'conciertos', upcomingEvents: 3, priceFrom: 180 },
-  { id: 'v2', name: 'Estadio Azteca',                address: 'Calzada de Tlalpan 3465, CDMX',        category: 'deportes',   upcomingEvents: 2, priceFrom: 220 },
-  { id: 'v3', name: 'Autódromo Hermanos Rodríguez',  address: 'Ciudad Deportiva, CDMX',               category: 'festival',   upcomingEvents: 1, priceFrom: 350 },
-  { id: 'v4', name: 'Palacio de los Deportes',       address: 'Av. del Conscripto 311, CDMX',         category: 'conciertos', upcomingEvents: 2, priceFrom: 200 },
-  { id: 'v5', name: 'Palacio de Bellas Artes',       address: 'Av. Juárez s/n, Centro, CDMX',         category: 'teatro',     upcomingEvents: 1, priceFrom: 160 },
-];
-
 const CATEGORIES = [
   { key: '',           label: 'Todos'     },
   { key: 'conciertos', label: 'Conciertos'},
@@ -41,7 +33,7 @@ const CAT_EMOJIS: Record<string, string> = {
 const BENEFITS = [
   { icon: ShieldCheck, bg: 'bg-[#DFF085]/20', fg: 'text-brand-dark', title: '100% garantizado', text: 'Tu cajón está apartado y bloqueado en nuestro sistema antes de que salgas de casa. No compitas por lugar.' },
   { icon: QrCode,      bg: 'bg-[#383497]/10', fg: 'text-[#383497]', title: 'WhatsApp QR Access', text: 'Recibe de inmediato el pase QR directo en tu WhatsApp. No requieres descargar ninguna app adicional.' },
-  { icon: Clock,       bg: 'bg-indigo-50',    fg: 'text-indigo-700', title: 'Cancelación flexible', text: '¿Hubo cambios de planes? Cancela gratis sin penalizaciones hasta 6 horas antes de que inicie tu evento.' },
+  { icon: Clock,       bg: 'bg-indigo-50',    fg: 'text-indigo-700', title: 'Cancelación flexible', text: '¿Hubo cambios de planes? Cancela con reembolso escalonado según tu anticipación, hasta 24 horas antes del evento.' },
   { icon: Zap,         bg: 'bg-[#aecfb2]/20', fg: 'text-brand-dark', title: 'Cero filas o demoras', text: 'Acceso automatizado leyendo tus placas. Entra rápido y sal con agilidad sin hacer filas de cobro.' },
 ];
 
@@ -62,8 +54,8 @@ export default function HomePage() {
     const q = category ? `?category=${category}` : '';
     fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/venues${q}`)
       .then(r => r.json())
-      .then(d => setVenues(d.data?.length ? d.data : MOCK_VENUES))
-      .catch(() => setVenues(MOCK_VENUES))
+      .then(d => setVenues(d.data ?? []))
+      .catch(() => setVenues([]))
       .finally(() => setLoading(false));
   }, [category]);
 

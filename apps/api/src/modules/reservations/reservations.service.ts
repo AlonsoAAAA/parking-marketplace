@@ -271,6 +271,7 @@ export class ReservationsService {
       const fecha = new Date(row.starts_at).toLocaleString('es-MX', {
         weekday: 'long', year: 'numeric', month: 'long',
         day: 'numeric', hour: '2-digit', minute: '2-digit',
+        timeZone: 'America/Mexico_City',
       });
       const venueOrParking = row.venue_name || row.parking_name;
       const horas = label === '24h' ? 'Mañana' : 'En unas horas';
@@ -433,7 +434,7 @@ export class ReservationsService {
 
   async getTicket(reservationId: string, userId: string) {
     const rows = await this.dataSource.query(
-      `SELECT r.id, r.status, r.created_at,
+      `SELECT r.id, r.status, r.created_at, r.vehicle_plate,
               e.name          AS event_name,
               e.venue_name,
               e.starts_at,
@@ -475,6 +476,7 @@ export class ReservationsService {
       payment: { amount: parseFloat(row.amount ?? '0') },
       qrToken,
       userPhone: row.user_phone ? formatPhoneDisplay(row.user_phone) : null,
+      vehiclePlate: row.vehicle_plate ?? null,
     };
   }
 

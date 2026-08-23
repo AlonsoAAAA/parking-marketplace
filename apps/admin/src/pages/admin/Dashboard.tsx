@@ -7,7 +7,8 @@ import { api } from '../../lib/api';
 interface Props { token: string; onNavigate: (page: string) => void; }
 
 const fmtMoney = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: 0 });
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+// CDMX fijo — los eventos son siempre ahí, sin importar el timezone del navegador.
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' });
 
 const SHORTCUTS = [
   { id: 'venues',     label: 'Venues',            icon: MapPin },
@@ -23,7 +24,7 @@ export default function AdminDashboard({ token, onNavigate }: Props) {
   const [metrics, setMetrics]   = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
-  const today = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Mexico_City' });
 
   useEffect(() => {
     Promise.allSettled([

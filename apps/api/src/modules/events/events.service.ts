@@ -1,10 +1,27 @@
 import { Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 @Injectable()
 export class EventsService {
   constructor(@InjectDataSource() private dataSource: DataSource) {}
+
+  // Cron: mover a "finished" los eventos activos/agotados cuyo fin ya pasó.
+  // Sin esto se quedan como "active" para siempre — no aparecen en la
+  // pestaña Finalizado del admin y en teoría se podrían seguir reservando.
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async finishEndedEvents() {
+    const result = await this.dataSource.query(
+      `UPDATE events
+       SET status = 'finished'
+       WHERE status IN ('active', 'sold_out') AND ends_at < NOW()
+       RETURNING id`,
+    );
+    if (result.length > 0) {
+      console.log(`🏁 ${result.length} eventos marcados como finalizados`);
+    }
+  }
 
   private readonly SELECT = `
     SELECT e.id, e.name, e.status, e.price,
@@ -15,6 +32,7 @@ export class EventsService {
            e.parking_id       AS "parkingId",
            e.created_at       AS "createdAt",
            e.category,
+           e.image_url        AS "imageUrl",
            p.name             AS "parkingName",
            p.address          AS "parkingAddress",
            COALESCE(p.lat, v.lat)::float AS lat,

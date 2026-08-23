@@ -57,6 +57,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@nestjs/cli':
+        specifier: ^10.0.0
+        version: 10.4.9
       '@nestjs/common':
         specifier: ^10.0.0
         version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -87,6 +90,21 @@ importers:
       '@parking/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@types/express':
+        specifier: ^4.17.0
+        version: 4.17.25
+      '@types/jsonwebtoken':
+        specifier: ^9.0.0
+        version: 9.0.10
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      '@types/passport-jwt':
+        specifier: ^4.0.0
+        version: 4.0.1
+      '@types/qrcode':
+        specifier: ^1.5.0
+        version: 1.5.6
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -123,34 +141,15 @@ importers:
       stripe:
         specifier: ^14.0.0
         version: 14.25.0
+      ts-node:
+        specifier: ^10.9.0
+        version: 10.9.2(@types/node@20.19.41)(typescript@5.9.3)
       twilio:
         specifier: ^4.23.0
         version: 4.23.0
       typeorm:
         specifier: ^0.3.19
         version: 0.3.29(ioredis@5.10.1)(pg@8.20.0)(ts-node@10.9.2(@types/node@20.19.41)(typescript@5.9.3))
-    devDependencies:
-      '@nestjs/cli':
-        specifier: ^10.0.0
-        version: 10.4.9
-      '@types/express':
-        specifier: ^4.17.0
-        version: 4.17.25
-      '@types/jsonwebtoken':
-        specifier: ^9.0.0
-        version: 9.0.10
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.41
-      '@types/passport-jwt':
-        specifier: ^4.0.0
-        version: 4.0.1
-      '@types/qrcode':
-        specifier: ^1.5.0
-        version: 1.5.6
-      ts-node:
-        specifier: ^10.9.0
-        version: 10.9.2(@types/node@20.19.41)(typescript@5.9.3)
       typescript:
         specifier: ^5.3.0
         version: 5.9.3

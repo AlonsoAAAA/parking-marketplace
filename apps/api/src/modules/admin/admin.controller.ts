@@ -31,6 +31,7 @@ class CreateVenueDto {
   @IsOptional() @IsNumber() @Type(() => Number) capacity?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
+  @IsOptional() @IsString() @MaxLength(3000000) photoUrl?: string;
 }
 
 class UpdateVenueDto {
@@ -40,6 +41,7 @@ class UpdateVenueDto {
   @IsOptional() @IsNumber() @Type(() => Number) capacity?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lat?: number;
   @IsOptional() @IsNumber() @Type(() => Number) lng?: number;
+  @IsOptional() @IsString() @MaxLength(3000000) photoUrl?: string;
 }
 
 class ParkingPricingDto {
@@ -91,6 +93,7 @@ class CreateEventDto {
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceSub?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) pricePickup?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceMoto?: number;
+  @IsOptional() @IsString() @MaxLength(1000) imageUrl?: string;
 }
 
 class UpdateEventDto {
@@ -106,6 +109,11 @@ class UpdateEventDto {
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceSub?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) pricePickup?: number;
   @IsOptional() @IsNumber() @Min(0) @Type(() => Number) priceMoto?: number;
+  @IsOptional() @IsString() @MaxLength(1000) imageUrl?: string;
+}
+
+class SetEventClosedTodayDto {
+  @IsBoolean() closed: boolean;
 }
 
 class UpdateEventPricesDto {
@@ -307,6 +315,12 @@ export class AdminController {
     return { data: await this.adminService.listPayments(status) };
   }
 
+  // Reservations (read-only, historial completo)
+  @Get('reservations')
+  async listReservations(@Query('status') status?: string) {
+    return { data: await this.adminService.listReservations(status) };
+  }
+
   // ─── Operator event price management ──────────────────────────────────────
 
   @Get('operator/events')
@@ -325,5 +339,16 @@ export class AdminController {
     @Req() req: any,
   ) {
     return this.adminService.updateEventPrices(id, req.user.id, dto);
+  }
+
+  @Patch('operator/events/:id/closed-today')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('operator', 'sub_operator', 'sub_admin', 'admin')
+  async setEventClosedToday(
+    @Param('id') id: string,
+    @Body() dto: SetEventClosedTodayDto,
+    @Req() req: any,
+  ) {
+    return { data: await this.adminService.setEventClosedToday(id, req.user.id, dto.closed) };
   }
 }

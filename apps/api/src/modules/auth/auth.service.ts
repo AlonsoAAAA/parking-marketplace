@@ -19,7 +19,7 @@ export class AuthService {
     private otpRepo: Repository<OtpEntity>,
   ) {}
 
-  // Paso 1: Enviar OTP por WhatsApp
+  // Paso 1: Enviar OTP por WhatsApp, con fallback automático a SMS
   async sendOtp(phone: string): Promise<{ message: string; devOtp?: string }> {
     const cleanPhone = normalizePhone(phone);
     const isDev = this.config.get('NODE_ENV') === 'development';

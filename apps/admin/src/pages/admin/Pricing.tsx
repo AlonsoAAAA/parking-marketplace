@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BarChart3, MapPin, Clock, Flame, Scale, DollarSign, Calculator, Receipt, Check, TriangleAlert, HandCoins } from 'lucide-react';
+import { BarChart3, MapPin, Clock, Flame, Scale, DollarSign, Calculator, Receipt, Check, TriangleAlert, HandCoins, Lock, Sparkles } from 'lucide-react';
 
 interface PricingConfig {
+  mode:                'fixed' | 'dynamic';
+  fixedMarginPct:      number;
   marginMin:          number;
   marginMax:          number;
   weightDistance:     number;
@@ -55,6 +57,17 @@ function computePrice(
   contractPrice: number, distKm: number, antHours: number, occupancy: number,
   cfg: PricingConfig,
 ): PriceBreakdown {
+  if (cfg.mode === 'fixed') {
+    const basePrice = +(contractPrice * (1 + cfg.fixedMarginPct / 100)).toFixed(2);
+    const ivaAmount = +(basePrice * IVA).toFixed(2);
+    const finalPrice = Math.round(basePrice + ivaAmount);
+    const profit = +(basePrice - contractPrice).toFixed(2);
+    return {
+      contractPrice, basePrice, ivaAmount, finalPrice, profit,
+      marginPercent: +cfg.fixedMarginPct.toFixed(2),
+      multipliers: { distance: 1, anticipation: 1, demand: 1, composite: 1 },
+    };
+  }
   const mDist = distMult(distKm);
   const mAnt  = antMult(antHours);
   const mDem  = demMult(occupancy);
@@ -103,6 +116,7 @@ const slider = (value: number, onChange: (v: number) => void, min: number, max: 
 
 export default function AdminPricing({ token }: { token: string }) {
   const [config, setConfig] = useState<PricingConfig>({
+    mode: 'fixed', fixedMarginPct: 30,
     marginMin: 15, marginMax: 60,
     weightDistance: 0.40, weightAnticipation: 0.35, weightDemand: 0.25,
   });
@@ -140,8 +154,12 @@ export default function AdminPricing({ token }: { token: string }) {
   };
 
   const handleSave = async () => {
-    if (!weightsOk) { setError('Los pesos deben sumar exactamente 100%'); return; }
-    if (config.marginMin >= config.marginMax) { setError('El margen mínimo debe ser menor al máximo'); return; }
+    if (config.mode === 'dynamic') {
+      if (!weightsOk) { setError('Los pesos deben sumar exactamente 100%'); return; }
+      if (config.marginMin >= config.marginMax) { setError('El margen mínimo debe ser menor al máximo'); return; }
+    } else {
+      if (config.fixedMarginPct <= 0) { setError('El margen fijo debe ser mayor a 0%'); return; }
+    }
     setSaving(true); setError('');
     try {
       const res = await fetch(`${API}/api/v1/pricing-config`, {
@@ -177,78 +195,118 @@ export default function AdminPricing({ token }: { token: string }) {
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Precios dinámicos</h2>
         <p style={{ fontSize: 13, color: '#999', marginTop: 4 }}>
-          Configura márgenes y pesos. El precio final = precio contrato × (1 + margen) × 1.16 IVA.
+          {config.mode === 'fixed'
+            ? 'Precio fijo = precio contrato × (1 + margen fijo) × 1.16 IVA.'
+            : 'Configura márgenes y pesos. El precio final = precio contrato × (1 + margen) × 1.16 IVA.'}
         </p>
+      </div>
+
+      {/* ── Toggle modo de precio ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, background: '#f0f0f0', borderRadius: 12, padding: 4, maxWidth: 360 }}>
+        {([
+          { key: 'fixed' as const,   label: 'Precio fijo',     icon: Lock },
+          { key: 'dynamic' as const, label: 'Precio dinámico', icon: Sparkles },
+        ]).map(({ key, label: lbl, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setConfig(c => ({ ...c, mode: key }))}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              padding: '9px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, transition: 'all .15s',
+              background: config.mode === key ? '#04210f' : 'transparent',
+              color: config.mode === key ? '#fff' : '#666',
+            }}
+          >
+            <Icon size={14} /> {lbl}
+          </button>
+        ))}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
 
         {/* ── Columna izquierda: configuración ── */}
         <div>
-          {card(
-            <div style={{ display: 'flex', gap: 16 }}>
-              <div style={{ flex: 1 }}>
-                {label('Margen mínimo')}
-                {numInput(config.marginMin, v => setConfig(c => ({ ...c, marginMin: v })), 0, 100, 1, '%')}
-                <p style={{ fontSize: 11, color: '#bbb', margin: '5px 0 0' }}>Aplica cuando todo favorece al cliente</p>
-              </div>
-              <div style={{ flex: 1 }}>
-                {label('Margen máximo')}
-                {numInput(config.marginMax, v => setConfig(c => ({ ...c, marginMax: v })), 0, 200, 1, '%')}
-                <p style={{ fontSize: 11, color: '#bbb', margin: '5px 0 0' }}>Aplica en condiciones de máxima demanda</p>
-              </div>
-            </div>,
-            <><BarChart3 size={14} /> Márgenes globales</>
-          )}
-
-          {card(
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Distancia */}
+          {config.mode === 'fixed' ? (
+            card(
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label(<><MapPin size={12} /> Distancia al venue</>)}
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightDistance * 100).toFixed(0)}%</span>
-                </div>
-                {slider(config.weightDistance, v => setWeight('weightDistance', v), 0, 1)}
-                <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Cerca = precio mayor · Lejos = precio menor</p>
-              </div>
+                {label('Margen fijo')}
+                {numInput(config.fixedMarginPct, v => setConfig(c => ({ ...c, fixedMarginPct: v })), 0, 200, 1, '%')}
+                <p style={{ fontSize: 11, color: '#bbb', margin: '5px 0 0' }}>
+                  Se aplica igual a todas las reservas, sin importar distancia, anticipación
+                  u ocupación. Precio final = contrato × (1 + {config.fixedMarginPct}%) × 1.16 IVA.
+                </p>
+              </div>,
+              <><Lock size={14} /> Margen fijo</>
+            )
+          ) : (
+            <>
+              {card(
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    {label('Margen mínimo')}
+                    {numInput(config.marginMin, v => setConfig(c => ({ ...c, marginMin: v })), 0, 100, 1, '%')}
+                    <p style={{ fontSize: 11, color: '#bbb', margin: '5px 0 0' }}>Aplica cuando todo favorece al cliente</p>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    {label('Margen máximo')}
+                    {numInput(config.marginMax, v => setConfig(c => ({ ...c, marginMax: v })), 0, 200, 1, '%')}
+                    <p style={{ fontSize: 11, color: '#bbb', margin: '5px 0 0' }}>Aplica en condiciones de máxima demanda</p>
+                  </div>
+                </div>,
+                <><BarChart3 size={14} /> Márgenes globales</>
+              )}
 
-              {/* Anticipación */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label(<><Clock size={12} /> Anticipación</>)}
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightAnticipation * 100).toFixed(0)}%</span>
-                </div>
-                {slider(config.weightAnticipation, v => setWeight('weightAnticipation', v), 0, 1)}
-                <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Última hora = precio mayor · Semana antes = precio menor</p>
-              </div>
+              {card(
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {/* Distancia */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      {label(<><MapPin size={12} /> Distancia al venue</>)}
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightDistance * 100).toFixed(0)}%</span>
+                    </div>
+                    {slider(config.weightDistance, v => setWeight('weightDistance', v), 0, 1)}
+                    <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Cerca = precio mayor · Lejos = precio menor</p>
+                  </div>
 
-              {/* Demanda */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label(<><Flame size={12} /> Demanda (ocupación)</>)}
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightDemand * 100).toFixed(0)}%</span>
-                </div>
-                {slider(config.weightDemand, v => setWeight('weightDemand', v), 0, 1)}
-                <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Lleno = precio mayor · Vacío = precio menor</p>
-              </div>
+                  {/* Anticipación */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      {label(<><Clock size={12} /> Anticipación</>)}
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightAnticipation * 100).toFixed(0)}%</span>
+                    </div>
+                    {slider(config.weightAnticipation, v => setWeight('weightAnticipation', v), 0, 1)}
+                    <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Última hora = precio mayor · Semana antes = precio menor</p>
+                  </div>
 
-              {/* Suma de pesos */}
-              <div style={{
-                padding: '10px 14px', borderRadius: 10,
-                background: weightsOk ? '#f0fdf4' : '#fff1f2',
-                border: `1px solid ${weightsOk ? '#bbf7d0' : '#fecdd3'}`,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: weightsOk ? '#166534' : '#9f1239' }}>
-                  {weightsOk ? (<><Check size={13} /> Los pesos suman 100%</>) : (<><TriangleAlert size={13} /> Los pesos deben sumar 100%</>)}
-                </span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: weightsOk ? '#166534' : '#9f1239' }}>
-                  {(weightsSum * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>,
-            <><Scale size={14} /> Pesos de multiplicadores</>
+                  {/* Demanda */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      {label(<><Flame size={12} /> Demanda (ocupación)</>)}
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#04210f' }}>{(config.weightDemand * 100).toFixed(0)}%</span>
+                    </div>
+                    {slider(config.weightDemand, v => setWeight('weightDemand', v), 0, 1)}
+                    <p style={{ fontSize: 11, color: '#bbb', margin: '3px 0 0' }}>Lleno = precio mayor · Vacío = precio menor</p>
+                  </div>
+
+                  {/* Suma de pesos */}
+                  <div style={{
+                    padding: '10px 14px', borderRadius: 10,
+                    background: weightsOk ? '#f0fdf4' : '#fff1f2',
+                    border: `1px solid ${weightsOk ? '#bbf7d0' : '#fecdd3'}`,
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: weightsOk ? '#166534' : '#9f1239' }}>
+                      {weightsOk ? (<><Check size={13} /> Los pesos suman 100%</>) : (<><TriangleAlert size={13} /> Los pesos deben sumar 100%</>)}
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: weightsOk ? '#166534' : '#9f1239' }}>
+                      {(weightsSum * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>,
+                <><Scale size={14} /> Pesos de multiplicadores</>
+              )}
+            </>
           )}
 
           {error && (
@@ -259,12 +317,12 @@ export default function AdminPricing({ token }: { token: string }) {
 
           <button
             onClick={handleSave}
-            disabled={saving || !weightsOk}
+            disabled={saving || (config.mode === 'dynamic' && !weightsOk)}
             style={{
               width: '100%', padding: '13px', background: saved ? '#22c55e' : '#04210f',
               color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
-              cursor: saving || !weightsOk ? 'not-allowed' : 'pointer',
-              opacity: !weightsOk ? 0.5 : 1,
+              cursor: saving || (config.mode === 'dynamic' && !weightsOk) ? 'not-allowed' : 'pointer',
+              opacity: (config.mode === 'dynamic' && !weightsOk) ? 0.5 : 1,
               transition: 'background .3s',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}>
@@ -282,38 +340,42 @@ export default function AdminPricing({ token }: { token: string }) {
                 {label(<><DollarSign size={12} /> Precio contrato (sin IVA)</>)}
                 {numInput(contractPrice, setContractP, 1, 9999, 1, 'MXN')}
               </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label(<><MapPin size={12} /> Distancia al venue</>)}
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>{distKm.toFixed(1)} km</span>
-                </div>
-                {slider(distKm, setDistKm, 0, 5, 0.1)}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb', marginTop: 2 }}>
-                  <span>0 km</span><span>5 km</span>
-                </div>
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label(<><Clock size={12} /> Anticipación</>)}
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>
-                    {antHours < 24 ? `${antHours}h` : `${(antHours/24).toFixed(1)}d`}
-                  </span>
-                </div>
-                {slider(antHours, setAntHours, 0, 168, 1)}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb', marginTop: 2 }}>
-                  <span>Ahora</span><span>1 semana</span>
-                </div>
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  {label(<><Flame size={12} /> Ocupación del estacionamiento</>)}
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>{occupancy}%</span>
-                </div>
-                {slider(occupancy, setOccupancy, 0, 100, 1)}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb', marginTop: 2 }}>
-                  <span>0% vacío</span><span>100% lleno</span>
-                </div>
-              </div>
+              {config.mode === 'dynamic' && (
+                <>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      {label(<><MapPin size={12} /> Distancia al venue</>)}
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>{distKm.toFixed(1)} km</span>
+                    </div>
+                    {slider(distKm, setDistKm, 0, 5, 0.1)}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb', marginTop: 2 }}>
+                      <span>0 km</span><span>5 km</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      {label(<><Clock size={12} /> Anticipación</>)}
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>
+                        {antHours < 24 ? `${antHours}h` : `${(antHours/24).toFixed(1)}d`}
+                      </span>
+                    </div>
+                    {slider(antHours, setAntHours, 0, 168, 1)}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb', marginTop: 2 }}>
+                      <span>Ahora</span><span>1 semana</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      {label(<><Flame size={12} /> Ocupación del estacionamiento</>)}
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>{occupancy}%</span>
+                    </div>
+                    {slider(occupancy, setOccupancy, 0, 100, 1)}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb', marginTop: 2 }}>
+                      <span>0% vacío</span><span>100% lleno</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>,
             <><Calculator size={14} /> Calculadora de precio</>
           )}
@@ -322,6 +384,7 @@ export default function AdminPricing({ token }: { token: string }) {
           {card(
             <div>
               {/* Multiplicadores */}
+              {config.mode === 'dynamic' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 20 }}>
                 {[
                   { label: <><MapPin size={11} /> Distancia</>, value: preview.multipliers.distance },
@@ -334,12 +397,13 @@ export default function AdminPricing({ token }: { token: string }) {
                   </div>
                 ))}
               </div>
+              )}
 
               {/* Desglose de precio */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {[
                   { label: 'Precio contrato',   value: `$${preview.contractPrice}`,                  sub: 'lo que pagas al estacionamiento' },
-                  { label: `Margen aplicado`,   value: `+${preview.marginPercent.toFixed(1)}%`,       sub: `composite × ${(preview.multipliers.composite).toFixed(3)}` },
+                  { label: `Margen aplicado`,   value: `+${preview.marginPercent.toFixed(1)}%`,       sub: config.mode === 'fixed' ? 'margen fijo' : `composite × ${(preview.multipliers.composite).toFixed(3)}` },
                   { label: 'Precio base',        value: `$${preview.basePrice.toFixed(2)}`,           sub: 'sin IVA' },
                   { label: 'IVA 16%',            value: `+$${preview.ivaAmount.toFixed(2)}`,          sub: '' },
                 ].map((row, i) => (

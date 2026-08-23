@@ -7,7 +7,7 @@
  */
 import { Controller, Get, Put, Body, Query, Req, UseGuards } from '@nestjs/common';
 import {
-  IsNumber, IsInt, Min, Max, ValidatorConstraint,
+  IsNumber, IsInt, IsIn, Min, Max, ValidatorConstraint,
   ValidatorConstraintInterface, Validate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -27,6 +27,8 @@ class WeightsSumToOne implements ValidatorConstraintInterface {
 }
 
 class SaveConfigDto {
+  @IsIn(['fixed', 'dynamic']) mode: 'fixed' | 'dynamic';
+  @Type(() => Number) @IsNumber() @Min(0)   @Max(200) fixedMarginPct:     number;
   @Type(() => Number) @IsNumber() @Min(0)   @Max(100) marginMin:          number;
   @Type(() => Number) @IsNumber() @Min(0)   @Max(200) marginMax:          number;
   @Type(() => Number) @IsNumber() @Min(0)   @Max(1)   weightDistance:     number;

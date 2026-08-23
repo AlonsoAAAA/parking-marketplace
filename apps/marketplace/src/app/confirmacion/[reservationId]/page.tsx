@@ -169,7 +169,7 @@ export default function ConfirmacionPage() {
               <div className="p-4 grid grid-cols-3 gap-2">
                 <span className="text-slate-400 font-mono text-[10px] uppercase">Fecha</span>
                 <span className="col-span-2 text-slate-700 font-semibold capitalize">
-                  {new Date(ticket.event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long'})}
+                  {new Date(ticket.event.startsAt).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'long',timeZone:'America/Mexico_City'})}
                 </span>
               </div>
               <div className="p-4 space-y-2 bg-emerald-50/30">
@@ -223,9 +223,10 @@ export default function ConfirmacionPage() {
           <div className="space-y-1 text-xs">
             <h4 className="font-extrabold uppercase tracking-wide text-amber-950 m-0">Política de cancelación importante</h4>
             <p className="leading-relaxed m-0">
-              Puedes solicitar un reembolso del 100% desde{' '}
+              Puedes solicitar un reembolso desde{' '}
               <Link href="/mis-boletos" className="font-bold underline">Mis boletos</Link>{' '}
-              hasta 6 horas antes del inicio del evento. Pasado ese plazo no se admiten cancelaciones ni reembolsos.
+              hasta 24 horas antes del inicio del evento. El monto es escalonado según tu anticipación — consulta los{' '}
+              <Link href="/terminos" className="font-bold underline">términos y condiciones</Link>.
             </p>
           </div>
         </div>

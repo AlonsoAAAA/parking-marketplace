@@ -1,4 +1,4 @@
-export type AdminPage = 'dashboard' | 'venues' | 'events' | 'parkings' | 'customers' | 'claims' | 'promotions' | 'payments' | 'fraud' | 'pricing' | 'metrics';
+export type AdminPage = 'dashboard' | 'venues' | 'events' | 'parkings' | 'customers' | 'claims' | 'promotions' | 'payments' | 'reservations' | 'fraud' | 'pricing' | 'metrics';
 export type OperatorPage    = 'dashboard' | 'reservations' | 'scanner' | 'profile' | 'settings' | 'metrics';
 export type SubOperatorPage = 'reservations' | 'scanner';
 export type SubAdminPage    = 'dashboard' | 'reservations' | 'scanner' | 'metrics';
@@ -37,6 +37,8 @@ export interface Reservation {
   vehicle_type?: string;
   vehicle_model?: string;
   assigned_spot?: string;
+  parkingName?: string;
+  parkingAddress?: string;
 }
 
 export interface Event {
@@ -57,6 +59,9 @@ export interface Event {
   parkingName?: string;
   parkingAddress?: string;
   parkingId?: string;
+  closedToday?: boolean;
+  imageUrl?: string;
+  image_url?: string;
 }
 
 export interface Venue {
@@ -67,6 +72,7 @@ export interface Venue {
   capacity?: number;
   lat?: number;
   lng?: number;
+  photoUrl?: string;
 }
 
 export interface Parking {
@@ -100,6 +106,7 @@ export interface Claim {
   resolved_at?: string;
   created_at: string;
   updated_at?: string;
+  eventStartsAt?: string;
 }
 
 export interface Promotion {
@@ -126,6 +133,22 @@ export interface Payment {
   provider_payment_id?: string;
   paid_at?: string;
   created_at?: string;
+}
+
+export interface ReservationHistoryRow {
+  id: string;
+  status: 'pending' | 'paid' | 'used' | 'cancelled' | 'expired';
+  createdAt: string;
+  userName?: string;
+  userPhone?: string;
+  eventName?: string;
+  eventStartsAt?: string;
+  amount?: number | string;
+  paymentStatus?: 'pending' | 'completed' | 'refunded' | 'failed';
+  scannedAt?: string;
+  claimCount: number;
+  lastClaimType?: 'complaint' | 'refund_request';
+  lastClaimStatus?: 'open' | 'in_progress' | 'resolved';
 }
 
 export interface FraudRule {

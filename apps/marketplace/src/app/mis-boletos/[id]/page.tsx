@@ -17,6 +17,7 @@ interface TicketData {
   payment: { amount: number };
   qrToken: string | null;
   userPhone: string | null;
+  vehiclePlate: string | null;
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -27,11 +28,13 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   cancelled: { label: 'Cancelado', cls: 'bg-[#FEEBEA] text-[#D32F2F] border-[#fbd4d2]/50' },
 };
 
+// Todos los eventos son en CDMX — se ancla explícitamente esa zona horaria
+// para que la fecha/hora se vea igual sin importar dónde esté el visitante.
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Mexico_City' });
 }
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
 }
 
 export default function BoletoDetailPage() {
@@ -155,7 +158,8 @@ export default function BoletoDetailPage() {
   const isPending = ticket.reservation.status === 'pending';
   const isUsed    = ticket.reservation.status === 'used';
   const hasQR     = isPaid || isUsed;
-  const canRefund = isPaid && new Date(ticket.event.startsAt) > new Date(Date.now() + 6 * 3600 * 1000);
+  const canRefund = isPaid && new Date(ticket.event.startsAt) > new Date(Date.now() + 24 * 3600 * 1000);
+  const canChangeVehicle = isPaid && new Date(ticket.event.startsAt) > new Date();
   const exitTime  = fmtTime(new Date(new Date(ticket.event.startsAt).getTime() + 6 * 3600 * 1000).toISOString());
 
   return (
@@ -194,6 +198,12 @@ export default function BoletoDetailPage() {
             {/* QR */}
             {hasQR && (
               <div className="flex flex-col items-center space-y-3 pt-2">
+                {ticket.vehiclePlate && (
+                  <div className="w-full max-w-[260px] bg-[#04210f] rounded-2xl px-4 py-3 text-center space-y-1">
+                    <span className="text-emerald-400 text-[9px] font-mono uppercase tracking-widest block">Placas registradas</span>
+                    <span className="text-white text-2xl font-black font-mono tracking-[0.15em] block">{ticket.vehiclePlate}</span>
+                  </div>
+                )}
                 <div className="p-4 bg-slate-50 rounded-2xl border-2 border-dotted border-slate-300">
                   <div className="bg-white p-2 rounded-xl">
                     <div className="w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] flex items-center justify-center" ref={qrRef}>
@@ -258,13 +268,17 @@ export default function BoletoDetailPage() {
               </div>
             )}
 
-            {/* Política */}
-            <div className="bg-amber-50 border border-amber-100 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-xs">
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <p className="leading-relaxed m-0">
-                <span className="font-extrabold uppercase text-amber-950">Política de reembolso:</span> Reembolso total disponible hasta 6 horas antes del evento. Cancelaciones posteriores no serán procesadas.
-              </p>
-            </div>
+            {/* Cambiar vehículo */}
+            {canChangeVehicle && (
+              <div className="pt-2 border-t border-slate-100">
+                <Link
+                  href={`/mis-boletos/${id}/cambiar-vehiculo`}
+                  className="w-full text-[#383497] hover:text-[#2b278c] text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1 py-1 no-underline"
+                >
+                  <span>Cambiar vehículo</span>
+                </Link>
+              </div>
+            )}
 
             {/* Solicitar reembolso */}
             {canRefund && !refundDone && (
@@ -319,6 +333,17 @@ export default function BoletoDetailPage() {
                           ))}
                         </div>
                       )}
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-100 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-xs">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <p className="leading-relaxed m-0">
+                        <span className="font-extrabold uppercase text-amber-950">Política de reembolso:</span> Reembolso escalonado según anticipación (100% con +48h, 70% entre 36-48h, 50% entre 24-36h). Sin reembolso dentro de las 24 horas previas al evento. Tu solicitud está sujeta a nuestros{' '}
+                        <a href="/terminos" target="_blank" rel="noopener noreferrer" className="font-extrabold underline text-amber-950">
+                          términos y condiciones
+                        </a>
+                        {' '}y puede ser rechazada.
+                      </p>
                     </div>
 
                     <button

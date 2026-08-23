@@ -6,7 +6,42 @@ interface Props { token: string; }
 const STORAGE_KEY = 'pm_operator_profile';
 
 const BANCOS = ['BBVA', 'Santander', 'Citibanamex', 'Banorte', 'HSBC', 'Scotiabank', 'Inbursa', 'Otro'];
-const REGIMENES = ['Persona Física con Actividad Empresarial', 'Régimen Simplificado de Confianza', 'Persona Moral', 'Otro'];
+// Catálogo oficial del SAT (c_RegimenFiscal, CFDI 4.0) — completo, sin "Otro".
+const REGIMENES = [
+  '601 - General de Ley Personas Morales',
+  '603 - Personas Morales con Fines no Lucrativos',
+  '605 - Sueldos y Salarios e Ingresos Asimilados a Salarios',
+  '606 - Arrendamiento',
+  '607 - Régimen de Enajenación o Adquisición de Bienes',
+  '608 - Demás ingresos',
+  '610 - Residentes en el Extranjero sin Establecimiento Permanente en México',
+  '611 - Ingresos por Dividendos (socios y accionistas)',
+  '612 - Personas Físicas con Actividades Empresariales y Profesionales',
+  '614 - Ingresos por intereses',
+  '615 - Régimen de los ingresos por obtención de premios',
+  '616 - Sin obligaciones fiscales',
+  '620 - Sociedades Cooperativas de Producción que optan por diferir sus ingresos',
+  '621 - Incorporación Fiscal',
+  '622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras',
+  '623 - Opcional para Grupos de Sociedades',
+  '624 - Coordinados',
+  '625 - Régimen de las Actividades Empresariales con ingresos a través de Plataformas Tecnológicas',
+  '626 - Régimen Simplificado de Confianza (RESICO)',
+];
+
+// Declarado fuera de OperatorProfile: si vive dentro del componente, React lo
+// recrea en cada render y desmonta/remonta el subárbol en cada tecleo,
+// perdiendo el foco del input (y cerrando el teclado en móvil).
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="adm-tw" style={{ marginBottom: 16 }}>
+      <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '2.5px', textTransform: 'uppercase', color: '#bbb' }}>{title}</p>
+      </div>
+      <div style={{ padding: '18px 18px 6px' }}>{children}</div>
+    </div>
+  );
+}
 
 export default function OperatorProfile({ token }: Props) {
   const [saved, setSaved]   = useState(false);
@@ -15,9 +50,12 @@ export default function OperatorProfile({ token }: Props) {
 
   const [form, setForm] = useState({
     name: '', email: '',
-    rfc: '', razonSocial: '', domicilioFiscal: '', regimenFiscal: REGIMENES[0],
+    rfc: '', razonSocial: '', regimenFiscal: REGIMENES[0],
+    calle: '', cp: '', colonia: '', delegacion: '', ciudad: '', estado: '',
     clabe: '', banco: BANCOS[0], titular: '',
   });
+  const [cpLoading, setCpLoading] = useState(false);
+  const [cpNotFound, setCpNotFound] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -29,6 +67,31 @@ export default function OperatorProfile({ token }: Props) {
       setForm(f => ({ ...f, phone: payload.phone || '' }));
     } catch {}
   }, [token]);
+
+  // Autocompleta delegación/municipio y estado al capturar un CP de 5 dígitos.
+  // La colonia no se autocompleta: el servicio gratuito de CP que usamos
+  // (zippopotam.us) da un solo lugar por CP, no el listado completo de
+  // colonias — se captura a mano.
+  useEffect(() => {
+    const cp = form.cp;
+    if (cp.length !== 5) { setCpNotFound(false); return; }
+    let cancelled = false;
+    setCpLoading(true); setCpNotFound(false);
+    const t = setTimeout(() => {
+      api.codigoPostal(cp)
+        .then(res => {
+          if (cancelled) return;
+          if (res.data) {
+            setForm(f => ({ ...f, delegacion: res.data!.municipio, ciudad: res.data!.ciudad, estado: res.data!.estado }));
+          } else {
+            setCpNotFound(true);
+          }
+        })
+        .catch(() => { if (!cancelled) setCpNotFound(true); })
+        .finally(() => { if (!cancelled) setCpLoading(false); });
+    }, 400);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [form.cp]);
 
   const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(p => ({ ...p, [k]: e.target.value }));
@@ -43,15 +106,6 @@ export default function OperatorProfile({ token }: Props) {
     } catch (e: any) { setError(e.message || 'Error al guardar'); }
     finally { setSaving(false); }
   };
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="adm-tw" style={{ marginBottom: 16 }}>
-      <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '2.5px', textTransform: 'uppercase', color: '#bbb' }}>{title}</p>
-      </div>
-      <div style={{ padding: '18px 18px 6px' }}>{children}</div>
-    </div>
-  );
 
   return (
     <>
@@ -82,7 +136,42 @@ export default function OperatorProfile({ token }: Props) {
             </div>
           </div>
           <div className="adm-field"><label className="adm-label">Razón social</label><input className="adm-input" value={form.razonSocial} onChange={f('razonSocial')} placeholder="Carlos García S.A. de C.V." /></div>
-          <div className="adm-field"><label className="adm-label">Domicilio fiscal</label><input className="adm-input" value={form.domicilioFiscal} onChange={f('domicilioFiscal')} placeholder="Av. Principal 123, Col. Centro, CDMX, CP 06600" /></div>
+
+          <div className="adm-field"><label className="adm-label">Calle y número</label><input className="adm-input" value={form.calle} onChange={f('calle')} placeholder="Av. Principal 123" /></div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="adm-field">
+              <label className="adm-label">Código postal</label>
+              <input
+                className="adm-input"
+                value={form.cp}
+                onChange={e => setForm(p => ({ ...p, cp: e.target.value.replace(/\D/g, '').slice(0, 5) }))}
+                placeholder="06600"
+                inputMode="numeric"
+                maxLength={5}
+                style={{ fontFamily: 'monospace' }}
+              />
+              {cpLoading && <p style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>Buscando…</p>}
+              {cpNotFound && <p style={{ fontSize: 11, color: '#dc2626', marginTop: 6 }}>CP no encontrado, captura manual</p>}
+            </div>
+            <div className="adm-field">
+              <label className="adm-label">Colonia</label>
+              <input className="adm-input" value={form.colonia} onChange={f('colonia')} placeholder="Centro" />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="adm-field">
+              <label className="adm-label">Delegación / Municipio</label>
+              <input className="adm-input" value={form.delegacion} onChange={f('delegacion')} placeholder="Cuauhtémoc" />
+            </div>
+            <div className="adm-field">
+              <label className="adm-label">Ciudad</label>
+              <input className="adm-input" value={form.ciudad} onChange={f('ciudad')} placeholder="Ciudad de México" />
+            </div>
+          </div>
+
+          <div className="adm-field"><label className="adm-label">Estado</label><input className="adm-input" value={form.estado} onChange={f('estado')} placeholder="Ciudad de México" /></div>
         </Section>
 
         <Section title="Datos bancarios">
@@ -108,7 +197,25 @@ export default function OperatorProfile({ token }: Props) {
         <button className="adm-btn" style={{ width: '100%', justifyContent: 'center', padding: '14px' }} onClick={save} disabled={saving}>
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
+        {saved && (
+          <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#065F46', marginTop: 12, textAlign: 'center', fontWeight: 600 }}>
+            ✓ Datos guardados correctamente
+          </div>
+        )}
       </div>
+
+      {saved && (
+        <div className="adm-overlay" onClick={() => setSaved(false)}>
+          <div className="adm-modal" style={{ maxWidth: 340, textAlign: 'center', padding: '32px 24px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28, color: '#065F46' }}>✓</div>
+            <div className="adm-modal-title" style={{ marginBottom: 6 }}>Datos guardados</div>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>Tu información se guardó correctamente.</p>
+            <button className="adm-btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setSaved(false)}>
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

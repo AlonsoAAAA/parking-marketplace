@@ -48,8 +48,26 @@ export class QrService {
   }
 
   // Validar QR al escanear — operación crítica con UPDATE atómico
-  async validateScan(token: string, operatorId: string): Promise<ScanResult> {
+  async validateScan(rawInput: string, operatorId: string): Promise<ScanResult> {
     const secret = this.config.get('QR_SECRET');
+    let token = rawInput.trim();
+
+    // Acepta también el folio corto del boleto (los primeros 8 caracteres
+    // del ID de la reserva, con o sin el prefijo "TKT-", tal como se
+    // muestra en el detalle del boleto) como alternativa a pegar el JWT
+    // completo del QR — más práctico para captura manual.
+    const folioMatch = /^(?:TKT-)?([0-9A-Fa-f]{8})$/.exec(token);
+    if (folioMatch) {
+      const folio = folioMatch[1].toLowerCase();
+      const [resolved] = await this.dataSource.query(
+        `SELECT q.token FROM qr_tokens q
+         JOIN reservations r ON r.id = q.reservation_id
+         WHERE LEFT(r.id::text, 8) = $1`,
+        [folio],
+      );
+      if (!resolved) return { valid: false, reason: 'NO_ENCONTRADO' };
+      token = resolved.token;
+    }
 
     // 1. Verificar firma JWT
     let payload: any;
@@ -61,7 +79,7 @@ export class QrService {
 
     // 2. Buscar en BD con info completa
     const result = await this.dataSource.query(
-      `SELECT q.*, r.status as reservation_status, r.event_id, r.user_id,
+      `SELECT q.*, r.status as reservation_status, r.event_id, r.user_id, r.vehicle_plate,
               e.name as event_name, e.starts_at, e.ends_at,
               u.name as user_name, u.phone as user_phone
        FROM qr_tokens q
@@ -119,6 +137,7 @@ export class QrService {
       reservationId: record.reservation_id,
       userName: record.user_name,
       eventName: record.event_name,
+      vehiclePlate: record.vehicle_plate ?? undefined,
       reservation: {
         id: record.reservation_id,
         userId: record.user_id,

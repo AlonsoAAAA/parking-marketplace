@@ -1,23 +1,47 @@
-import { useState, useEffect, useMemo } from 'react';
-import { ClipboardList } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { ClipboardList, RefreshCw } from 'lucide-react';
 import { Event, Reservation } from '../../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../../lib/styles';
 import { api } from '../../lib/api';
 
 interface Props { token: string; initialEventId?: string; }
 
-const STATUS_TABS = ['all', 'paid', 'pending', 'used', 'cancelled', 'expired'];
+// Solo 4 estatus visibles para el operador: "paid" (pagada, aún sin
+// escanear) se agrupa visualmente bajo "Pendiente" junto con "pending"
+// (reserva sin pagar aún) — ver matchSt más abajo.
+const STATUS_TABS = ['all', 'pending', 'used', 'cancelled', 'expired'];
 
+// CDMX fijo — los eventos son siempre ahí, sin importar el timezone del navegador.
 const fmtDT = (iso: string) =>
-  new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
 
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
+
+// Botón de status más visible que el .adm-pill genérico — usado en las
+// tarjetas de reserva para que el estatus (sobre todo "Pendiente") salte a
+// la vista de inmediato en vez de un texto chico.
+function StatusBadge({ status }: { status: string }) {
+  const sc = STATUS_COLORS[status] || STATUS_COLORS.expired;
+  return (
+    <span
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        padding: '6px 14px', borderRadius: 999,
+        fontSize: 12, fontWeight: 800, letterSpacing: '0.3px', textTransform: 'uppercase',
+        background: sc.bg, color: sc.color,
+        border: `1.5px solid ${sc.color}33`,
+        boxShadow: `0 1px 3px ${sc.color}22`,
+      }}
+    >
+      {STATUS_LABELS[status] || status}
+    </span>
+  );
+}
 
 // ── Ticket modal ────────────────────────────────────────────────────────────────
 function TicketModal({ r, events, onClose }: { r: Reservation; events: Event[]; onClose: () => void }) {
   const ev = events.find(e => e.id === r.event_id);
-  const sc = STATUS_COLORS[r.status] || STATUS_COLORS.expired;
 
   const rows: [string, string][] = [
     ['Nombre',    r.user_name || '—'],
@@ -25,8 +49,8 @@ function TicketModal({ r, events, onClose }: { r: Reservation; events: Event[]; 
     ['Evento',    r.event_name || ev?.name || '—'],
     ['Venue',     ev?.venueName || ev?.venue_name || '—'],
     ['Fecha',     ev ? fmtDate(ev.startsAt || ev.starts_at || '') : '—'],
-    ['Estacionamiento', ev?.parkingName || '—'],
-    ['Dirección', ev?.parkingAddress || '—'],
+    ['Estacionamiento', r.parkingName || ev?.parkingName || '—'],
+    ['Dirección', r.parkingAddress || ev?.parkingAddress || '—'],
     ['Lugar asignado', r.assigned_spot || '—'],
     ['Placas',    r.plates        || '—'],
     ['Tipo de auto',  r.vehicle_type  || '—'],
@@ -59,7 +83,7 @@ function TicketModal({ r, events, onClose }: { r: Reservation; events: Event[]; 
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="adm-pill" style={sc}>{STATUS_LABELS[r.status]}</span>
+            <StatusBadge status={r.status} />
             <button
               onClick={onClose}
               style={{ background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', fontSize: 16, color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -100,32 +124,51 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
   useEffect(() => {
     api.operator.events(token)
       .then(d => {
-        const list = (d as any).data || [];
+        const list: Event[] = (d as any).data || [];
         setEvents(list);
+        const firstActive = list.find(e => e.status === 'active') ?? list[0];
         // Only auto-select first event if no initialEventId was provided
-        if (!initialEventId && list.length > 0) setSelectedEvent(list[0].id);
-        // If initialEventId was provided but doesn't exist in list, fall back to first
-        if (initialEventId && list.length > 0 && !list.find((e: any) => e.id === initialEventId)) {
-          setSelectedEvent(list[0].id);
+        if (!initialEventId && firstActive) setSelectedEvent(firstActive.id);
+        // If initialEventId was provided but doesn't exist in list, fall back to first activo
+        if (initialEventId && firstActive && !list.find((e: any) => e.id === initialEventId)) {
+          setSelectedEvent(firstActive.id);
         }
       })
       .catch(() => setEvents([]))
       .finally(() => setEventsLoading(false));
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
+  const activeEvents   = useMemo(() => events.filter(e => e.status === 'active'), [events]);
+  const archivedEvents = useMemo(() => events.filter(e => e.status !== 'active'), [events]);
+
+  const loadReservations = useCallback((showSpinner = true) => {
     if (!selectedEvent) return;
-    setLoading(true);
+    if (showSpinner) setLoading(true);
     api.reservations.byEvent(token, selectedEvent)
       .then(d => setReservations(Array.isArray(d) ? d : []))
       .catch(() => setReservations([]))
       .finally(() => setLoading(false));
   }, [selectedEvent, token]);
 
+  useEffect(() => {
+    loadReservations(true);
+  }, [selectedEvent, token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Las reservas "pendientes" son las más sensibles al tiempo — un cliente
+  // puede iniciar el checkout mientras el operador ya tiene la pantalla
+  // abierta, y sin refrescar nunca aparecería. Se refresca en segundo plano
+  // cada 20s sin mostrar el spinner de carga completo.
+  useEffect(() => {
+    if (!selectedEvent) return;
+    const iv = setInterval(() => loadReservations(false), 20000);
+    return () => clearInterval(iv);
+  }, [selectedEvent, loadReservations]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return reservations.filter(r => {
-      const matchSt = status === 'all' || r.status === status;
+      const matchSt = status === 'all' || r.status === status
+        || (status === 'pending' && r.status === 'paid');
       const matchQ  = !q
         || (r.user_name || '').toLowerCase().includes(q)
         || r.phone.includes(q)
@@ -142,6 +185,15 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
             <h1 className="adm-pt">Reservaciones</h1>
             <p className="adm-ps">Lista de reservas por evento</p>
           </div>
+          <button
+            className="adm-btn adm-btn-ghost"
+            onClick={() => loadReservations(true)}
+            disabled={loading || !selectedEvent}
+            title="Actualizar lista (se refresca automáticamente cada 20s)"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />
+            Actualizar
+          </button>
         </div>
 
         {/* Event selector */}
@@ -149,7 +201,16 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
           <div className="adm-field" style={{ maxWidth: 420, marginBottom: 16 }}>
             <label className="adm-label">Evento</label>
             <select className="adm-input" value={selectedEvent} onChange={e => setSelectedEvent(e.target.value)}>
-              {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name} — {ev.venueName || ev.venue_name}</option>)}
+              {activeEvents.length > 0 && (
+                <optgroup label="Activos">
+                  {activeEvents.map(ev => <option key={ev.id} value={ev.id}>{ev.name} — {ev.venueName || ev.venue_name}</option>)}
+                </optgroup>
+              )}
+              {archivedEvents.length > 0 && (
+                <optgroup label="Archivados">
+                  {archivedEvents.map(ev => <option key={ev.id} value={ev.id}>{ev.name} — {ev.venueName || ev.venue_name}</option>)}
+                </optgroup>
+              )}
               {events.length === 0 && <option value="">Sin eventos disponibles</option>}
             </select>
           </div>
@@ -227,7 +288,6 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
             {/* Mobile cards */}
             <div className="hide-dt">
               {filtered.map(r => {
-                const sc = STATUS_COLORS[r.status] || STATUS_COLORS.expired;
                 return (
                   <div key={r.id} className="res-card" onClick={() => setSelected(r)}>
                     <div className="res-card-top">
@@ -235,7 +295,7 @@ export default function OperatorReservations({ token, initialEventId }: Props) {
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{r.user_name}</div>
                         <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{r.phone}</div>
                       </div>
-                      <span className="adm-pill" style={sc}>{STATUS_LABELS[r.status]}</span>
+                      <StatusBadge status={r.status} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
