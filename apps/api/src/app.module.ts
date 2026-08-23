@@ -20,6 +20,7 @@ import { VenuesModule } from './modules/venues/venues.module';
 import { VehicleModelsModule } from './modules/vehicle-models/vehicle-models.module';
 import { VehiculosMxModule } from './modules/vehiculos-mx/vehiculos-mx.module';
 import { PricingModule }    from './modules/pricing/pricing.module';
+import { WhatsAppModule }   from './modules/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { PricingModule }    from './modules/pricing/pricing.module';
     VehicleModelsModule,
     VehiculosMxModule,
     PricingModule,
+    WhatsAppModule,
   ],
   providers: [
     // Aplica ThrottlerGuard globalmente a todos los endpoints

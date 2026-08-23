@@ -10,6 +10,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { FraudService } from '../fraud/fraud.service';
 import { QrService } from '../qr/qr.service';
 import { VehiculosMxService } from '../vehiculos-mx/vehiculos-mx.service';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 
 /**
  * Normaliza cualquier variante de número mexicano a formato display: +52 XXXXXXXXXX
@@ -29,6 +30,7 @@ export class ReservationsService {
     private fraud: FraudService,
     private qrService: QrService,
     private vehiculos: VehiculosMxService,
+    private whatsapp: WhatsAppService,
   ) {}
 
   // Crear reserva con bloqueo atómico de slot
@@ -153,16 +155,26 @@ export class ReservationsService {
   }
 
   async findByEvent(eventId: string, operatorId: string) {
-    // Soporta operadores directos Y sub-operadores (que heredan el owner_id del padre)
+    // Soporta operadores directos Y sub-operadores (que heredan el owner_id del padre).
+    // Igual que listOperatorEvents: el evento es del operador si su parking_id
+    // directo le pertenece, O si el venue del evento tiene ligado (via
+    // venue_parkings) algún estacionamiento del operador — antes solo se
+    // checaba parking_id directo, lo que bloqueaba (403) eventos ligados al
+    // operador solo por venue_parkings, ocultando sus reservas reales.
     const authorized = await this.dataSource.query(
       `SELECT e.id FROM events e
-       JOIN parkings p ON p.id = e.parking_id
        WHERE e.id = $1
          AND (
-           p.owner_id = $2
-           OR p.owner_id = (
-             SELECT parent_operator_id FROM users
-             WHERE id = $2 AND role IN ('sub_operator', 'sub_admin')
+           e.parking_id IN (
+             SELECT id FROM parkings
+             WHERE owner_id = $2
+                OR owner_id = (SELECT parent_operator_id FROM users WHERE id = $2 AND role IN ('sub_operator', 'sub_admin'))
+           )
+           OR e.venue_id IN (
+             SELECT vp.venue_id FROM venue_parkings vp
+             JOIN parkings pk ON pk.id = vp.parking_id
+             WHERE pk.owner_id = $2
+                OR pk.owner_id = (SELECT parent_operator_id FROM users WHERE id = $2 AND role IN ('sub_operator', 'sub_admin'))
            )
          )`,
       [eventId, operatorId],
@@ -172,12 +184,22 @@ export class ReservationsService {
       throw new BadRequestException('No tienes acceso a este evento');
     }
 
+    // r.* no traía el nombre/dirección del estacionamiento ni el monto pagado
+    // (faltaban los JOINs a parkings/payments), y el frontend lee "plates"
+    // mientras la columna real es vehicle_plate — de ahí que el boleto del
+    // operador mostrara Estacionamiento/Dirección/Placas/Monto en blanco.
     return this.dataSource.query(
       `SELECT r.*, u.phone, u.name as user_name,
-              q.scanned_at, q.token IS NOT NULL as has_ticket
+              q.scanned_at, q.token IS NOT NULL as has_ticket,
+              r.vehicle_plate AS plates,
+              p.name AS "parkingName", p.address AS "parkingAddress",
+              pay.amount AS amount
        FROM reservations r
        JOIN users u ON u.id = r.user_id
        LEFT JOIN qr_tokens q ON q.reservation_id = r.id
+       LEFT JOIN events e2 ON e2.id = r.event_id
+       LEFT JOIN parkings p ON p.id = COALESCE(r.parking_id, e2.parking_id)
+       LEFT JOIN payments pay ON pay.reservation_id = r.id AND pay.status = 'completed'
        WHERE r.event_id = $1
        ORDER BY r.created_at DESC`,
       [eventId],
@@ -209,6 +231,74 @@ export class ReservationsService {
     if (result.length > 0) {
       console.log(`⏰ ${result.length} reservas expiradas y slots liberados`);
     }
+  }
+
+  // Cron: recordatorios de evento por WhatsApp, 24h y 3h antes.
+  // Ventanas de 20 min con intervalo de 10 min: sin solape en condiciones
+  // normales, pero la salvaguarda real contra duplicados es reminder_*_sent_at.
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async sendEventReminders() {
+    await this.sendReminderWindow('24h', 'reminder_24h_sent_at', 24, 'reminder_24h', 'TWILIO_REMINDER_24H_CONTENT_SID');
+    await this.sendReminderWindow('3h', 'reminder_3h_sent_at', 3, 'reminder_3h', 'TWILIO_REMINDER_3H_CONTENT_SID');
+  }
+
+  private async sendReminderWindow(
+    label: string,
+    sentColumn: 'reminder_24h_sent_at' | 'reminder_3h_sent_at',
+    hoursBefore: number,
+    purpose: 'reminder_24h' | 'reminder_3h',
+    contentSidEnvVar: string,
+  ) {
+    const rows = await this.dataSource.query(
+      `SELECT r.id, u.phone, e.name as event_name, e.starts_at, e.venue_name,
+              p.name as parking_name, p.address as parking_address
+       FROM reservations r
+       JOIN users u ON u.id = r.user_id
+       JOIN events e ON e.id = r.event_id
+       LEFT JOIN parkings p ON p.id = COALESCE(r.parking_id, e.parking_id)
+       WHERE r.status = 'paid'
+         AND r.${sentColumn} IS NULL
+         AND e.starts_at BETWEEN NOW() + ($1 || ' hours')::interval - interval '10 minutes'
+                              AND NOW() + ($1 || ' hours')::interval + interval '10 minutes'`,
+      [hoursBefore],
+    );
+
+    if (!rows.length) return;
+
+    let sentCount = 0;
+
+    for (const row of rows) {
+      const fecha = new Date(row.starts_at).toLocaleString('es-MX', {
+        weekday: 'long', year: 'numeric', month: 'long',
+        day: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+      const venueOrParking = row.venue_name || row.parking_name;
+      const horas = label === '24h' ? 'Mañana' : 'En unas horas';
+
+      const sent = await this.whatsapp.send(
+        row.phone,
+        purpose,
+        `⏰ *${horas} tienes evento en EstacionaT*\n\n🎉 ${row.event_name}\n📍 ${venueOrParking}\n📅 ${fecha}`,
+        {
+          contentSid: process.env[contentSidEnvVar],
+          contentVariables: { '1': row.event_name, '2': venueOrParking, '3': fecha },
+          reservationId: row.id,
+        },
+      );
+
+      // Solo marcamos "enviado" si Twilio de verdad lo aceptó — si falló (ej.
+      // sender no aprobado, Twilio caído), lo reintentamos en la próxima
+      // corrida del cron en vez de perderlo silenciosamente.
+      if (sent) {
+        sentCount++;
+        await this.dataSource.query(
+          `UPDATE reservations SET ${sentColumn} = NOW() WHERE id = $1`,
+          [row.id],
+        );
+      }
+    }
+
+    console.log(`⏰ recordatorios (${label}): ${sentCount}/${rows.length} enviados`);
   }
 
   // ─── Mapa interno: categoría del vehículo → columna de precio en events ──
@@ -402,8 +492,8 @@ export class ReservationsService {
     if (row.status !== 'paid') throw new BadRequestException('Solo puedes solicitar reembolso de reservas pagadas');
 
     const hoursUntilEvent = (new Date(row.starts_at).getTime() - Date.now()) / 3600000;
-    if (hoursUntilEvent <= 6) {
-      throw new BadRequestException('El plazo para solicitar reembolso (6 horas antes del evento) ha vencido');
+    if (hoursUntilEvent <= 24) {
+      throw new BadRequestException('El plazo para solicitar reembolso (24 horas antes del evento) ha vencido');
     }
 
     const [claim] = await this.dataSource.query(

@@ -8,11 +8,13 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { OtpEntity } from './entities/otp.entity';
+import { WhatsAppModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([OtpEntity]),
     UsersModule,
+    WhatsAppModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

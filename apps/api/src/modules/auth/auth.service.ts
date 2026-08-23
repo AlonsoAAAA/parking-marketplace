@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OtpEntity } from './entities/otp.entity';
 import { normalizePhone } from '../../lib/phone';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private whatsapp: WhatsAppService,
     @InjectRepository(OtpEntity)
     private otpRepo: Repository<OtpEntity>,
   ) {}
@@ -30,7 +32,19 @@ export class AuthService {
       ['phone'],
     );
 
-    await this.sendWhatsAppOtp(cleanPhone, otp);
+    await this.whatsapp.send(
+      cleanPhone,
+      'otp',
+      `Tu código de verificación para EstacionaT es: *${otp}*\n\nVálido por 10 minutos.`,
+      {
+        contentSid: this.config.get('TWILIO_OTP_CONTENT_SID'),
+        contentVariables: { '1': otp },
+      },
+    );
+
+    if (this.config.get('NODE_ENV') === 'development') {
+      console.log(`📱 OTP para ${cleanPhone}: ${otp}`);
+    }
 
     return { message: 'Código enviado por WhatsApp', ...(isDev && { devOtp: otp }) };
   }
@@ -109,56 +123,5 @@ export class AuthService {
     );
 
     return { access_token: token, token, isNewUser };
-  }
-
-  private async sendWhatsAppOtp(phone: string, otp: string): Promise<void> {
-    const accountSid = this.config.get('TWILIO_ACCOUNT_SID');
-    const authToken = this.config.get('TWILIO_AUTH_TOKEN');
-    const fromNumber = this.config.get('TWILIO_WHATSAPP_NUMBER');
-
-    // Normalizar siempre a 521XXXXXXXXXX (13 dígitos) para WhatsApp mexicano
-    const digits = phone.replace(/\D/g, '');
-    let waPhone: string;
-    if (digits.length === 10) {
-      // Solo los 10 dígitos → agregar 521
-      waPhone = `521${digits}`;
-    } else if (digits.length === 12 && digits.startsWith('52')) {
-      // 52XXXXXXXXXX → 521XXXXXXXXXX
-      waPhone = `521${digits.slice(2)}`;
-    } else if (digits.length === 13 && digits.startsWith('521')) {
-      // Ya tiene formato correcto
-      waPhone = digits;
-    } else {
-      waPhone = digits;
-    }
-
-    // El OTP en texto plano solo se loguea en desarrollo — nunca en producción.
-    if (this.config.get('NODE_ENV') === 'development') {
-      console.log(`📱 OTP para +${waPhone}: ${otp}`);
-    }
-
-    if (!accountSid || !authToken || !fromNumber) {
-      console.log('⚠️  Twilio no configurado — OTP solo en consola');
-      return;
-    }
-
-    // Plantilla aprobada por Meta (producción). Si no está configurada, se usa
-    // texto libre — válido solo con el sandbox de Twilio para pruebas.
-    const templateSid = this.config.get('TWILIO_OTP_TEMPLATE_SID');
-
-    try {
-      const twilio = require('twilio')(accountSid, authToken);
-      const payload: any = { from: fromNumber, to: `whatsapp:+${waPhone}` };
-      if (templateSid) {
-        payload.contentSid = templateSid;
-        payload.contentVariables = JSON.stringify({ '1': otp });
-      } else {
-        payload.body = `Tu código de verificación para EstacionaT es: *${otp}*\n\nVálido por 10 minutos.`;
-      }
-      await twilio.messages.create(payload);
-      console.log(`✅ WhatsApp enviado a +${waPhone}`);
-    } catch (e) {
-      console.error(`❌ Twilio error: ${e?.message} (código: ${e?.code})`);
-    }
   }
 }

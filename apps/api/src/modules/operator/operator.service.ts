@@ -9,12 +9,14 @@ import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { OtpEntity } from '../auth/entities/otp.entity';
 import { normalizePhone } from '../../lib/phone';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class OperatorService {
   constructor(
     @InjectDataSource() private db: DataSource,
     private config: ConfigService,
+    private whatsapp: WhatsAppService,
     @InjectRepository(OtpEntity) private otpRepo: Repository<OtpEntity>,
   ) {}
 
@@ -136,28 +138,12 @@ export class OperatorService {
     subOpName: string,
     operatorName?: string,
   ) {
-    const accountSid = this.config.get('TWILIO_ACCOUNT_SID');
-    const authToken  = this.config.get('TWILIO_AUTH_TOKEN');
-    const fromNumber = this.config.get('TWILIO_WHATSAPP_NUMBER');
-
-    const adminUrl = this.config.get('ADMIN_URL') ?? 'https://admin.parkingmx.com';
-
-    // Normalizar a 521XXXXXXXXXX igual que auth.service
-    const digits = phone.replace(/\D/g, '');
-    let waPhone: string;
-    if (digits.length === 10)                                  waPhone = `+521${digits}`;
-    else if (digits.length === 12 && digits.startsWith('52')) waPhone = `+521${digits.slice(2)}`;
-    else if (digits.length === 13 && digits.startsWith('521'))waPhone = `+${digits}`;
-    else                                                       waPhone = `+${digits}`;
-
-    console.log(`📱 Bienvenida sub-operador: ${subOpName} (${waPhone})`);
-
-    if (!accountSid || !authToken || !fromNumber) return;
+    const adminUrl = this.config.get('ADMIN_URL') ?? 'https://estacionat.mx/op/';
 
     const body = [
       `👋 *Hola ${subOpName}*`,
       ``,
-      `${operatorName ?? 'Tu operador'} te ha dado acceso al panel de ParkingMX.`,
+      `${operatorName ?? 'Tu operador'} te ha dado acceso al panel de EstacionaT.`,
       ``,
       `📲 Ingresa con tu número de WhatsApp en:`,
       `${adminUrl}`,
@@ -167,16 +153,13 @@ export class OperatorService {
       `Si tienes dudas, contacta a ${operatorName ?? 'tu operador'}.`,
     ].join('\n');
 
-    try {
-      const twilio = require('twilio')(accountSid, authToken);
-      await twilio.messages.create({
-        body,
-        from: fromNumber,
-        to: `whatsapp:${waPhone}`,
-      });
-      console.log(`✅ Bienvenida enviada a ${waPhone}`);
-    } catch (e: any) {
-      console.error(`❌ Twilio bienvenida error: ${e?.message}`);
-    }
+    await this.whatsapp.send(phone, 'welcome', body, {
+      contentSid: this.config.get('TWILIO_WELCOME_CONTENT_SID'),
+      contentVariables: {
+        '1': subOpName,
+        '2': operatorName ?? 'Tu operador',
+        '3': adminUrl,
+      },
+    });
   }
 }

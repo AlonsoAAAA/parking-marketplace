@@ -38,6 +38,9 @@ async function bootstrap() {
     }),
   );
 
+  // ── Body parser form-urlencoded para webhooks de Twilio (WhatsApp/SMS) ──────
+  app.use(express.urlencoded({ extended: false }));
+
   // ── CORS ─────────────────────────────────────────────────────────────────────
   const allowedOrigins = [
     'http://localhost:3001',
