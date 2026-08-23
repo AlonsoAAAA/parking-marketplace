@@ -113,6 +113,10 @@ export default function ParkingDetailPage() {
   const [name,  setName]  = useState('');
 
   const pendingSubmit = useRef(false);
+  // Modelo/versión que quedan pendientes de restaurar tras volver del login —
+  // no se setean de inmediato porque el <select> de modelo depende de que
+  // `modelos` ya se haya cargado para esa marca (ver efectos de abajo).
+  const pendingRestore = useRef<{ modelo?: string; version?: string } | null>(null);
   const PENDING_KEY   = `pm_pending_${eventId}_${parkingId}`;
 
   const tieneVersion = !!modelos.find(m => m.nombre === modelo)?.tieneVersion;
@@ -144,22 +148,42 @@ export default function ParkingDetailPage() {
 
   useEffect(() => {
     if (!marca) { setModelos([]); setModelo(''); setVersiones([]); setVersion(''); setCategoria(null); return; }
-    setModelo(''); setVersiones([]); setVersion(''); setCategoria(null);
+    // Al restaurar la selección tras el login no limpiamos modelo/versión —
+    // ya vienen de sessionStorage y se aplican abajo una vez cargue la lista.
+    if (!pendingRestore.current) {
+      setModelo(''); setVersiones([]); setVersion(''); setCategoria(null);
+    }
     apiFetch(`/api/v1/vehiculos/modelos?marca=${encodeURIComponent(marca)}`)
-      .then(d => setModelos(Array.isArray(d.modelos) ? d.modelos : []))
+      .then(d => {
+        const list = Array.isArray(d.modelos) ? d.modelos : [];
+        setModelos(list);
+        if (pendingRestore.current?.modelo) {
+          setModelo(pendingRestore.current.modelo);
+        } else {
+          pendingRestore.current = null;
+        }
+      })
       .catch(() => setModelos([]));
   }, [marca]);
 
   useEffect(() => {
     if (!modelo) { setVersiones([]); setVersion(''); setCategoria(null); return; }
-    setCategoria(null);
+    const pendingVersion = pendingRestore.current?.version;
+    if (!pendingRestore.current) {
+      setCategoria(null);
+    }
     const info = modelos.find(m => m.nombre === modelo);
     if (!info?.tieneVersion) {
       setVersiones([]); setVersion('');
+      pendingRestore.current = null;
       return;
     }
     apiFetch(`/api/v1/vehiculos/versiones?marca=${encodeURIComponent(marca)}&modelo=${encodeURIComponent(modelo)}`)
-      .then(d => setVersiones(Array.isArray(d.versiones) ? d.versiones : []))
+      .then(d => {
+        setVersiones(Array.isArray(d.versiones) ? d.versiones : []);
+        if (pendingVersion) setVersion(pendingVersion);
+        pendingRestore.current = null;
+      })
       .catch(() => setVersiones([]));
   }, [modelo]);
 
@@ -183,9 +207,10 @@ export default function ParkingDetailPage() {
       sessionStorage.removeItem(PENDING_KEY);
       try {
         const { marca: m, modelo: mo, version: v, plate: p, name: n } = JSON.parse(saved);
-        if (m)  setMarca(m);
-        if (mo) setModelo(mo);
-        if (v)  setVersion(v);
+        if (m) {
+          pendingRestore.current = { modelo: mo, version: v };
+          setMarca(m);
+        }
         if (p)  setPlate(p);
         if (n)  setName(n);
         if (token) pendingSubmit.current = true;
@@ -200,10 +225,13 @@ export default function ParkingDetailPage() {
 
   useEffect(() => {
     if (!pendingSubmit.current) return;
-    if (!marca || !modelo || plate.trim().length < 3 || name.trim().length < 2) return;
+    // `handleReserve` también exige `parking` cargado — sin este check aquí,
+    // si esta selección se restaura antes de que termine ese fetch (carrera
+    // entre efectos independientes), el auto-envío se consume sin disparar.
+    if (!parking || !marca || !modelo || plate.trim().length < 3 || name.trim().length < 2) return;
     pendingSubmit.current = false;
     handleReserve();
-  }, [marca, modelo, plate, name]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [parking, marca, modelo, plate, name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReserve = async () => {
     const token = localStorage.getItem('token');
