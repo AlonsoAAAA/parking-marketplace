@@ -165,36 +165,19 @@ export class PaymentsService {
 
   // Valida un código y lo aplica al Payment Intent ya creado para esta
   // reserva — actualiza el mismo intent en vez de crear uno nuevo, para no
-  // tener que remontar Stripe Elements con un clientSecret distinto.
+  // tener que remontar Stripe Elements con un clientSecret distinto. El
+  // monto nunca baja de MIN_CHARGE_MXN (el mínimo cobrable por Stripe en
+  // MXN) — un descuento de 100% igual cobra ese mínimo, nunca queda gratis.
   async applyPromoCode(reservationId: string, userId: string, code: string) {
     const { reservation, finalPrice } = await this.computeReservationPrice(reservationId, userId);
     const promo = await this.findValidPromo(code, reservation.event_id);
-    const discountedPrice = this.applyDiscount(finalPrice, promo);
+    const discountedPrice = Math.max(this.MIN_CHARGE_MXN, this.applyDiscount(finalPrice, promo));
 
     const [payment] = await this.dataSource.query(
       `SELECT * FROM payments WHERE reservation_id = $1 AND status = 'pending' ORDER BY created_at DESC LIMIT 1`,
       [reservationId],
     );
     if (!payment) throw new BadRequestException('No hay un pago pendiente para esta reserva');
-
-    if (discountedPrice < this.MIN_CHARGE_MXN) {
-      // Gratis: Stripe no permite cobrar por debajo de su mínimo — se
-      // resuelve sin pasar por Stripe, marcando la reserva pagada directo.
-      await this.stripe.paymentIntents.cancel(payment.provider_payment_id).catch(() => {});
-      await this.dataSource.query(
-        `UPDATE payments SET status = 'completed', amount = 0, promo_code = $1, paid_at = NOW() WHERE id = $2`,
-        [promo.code, payment.id],
-      );
-      await this.dataSource.query(`UPDATE reservations SET status = 'paid' WHERE id = $1`, [reservationId]);
-      await this.incrementPromoUseByCode(promo.code);
-
-      const qrToken = await this.qrService.generateQR(reservationId);
-      this.notificationsService.sendTicket(reservationId, qrToken).catch(e =>
-        console.error('Notification error (promo gratis):', e?.message),
-      );
-
-      return { free: true, amount: 0, code: promo.code };
-    }
 
     await this.stripe.paymentIntents.update(payment.provider_payment_id, {
       amount: Math.round(discountedPrice * 100),
@@ -204,7 +187,7 @@ export class PaymentsService {
       [discountedPrice, promo.code, payment.id],
     );
 
-    return { free: false, amount: discountedPrice, code: promo.code };
+    return { amount: discountedPrice, code: promo.code };
   }
 
   // Llamado desde el webhook y desde syncPaymentIntent cuando un pago (con

@@ -57,7 +57,6 @@ function CheckoutForm({
 }) {
   const stripe = useStripe();
   const elements = useElements();
-  const router = useRouter();
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
   // Por seguridad el checkbox de términos SIEMPRE inicia sin marcar (no auto-aceptado).
@@ -84,10 +83,6 @@ function CheckoutForm({
 
       onAmountChange(d.amount);
       setPromoApplied(d.code);
-
-      if (d.free) {
-        router.push(`/confirmacion/${reservationId}`);
-      }
     } catch (e: any) {
       setPromoError(e.message || 'No se pudo aplicar el código');
     } finally {
