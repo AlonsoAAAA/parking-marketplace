@@ -34,10 +34,11 @@ export class PaymentsService {
     });
   }
 
-  async createPaymentIntent(reservationId: string, userId: string) {
-    // 1. Obtener reserva con toda la info necesaria para el precio dinámico
+  // Precio final (sin promoción) para una reserva — compartido entre la
+  // creación del Payment Intent y la aplicación posterior de un código.
+  private async computeReservationPrice(reservationId: string, userId: string) {
     const result = await this.dataSource.query(
-      `SELECT r.id, r.status, r.expires_at, r.vehicle_type,
+      `SELECT r.id, r.status, r.expires_at, r.vehicle_type, r.event_id,
               COALESCE(r.parking_id, e.parking_id) AS parking_id,
               e.name     AS event_name,
               e.starts_at,
@@ -78,7 +79,6 @@ export class PaymentsService {
       throw new BadRequestException('La reserva ha expirado');
     }
 
-    // 2. Calcular precio final con motor de precios dinámicos
     const contractPrice = reservation.contract_price
       ? parseFloat(reservation.contract_price)
       : parseFloat(reservation.event_base_price);   // fallback al precio base del evento
@@ -99,7 +99,40 @@ export class PaymentsService {
       vehicleType: (reservation.vehicle_type as any) ?? 'auto',
     });
 
-    const finalPrice = breakdown.finalPrice;
+    return { reservation, finalPrice: breakdown.finalPrice };
+  }
+
+  // Busca un código de promoción válido para el evento de la reserva.
+  // No incrementa uses_count aquí — eso solo pasa cuando el pago se confirma
+  // de verdad (webhook/sync), para no gastar usos de códigos abandonados.
+  private async findValidPromo(code: string, eventId: string) {
+    const rows = await this.dataSource.query(
+      `SELECT * FROM promotions
+       WHERE code = $1
+         AND is_active = true
+         AND (expires_at IS NULL OR expires_at > NOW())
+         AND (max_uses IS NULL OR uses_count < max_uses)
+         AND (event_id IS NULL OR event_id = $2)`,
+      [code.trim().toUpperCase(), eventId],
+    );
+    if (!rows.length) throw new BadRequestException('Código promocional inválido o ya no disponible');
+    return rows[0];
+  }
+
+  private applyDiscount(amount: number, promo: { type: string; value: string | number }): number {
+    const value = parseFloat(promo.value as string);
+    const discounted = promo.type === 'percent'
+      ? amount * (1 - value / 100)
+      : amount - value;
+    return Math.max(0, Math.round(discounted * 100) / 100);
+  }
+
+  // Stripe rechaza montos por debajo de este mínimo para MXN — si el
+  // descuento deja el total por debajo, el checkout se resuelve sin Stripe.
+  private readonly MIN_CHARGE_MXN = 10;
+
+  async createPaymentIntent(reservationId: string, userId: string) {
+    const { reservation, finalPrice } = await this.computeReservationPrice(reservationId, userId);
 
     // 3. Crear Payment Intent en Stripe
     const paymentIntent = await this.stripe.paymentIntents.create({
@@ -128,6 +161,61 @@ export class PaymentsService {
       eventName: reservation.event_name,
       vehicleType: reservation.vehicle_type,
     };
+  }
+
+  // Valida un código y lo aplica al Payment Intent ya creado para esta
+  // reserva — actualiza el mismo intent en vez de crear uno nuevo, para no
+  // tener que remontar Stripe Elements con un clientSecret distinto.
+  async applyPromoCode(reservationId: string, userId: string, code: string) {
+    const { reservation, finalPrice } = await this.computeReservationPrice(reservationId, userId);
+    const promo = await this.findValidPromo(code, reservation.event_id);
+    const discountedPrice = this.applyDiscount(finalPrice, promo);
+
+    const [payment] = await this.dataSource.query(
+      `SELECT * FROM payments WHERE reservation_id = $1 AND status = 'pending' ORDER BY created_at DESC LIMIT 1`,
+      [reservationId],
+    );
+    if (!payment) throw new BadRequestException('No hay un pago pendiente para esta reserva');
+
+    if (discountedPrice < this.MIN_CHARGE_MXN) {
+      // Gratis: Stripe no permite cobrar por debajo de su mínimo — se
+      // resuelve sin pasar por Stripe, marcando la reserva pagada directo.
+      await this.stripe.paymentIntents.cancel(payment.provider_payment_id).catch(() => {});
+      await this.dataSource.query(
+        `UPDATE payments SET status = 'completed', amount = 0, promo_code = $1, paid_at = NOW() WHERE id = $2`,
+        [promo.code, payment.id],
+      );
+      await this.dataSource.query(`UPDATE reservations SET status = 'paid' WHERE id = $1`, [reservationId]);
+      await this.incrementPromoUseByCode(promo.code);
+
+      const qrToken = await this.qrService.generateQR(reservationId);
+      this.notificationsService.sendTicket(reservationId, qrToken).catch(e =>
+        console.error('Notification error (promo gratis):', e?.message),
+      );
+
+      return { free: true, amount: 0, code: promo.code };
+    }
+
+    await this.stripe.paymentIntents.update(payment.provider_payment_id, {
+      amount: Math.round(discountedPrice * 100),
+    });
+    await this.dataSource.query(
+      `UPDATE payments SET amount = $1, promo_code = $2 WHERE id = $3`,
+      [discountedPrice, promo.code, payment.id],
+    );
+
+    return { free: false, amount: discountedPrice, code: promo.code };
+  }
+
+  // Llamado desde el webhook y desde syncPaymentIntent cuando un pago (con
+  // código aplicado) se confirma de verdad — recién ahí se gasta el uso.
+  async incrementPromoUseByCode(code: string | null | undefined): Promise<void> {
+    if (!code) return;
+    await this.dataSource.query(
+      `UPDATE promotions SET uses_count = uses_count + 1
+       WHERE code = $1 AND (max_uses IS NULL OR uses_count < max_uses)`,
+      [code],
+    );
   }
 
   async getReservationPayment(reservationId: string) {
@@ -364,7 +452,7 @@ export class PaymentsService {
 
     // Idempotencia — si ya fue procesado, salir
     const existing = await this.dataSource.query(
-      `SELECT status FROM payments WHERE provider_payment_id = $1`,
+      `SELECT status, promo_code FROM payments WHERE provider_payment_id = $1`,
       [paymentIntentId],
     );
     if (existing[0]?.status === 'completed') return;
@@ -386,6 +474,8 @@ export class PaymentsService {
       `UPDATE reservations SET status = 'paid' WHERE id = $1`,
       [reservationId],
     );
+
+    await this.incrementPromoUseByCode(existing[0]?.promo_code);
 
     const qrToken = await this.qrService.generateQR(reservationId);
 

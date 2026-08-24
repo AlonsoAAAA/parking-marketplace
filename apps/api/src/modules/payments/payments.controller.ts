@@ -15,6 +15,14 @@ class SyncPaymentDto {
   paymentIntentId: string;
 }
 
+class ApplyPromoDto {
+  @IsUUID('all')
+  reservationId: string;
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}
+
 class VehicleChangeDto {
   @IsUUID('all') reservationId: string;
   @IsString() @IsNotEmpty() plate: string;
@@ -39,6 +47,12 @@ export class PaymentsController {
   @UseGuards(JwtGuard)
   sync(@Body() dto: SyncPaymentDto, @Req() req: any) {
     return this.paymentsService.syncPaymentIntent(dto.paymentIntentId, req.user.id);
+  }
+
+  @Post('apply-promo')
+  @UseGuards(JwtGuard)
+  applyPromo(@Body() dto: ApplyPromoDto, @Req() req: any) {
+    return this.paymentsService.applyPromoCode(dto.reservationId, req.user.id, dto.code);
   }
 
   @Get('vehicle-change/current')

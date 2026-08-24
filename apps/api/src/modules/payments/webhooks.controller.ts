@@ -86,7 +86,7 @@ export class WebhooksController {
 
     // 3. Idempotencia + validación de amount
     const payment = await this.dataSource.query(
-      `SELECT status, amount FROM payments WHERE provider_payment_id = $1`,
+      `SELECT status, amount, promo_code FROM payments WHERE provider_payment_id = $1`,
       [intent.id],
     );
 
@@ -113,6 +113,8 @@ export class WebhooksController {
       `UPDATE reservations SET status = 'paid' WHERE id = $1`,
       [reservationId],
     );
+
+    await this.paymentsService.incrementPromoUseByCode(payment[0]?.promo_code);
 
     // 6. Generar QR
     const token = await this.qrService.generateQR(reservationId);

@@ -48,13 +48,52 @@ const STRIPE_APPEARANCE = {
 interface CheckoutData { clientSecret: string; amount: number; eventName: string; }
 
 // ─── Formulario interno (requiere contexto de Elements) ───────────────────────
-function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservationId: string }) {
+function CheckoutForm({
+  data, reservationId, onAmountChange,
+}: {
+  data: CheckoutData;
+  reservationId: string;
+  onAmountChange: (amount: number) => void;
+}) {
   const stripe = useStripe();
   const elements = useElements();
+  const router = useRouter();
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
   // Por seguridad el checkbox de términos SIEMPRE inicia sin marcar (no auto-aceptado).
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplying, setPromoApplying] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const [promoApplied, setPromoApplied] = useState<string | null>(null);
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoApplying(true);
+    setPromoError('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/payments/apply-promo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reservationId, code: promoCode.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(Array.isArray(d.message) ? d.message[0] : (d.message || 'Código inválido'));
+
+      onAmountChange(d.amount);
+      setPromoApplied(d.code);
+
+      if (d.free) {
+        router.push(`/confirmacion/${reservationId}`);
+      }
+    } catch (e: any) {
+      setPromoError(e.message || 'No se pudo aplicar el código');
+    } finally {
+      setPromoApplying(false);
+    }
+  };
 
   const [phone, setPhone] = useState(() => {
     try {
@@ -114,6 +153,36 @@ function CheckoutForm({ data, reservationId }: { data: CheckoutData; reservation
           <Info className="w-3.5 h-3.5" />
           <span>Tu boleto QR llegará aquí inmediatamente tras el pago.</span>
         </p>
+      </div>
+
+      {/* Código promocional */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-mono text-slate-400 uppercase">Código promocional</label>
+        {promoApplied ? (
+          <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl p-3.5">
+            <span className="text-emerald-700 text-xs font-bold">✅ Código "{promoApplied}" aplicado</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <input
+                type="text" value={promoCode}
+                onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3.5 focus:outline-none focus:ring-2 focus:ring-[#383497]/15 focus:border-[#383497] font-mono tracking-wider transition-all uppercase"
+                placeholder="CODIGO2026"
+              />
+              <button
+                type="button"
+                onClick={handleApplyPromo}
+                disabled={promoApplying || !promoCode.trim()}
+                className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-200 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-wider px-5 rounded-xl transition-all cursor-pointer"
+              >
+                {promoApplying ? '...' : 'Aplicar'}
+              </button>
+            </div>
+            {promoError && <p className="text-rose-600 text-[11px] font-semibold">{promoError}</p>}
+          </>
+        )}
       </div>
 
       {/* Pago (Stripe Elements real) */}
@@ -259,7 +328,11 @@ export default function CheckoutPage() {
             </div>
           ) : (
             <Elements stripe={stripePromise} options={{ clientSecret: data!.clientSecret, appearance: STRIPE_APPEARANCE }}>
-              <CheckoutForm data={data!} reservationId={reservationId} />
+              <CheckoutForm
+                data={data!}
+                reservationId={reservationId}
+                onAmountChange={amount => setData(prev => prev ? { ...prev, amount } : prev)}
+              />
             </Elements>
           )}
         </div>
