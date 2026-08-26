@@ -110,10 +110,10 @@ export class ReservationsService {
         }
       }
 
-      // 3b. Crear reserva con expiración de 15 minutos
+      // 3b. Crear reserva con expiración de 5 minutos
       const reservationResult = await queryRunner.query(
         `INSERT INTO reservations (user_id, event_id, parking_id, status, expires_at)
-         VALUES ($1, $2, $3, 'pending', NOW() + INTERVAL '15 minutes')
+         VALUES ($1, $2, $3, 'pending', NOW() + INTERVAL '5 minutes')
          RETURNING *`,
         [userId, eventId, parkingId ?? null],
       );
@@ -206,8 +206,10 @@ export class ReservationsService {
     );
   }
 
-  // Cron: expirar reservas pendientes cada 5 minutos y liberar slots
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // Cron: expirar reservas pendientes y liberar slots. Cada 1 minuto (no cada
+  // 5) porque la reserva misma ahora expira a los 5 minutos — con el
+  // intervalo viejo un lugar podía quedar "fantasma" hasta 5 min de más.
+  @Cron(CronExpression.EVERY_MINUTE)
   async expireReservations() {
     const result = await this.dataSource.query(
       `WITH expired AS (

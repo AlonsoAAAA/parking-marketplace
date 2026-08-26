@@ -45,15 +45,38 @@ const STRIPE_APPEARANCE = {
   },
 };
 
-interface CheckoutData { clientSecret: string; amount: number; eventName: string; }
+interface CheckoutData { clientSecret: string; amount: number; eventName: string; expiresAt: string; }
+
+// Cuenta regresiva hasta `expiresAt` — la reserva se libera automáticamente
+// del lado del servidor cuando vence, esto solo refleja ese límite en vivo.
+// `expiresAt` llega vacío mientras el pago sigue cargando/falló.
+function useCountdown(expiresAt: string | undefined) {
+  const [remainingMs, setRemainingMs] = useState(() => expiresAt ? new Date(expiresAt).getTime() - Date.now() : Infinity);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const tick = () => setRemainingMs(new Date(expiresAt).getTime() - Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  if (!expiresAt) return { expired: false, label: '' };
+
+  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return { expired: remainingMs <= 0, label: `${minutes}:${seconds.toString().padStart(2, '0')}` };
+}
 
 // ─── Formulario interno (requiere contexto de Elements) ───────────────────────
 function CheckoutForm({
-  data, reservationId, onAmountChange,
+  data, reservationId, onAmountChange, expired,
 }: {
   data: CheckoutData;
   reservationId: string;
   onAmountChange: (amount: number) => void;
+  expired: boolean;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -169,7 +192,7 @@ function CheckoutForm({
               <button
                 type="button"
                 onClick={handleApplyPromo}
-                disabled={promoApplying || !promoCode.trim()}
+                disabled={promoApplying || !promoCode.trim() || expired}
                 className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-200 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-wider px-5 rounded-xl transition-all cursor-pointer"
               >
                 {promoApplying ? '...' : 'Aplicar'}
@@ -208,12 +231,18 @@ function CheckoutForm({
         </span>
       </div>
 
+      {expired && (
+        <p className="bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold p-3.5 rounded-xl text-center">
+          ⏰ Se acabó el tiempo para completar esta compra. Vuelve a intentar la reserva.
+        </p>
+      )}
+
       {error && <p className="bg-rose-50 border border-rose-100 text-rose-600 text-xs p-3.5 rounded-xl text-center">{error}</p>}
 
       <button
         type="button"
         onClick={handlePay}
-        disabled={!stripe || !elements || paying || !termsAccepted}
+        disabled={!stripe || !elements || paying || !termsAccepted || expired}
         className="w-full bg-[#383497] hover:bg-[#2b278c] disabled:bg-slate-200 disabled:cursor-not-allowed text-white py-4 px-6 rounded-2xl font-sans text-sm font-black uppercase tracking-wider shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
       >
         {paying ? (
@@ -270,6 +299,8 @@ export default function CheckoutPage() {
       .finally(() => setLoading(false));
   }, [reservationId]);
 
+  const { expired, label: timeLabel } = useCountdown(data?.expiresAt);
+
   if (loading) return (
     <div className="min-h-screen bg-background font-sans">
       <Navbar back="back" showExplore={false} />
@@ -300,9 +331,20 @@ export default function CheckoutPage() {
         <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl">
           {/* Header verde-negro / lima */}
           <div className="bg-[#04210f] text-[#DFF085] p-6 space-y-3 relative overflow-hidden">
-            <span className="text-[10px] font-mono uppercase tracking-widest bg-emerald-950 px-2.5 py-1 rounded-full text-white font-bold border border-emerald-900">
-              Resumen de reserva
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase tracking-widest bg-emerald-950 px-2.5 py-1 rounded-full text-white font-bold border border-emerald-900">
+                Resumen de reserva
+              </span>
+              {timeLabel && (
+                <span className={`text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full font-bold border flex items-center gap-1 ${
+                  expired
+                    ? 'bg-rose-950 border-rose-900 text-rose-300'
+                    : 'bg-emerald-950 border-emerald-900 text-[#DFF085]'
+                }`}>
+                  ⏱ {expired ? 'Expirado' : timeLabel}
+                </span>
+              )}
+            </div>
             <div className="space-y-1">
               <h2 className="text-white text-lg font-bold tracking-tight m-0">{data!.eventName}</h2>
               <p className="text-xs text-slate-300 flex items-center gap-1 m-0">
@@ -327,6 +369,7 @@ export default function CheckoutPage() {
                 data={data!}
                 reservationId={reservationId}
                 onAmountChange={amount => setData(prev => prev ? { ...prev, amount } : prev)}
+                expired={expired}
               />
             </Elements>
           )}

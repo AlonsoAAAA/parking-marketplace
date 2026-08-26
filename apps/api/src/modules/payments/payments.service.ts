@@ -160,6 +160,7 @@ export class PaymentsService {
       amount: finalPrice,
       eventName: reservation.event_name,
       vehicleType: reservation.vehicle_type,
+      expiresAt: reservation.expires_at,
     };
   }
 
