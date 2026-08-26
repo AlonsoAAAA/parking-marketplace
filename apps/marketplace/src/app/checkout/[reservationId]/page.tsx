@@ -328,23 +328,30 @@ export default function CheckoutPage() {
       <Navbar back="back" showExplore={false} />
 
       <div className="max-w-xl mx-auto space-y-6 pt-24">
+        {timeLabel && (
+          <div className={`flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-2xl border-2 ${
+            expired
+              ? 'bg-rose-50 border-rose-200 text-rose-600'
+              : 'bg-white border-[#04210f]/10 text-[#04210f] shadow-md'
+          }`}>
+            <span className="text-xl">⏱</span>
+            <span className="font-mono font-black text-2xl tracking-widest">
+              {expired ? 'Tiempo expirado' : timeLabel}
+            </span>
+            {!expired && (
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 ml-1">
+                para completar tu pago
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl">
           {/* Header verde-negro / lima */}
           <div className="bg-[#04210f] text-[#DFF085] p-6 space-y-3 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase tracking-widest bg-emerald-950 px-2.5 py-1 rounded-full text-white font-bold border border-emerald-900">
-                Resumen de reserva
-              </span>
-              {timeLabel && (
-                <span className={`text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full font-bold border flex items-center gap-1 ${
-                  expired
-                    ? 'bg-rose-950 border-rose-900 text-rose-300'
-                    : 'bg-emerald-950 border-emerald-900 text-[#DFF085]'
-                }`}>
-                  ⏱ {expired ? 'Expirado' : timeLabel}
-                </span>
-              )}
-            </div>
+            <span className="text-[10px] font-mono uppercase tracking-widest bg-emerald-950 px-2.5 py-1 rounded-full text-white font-bold border border-emerald-900">
+              Resumen de reserva
+            </span>
             <div className="space-y-1">
               <h2 className="text-white text-lg font-bold tracking-tight m-0">{data!.eventName}</h2>
               <p className="text-xs text-slate-300 flex items-center gap-1 m-0">
