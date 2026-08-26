@@ -367,7 +367,7 @@ export default function ParkingDetailPage() {
                 <input
                   type="text" required maxLength={10} placeholder="ABC-123-A"
                   value={plate}
-                  onChange={e => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9\s-]/g, '').slice(0, 10))}
+                  onChange={e => setPlate(e.target.value.toUpperCase().replace(/\s/g, '-').replace(/[^A-Z0-9-]/g, '').slice(0, 10))}
                   className="w-full bg-transparent text-center font-mono text-2xl font-black tracking-widest text-slate-800 uppercase py-2 focus:outline-none"
                 />
                 <div className="w-full text-center text-[7px] font-mono text-slate-400 tracking-wider pt-1 border-t border-slate-100">
