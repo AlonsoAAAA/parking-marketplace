@@ -301,6 +301,17 @@ export default function CheckoutPage() {
 
   const { expired, label: timeLabel } = useCountdown(data?.expiresAt);
 
+  // Cuando el banner grande del timer sale de la vista al hacer scroll,
+  // aparece una versión flotante y chica en su lugar.
+  const [timerEl, setTimerEl] = useState<HTMLDivElement | null>(null);
+  const [timerInView, setTimerInView] = useState(true);
+  useEffect(() => {
+    if (!timerEl) return;
+    const observer = new IntersectionObserver(([entry]) => setTimerInView(entry.isIntersecting), { threshold: 0 });
+    observer.observe(timerEl);
+    return () => observer.disconnect();
+  }, [timerEl]);
+
   if (loading) return (
     <div className="min-h-screen bg-background font-sans">
       <Navbar back="back" showExplore={false} />
@@ -329,7 +340,7 @@ export default function CheckoutPage() {
 
       <div className="max-w-xl mx-auto space-y-6 pt-24">
         {timeLabel && (
-          <div className={`flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-2xl border-2 ${
+          <div ref={setTimerEl} className={`flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-2xl border-2 ${
             expired
               ? 'bg-rose-50 border-rose-200 text-rose-600'
               : 'bg-white border-[#04210f]/10 text-[#04210f] shadow-md'
@@ -382,6 +393,18 @@ export default function CheckoutPage() {
           )}
         </div>
       </div>
+
+      {/* Versión flotante y chica — aparece cuando el banner grande sale de la vista al hacer scroll */}
+      {timeLabel && !timerInView && (
+        <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 py-1.5 px-3.5 rounded-full border-2 shadow-lg font-mono ${
+          expired
+            ? 'bg-rose-50 border-rose-200 text-rose-600'
+            : 'bg-white border-[#04210f]/15 text-[#04210f]'
+        }`}>
+          <span className="text-sm">⏱</span>
+          <span className="font-black text-sm tracking-wider">{expired ? 'Expirado' : timeLabel}</span>
+        </div>
+      )}
     </div>
   );
 }
