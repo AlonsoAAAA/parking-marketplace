@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Calendar, MapPin, QrCode, ChevronRight, Inbox } from 'lucide-react';
+import { Calendar, MapPin, QrCode, ChevronRight, Inbox, LogOut } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
 interface Reservation {
@@ -68,6 +68,11 @@ export default function MisBoletosPage() {
   const active = reservations.filter(r => r.status === 'pending' || r.status === 'paid');
   const past   = reservations.filter(r => r.status === 'used' || r.status === 'expired' || r.status === 'cancelled');
   const displayed = activeTab === 'activos' ? active : past;
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    router.push('/');
+  };
 
   return (
     <div className="bg-background min-h-screen py-10 px-6 font-sans">
@@ -177,6 +182,17 @@ export default function MisBoletosPage() {
                 </Link>
               </div>
             )}
+
+            <div className="pt-6 border-t border-slate-200 flex justify-center">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-rose-600 hover:text-rose-700 text-xs font-mono font-bold uppercase tracking-wider bg-transparent border-none cursor-pointer py-2 px-4"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
           </>
         )}
       </div>
