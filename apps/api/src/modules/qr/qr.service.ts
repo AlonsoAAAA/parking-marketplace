@@ -113,7 +113,10 @@ export class QrService {
     }
 
     // 4. Marcar como usado — UPDATE atómico para evitar doble escaneo simultáneo
-    const updateResult = await this.dataSource.query(
+    // UPDATE...RETURNING devuelve [filas[], contador], no las filas directas —
+    // sin desempacar el tuple, este guard nunca disparaba y el doble escaneo
+    // concurrente no se detectaba.
+    const [updateRows] = await this.dataSource.query(
       `UPDATE qr_tokens
        SET scanned_at = NOW(), scanned_by = $1
        WHERE token = $2 AND scanned_at IS NULL
@@ -121,7 +124,7 @@ export class QrService {
       [operatorId, token],
     );
 
-    if (!updateResult.length) {
+    if (!updateRows.length) {
       return { valid: false, reason: 'CONDICIÓN_DE_CARRERA' };
     }
 

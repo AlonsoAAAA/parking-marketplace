@@ -334,7 +334,10 @@ export class AdminService {
   async updateEventPrices(eventId: string, operatorId: string, prices: {
     priceAuto?: number; priceSub?: number; pricePickup?: number; priceMoto?: number;
   }) {
-    const rows = await this.db.query(
+    // UPDATE...RETURNING devuelve [filas[], contador], no las filas directas
+    // como un INSERT...RETURNING — sin desempacar, el guard nunca lanzaba y
+    // se devolvía el array de filas en vez del evento actualizado.
+    const [rows] = await this.db.query(
       `UPDATE events e
        SET price_auto   = COALESCE($1, e.price_auto),
            price_sub    = COALESCE($2, e.price_sub),

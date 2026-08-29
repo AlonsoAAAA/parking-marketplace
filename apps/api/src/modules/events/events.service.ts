@@ -12,14 +12,15 @@ export class EventsService {
   // pestaña Finalizado del admin y en teoría se podrían seguir reservando.
   @Cron(CronExpression.EVERY_10_MINUTES)
   async finishEndedEvents() {
-    const result = await this.dataSource.query(
+    // UPDATE...RETURNING devuelve [filas[], contador], no las filas directas.
+    const [rows] = await this.dataSource.query(
       `UPDATE events
        SET status = 'finished'
        WHERE status IN ('active', 'sold_out') AND ends_at < NOW()
        RETURNING id`,
     );
-    if (result.length > 0) {
-      console.log(`🏁 ${result.length} eventos marcados como finalizados`);
+    if (rows.length > 0) {
+      console.log(`🏁 ${rows.length} eventos marcados como finalizados`);
     }
   }
 

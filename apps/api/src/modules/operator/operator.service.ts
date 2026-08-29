@@ -83,14 +83,18 @@ export class OperatorService {
     // ── 5. Crear o convertir a sub-operador ─────────────────────────────────────
     const teamRole = data.role === 'sub_admin' ? 'sub_admin' : 'sub_operator';
 
+    // UPDATE...RETURNING devuelve [filas[], contador], a diferencia de
+    // INSERT...RETURNING que da las filas directas — hay que desempacar el
+    // tuple en la rama UPDATE o `user` queda como el array de filas en vez
+    // del registro.
     const [user] = existingUser
-      ? await this.db.query(
+      ? (await this.db.query(
           `UPDATE users
            SET name = $1, role = $2, parent_operator_id = $3, is_active = true
            WHERE id = $4
            RETURNING id, name, phone, role, is_active, created_at`,
           [data.name.trim(), teamRole, operatorId, existingUser.id],
-        )
+        ))[0]
       : await this.db.query(
           `INSERT INTO users (name, phone, role, channel, parent_operator_id, is_active)
            VALUES ($1, $2, $3, 'whatsapp', $4, true)

@@ -56,17 +56,20 @@ export class ReservationsService {
       let event = ev;
       if (ev.total_slots > 0) {
         // Bloqueo atómico solo cuando hay slots configurados en el evento
-        const eventResult = await queryRunner.query(
+        // UPDATE...RETURNING via TypeORM devuelve [filas[], contador], no las
+        // filas directamente (a diferencia de un SELECT) — hay que desempacar
+        // el tuple o el guard de cupo nunca dispara y `event` queda undefined.
+        const [eventRows] = await queryRunner.query(
           `UPDATE events
            SET slots_reserved = slots_reserved + 1
            WHERE id = $1 AND slots_reserved < total_slots AND status = 'active'
            RETURNING id, price, name, slots_reserved, total_slots`,
           [eventId],
         );
-        if (!eventResult.length) {
+        if (!eventRows.length) {
           throw new BadRequestException('No hay lugares disponibles para este evento');
         }
-        event = eventResult[0];
+        event = eventRows[0];
         if (event.slots_reserved >= event.total_slots) {
           await queryRunner.query(
             `UPDATE events SET status = 'sold_out' WHERE id = $1`,
@@ -78,7 +81,10 @@ export class ReservationsService {
       // 3a. Bloquear slot a nivel de estacionamiento
       if (parkingId) {
         // Intentar con event_parkings (asignación directa por evento)
-        const epResult = await queryRunner.query(
+        // Mismo desempaque de tuple que arriba: UPDATE...RETURNING no da las
+        // filas directas, así que sin esto el fallback a venue_parkings nunca
+        // se ejecutaba y el cupo por estacionamiento no se validaba.
+        const [epRows] = await queryRunner.query(
           `UPDATE event_parkings
            SET slots_reserved = slots_reserved + 1
            WHERE event_id = $1 AND parking_id = $2
@@ -87,7 +93,7 @@ export class ReservationsService {
           [eventId, parkingId],
         );
 
-        if (!epResult.length) {
+        if (!epRows.length) {
           // Fallback: venue_parkings — verificar capacidad con conteo de reservas activas
           const vpCheck = await queryRunner.query(
             `SELECT p.total_capacity,
@@ -211,7 +217,7 @@ export class ReservationsService {
   // intervalo viejo un lugar podía quedar "fantasma" hasta 5 min de más.
   @Cron(CronExpression.EVERY_MINUTE)
   async expireReservations() {
-    const result = await this.dataSource.query(
+    const [rows] = await this.dataSource.query(
       `WITH expired AS (
          UPDATE reservations
          SET status = 'expired'
@@ -230,8 +236,8 @@ export class ReservationsService {
        RETURNING id`,
     );
 
-    if (result.length > 0) {
-      console.log(`⏰ ${result.length} reservas expiradas y slots liberados`);
+    if (rows.length > 0) {
+      console.log(`⏰ ${rows.length} reservas expiradas y slots liberados`);
     }
   }
 
@@ -378,7 +384,10 @@ export class ReservationsService {
     if (!clasif.ok) throw new BadRequestException(clasif.error);
 
     // 2. Guardar todos los datos del vehículo
-    const result = await this.dataSource.query(
+    // UPDATE...RETURNING devuelve [filas[], contador] — sin desempacar, este
+    // guard nunca lanzaba y siempre se devolvía { ok: true } aunque la reserva
+    // no existiera o no fuera editable.
+    const [rows] = await this.dataSource.query(
       `UPDATE reservations
        SET vehicle_plate   = $1,
            vehicle_make    = $2,
@@ -401,7 +410,7 @@ export class ReservationsService {
         userId,
       ],
     );
-    if (!result.length) throw new NotFoundException('Reserva no encontrada o no editable');
+    if (!rows.length) throw new NotFoundException('Reserva no encontrada o no editable');
     return { ok: true };
   }
 
