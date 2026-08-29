@@ -109,7 +109,7 @@ export class WhatsAppService {
     try {
       const sent = await client.messages.create(payload as any);
       console.log(`✅ ${channel} enviado a ${to} — SID: ${sent.sid}`);
-      await this.logMessage(channel, phone, options.contentSid ?? null, purpose, 'sent', null, sent.sid, options.reservationId);
+      await this.logMessage(channel, phone, options.contentSid ?? null, purpose, 'sent', null, sent.sid, options.reservationId, fallbackText);
       return true;
     } catch (e: any) {
       // Errores transitorios (de red, o 5xx de Twilio): un solo reintento
@@ -129,16 +129,41 @@ export class WhatsAppService {
         { message: e?.message, code: e?.code },
         null,
         options.reservationId,
+        fallbackText,
       );
       return false;
     }
   }
 
-  async markDelivered(messageSid: string, status: string): Promise<void> {
-    await this.dataSource.query(
-      `UPDATE whatsapp_messages SET status = $1, updated_at = NOW() WHERE wa_message_id = $2`,
+  // Twilio confirma el envío de WhatsApp de forma síncrona (HTTP 201, "aceptado
+  // para procesar") pero el resultado real (delivered/undelivered) llega después
+  // por este webhook. Si termina en falla, ahí — y solo ahí — se sabe con certeza
+  // que WhatsApp no lo entregó, así que es aquí donde se reintenta por SMS.
+  async handleStatusCallback(messageSid: string, status: string): Promise<void> {
+    // `dataSource.query` en UPDATE...RETURNING devuelve [filas[], contador],
+    // no las filas directamente como en un SELECT — a diferencia de otras
+    // consultas en este archivo, aquí sí importa desempacar bien el resultado.
+    const [rows] = await this.dataSource.query(
+      `UPDATE whatsapp_messages
+       SET status = $1, updated_at = NOW()
+       WHERE wa_message_id = $2
+       RETURNING phone, purpose, reservation_id, fallback_text, channel, sms_fallback_sent`,
       [status, messageSid],
     );
+    const msg = rows?.[0];
+    if (!msg) return;
+
+    const isFailure = status === 'failed' || status === 'undelivered';
+    if (!isFailure || msg.channel !== 'whatsapp' || !msg.fallback_text || msg.sms_fallback_sent) return;
+
+    await this.dataSource.query(
+      `UPDATE whatsapp_messages SET sms_fallback_sent = true WHERE wa_message_id = $1`,
+      [messageSid],
+    );
+    console.log(`↩️ WhatsApp falló (${status}) para ${msg.phone}, reintentando por SMS`);
+    await this.sendVia('sms', msg.phone, msg.purpose, msg.fallback_text, {
+      reservationId: msg.reservation_id ?? undefined,
+    });
   }
 
   private async logMessage(
@@ -149,12 +174,13 @@ export class WhatsAppService {
     status: 'sent' | 'failed',
     errorDetail: any,
     messageSid: string | null,
-    reservationId?: string,
+    reservationId: string | undefined,
+    fallbackText: string,
   ): Promise<void> {
     try {
       await this.dataSource.query(
-        `INSERT INTO whatsapp_messages (wa_message_id, phone, template_name, purpose, status, error_detail, reservation_id, channel)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO whatsapp_messages (wa_message_id, phone, template_name, purpose, status, error_detail, reservation_id, channel, fallback_text)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           messageSid,
           phone,
@@ -164,6 +190,7 @@ export class WhatsAppService {
           errorDetail ? JSON.stringify(errorDetail) : null,
           reservationId ?? null,
           channel,
+          fallbackText,
         ],
       );
     } catch (e: any) {

@@ -34,7 +34,7 @@ export class WhatsAppController {
   private async processEvent(body: any): Promise<void> {
     // Status callback de un mensaje saliente.
     if (body?.MessageStatus && body?.MessageSid) {
-      await this.whatsapp.markDelivered(body.MessageSid, body.MessageStatus);
+      await this.whatsapp.handleStatusCallback(body.MessageSid, body.MessageStatus);
       return;
     }
 
